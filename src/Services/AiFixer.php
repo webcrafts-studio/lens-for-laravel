@@ -39,6 +39,36 @@ class AiFixer
         $context = 20;
         $startIndex = max(0, $lineNumber - 1 - $context);
         $endIndex = min(count($lines) - 1, $lineNumber - 1 + $context);
+
+        // If the failing element is identified, expand the window downward until
+        // the matching closing tag is included. Without this, the AI sees only
+        // the opening tag and leaves the closing tag unchanged (e.g. <header>…</div>).
+        if (preg_match('/<([a-zA-Z][a-zA-Z0-9-]*)/i', $htmlSnippet, $tagMatch)) {
+            $tagName = preg_quote(strtolower($tagMatch[1]), '/');
+            $openRe = '/<'.$tagName.'[\s\/>]/i';
+            $closeRe = '/<\/'.$tagName.'>/i';
+
+            // Count how many opens vs closes are in the initial block.
+            $depth = 0;
+            for ($i = $startIndex; $i <= $endIndex; $i++) {
+                $depth += preg_match_all($openRe, $lines[$i]);
+                $depth -= preg_match_all($closeRe, $lines[$i]);
+            }
+
+            // If depth > 0 the closing tag is further down — scan ahead to find it.
+            if ($depth > 0) {
+                $limit = min(count($lines) - 1, $endIndex + 300);
+                for ($i = $endIndex + 1; $i <= $limit; $i++) {
+                    $depth += preg_match_all($openRe, $lines[$i]);
+                    $depth -= preg_match_all($closeRe, $lines[$i]);
+                    if ($depth <= 0) {
+                        $endIndex = $i;
+                        break;
+                    }
+                }
+            }
+        }
+
         $codeBlock = implode("\n", array_slice($lines, $startIndex, $endIndex - $startIndex + 1));
 
         // Guard against sending extremely large blobs to the AI provider.
@@ -72,6 +102,7 @@ WCAG Standards: {$wcagTags}
 </user_content>
 
 Return the corrected version of the ENTIRE code block shown above. Only fix what is necessary — do not reformat unrelated code. Preserve all Blade directives, whitespace, and indentation exactly.
+If you rename an element's opening tag (e.g. <div> → <header>), you MUST also rename its matching closing tag (e.g. </div> → </header>).
 PROMPT;
 
         $providerConfig = config('lens-for-laravel.ai_provider', 'gemini');
