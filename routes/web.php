@@ -155,111 +155,132 @@ Route::post('/preview', function (Request $request) use ($domainRule) {
 })->name('lens-for-laravel.preview')->middleware('throttle:20,1');
 
 Route::post('/fix/suggest', function (Request $request) {
-    if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
-    }
-
-    $request->validate([
-        'htmlSnippet' => ['required', 'string', 'max:2000'],
-        'description' => ['required', 'string', 'max:500'],
-        'fileName' => ['required', 'string', 'max:500'],
-        'lineNumber' => ['required', 'integer', 'min:1'],
-        'tags' => ['nullable', 'array'],
-        'tags.*' => ['string'],
-    ]);
-
     try {
+        if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
+            return response()->json(['status' => 'error', 'message' => 'Lens For Laravel is not allowed in this environment.'], 403);
+        }
+
+        $validated = $request->validate([
+            'htmlSnippet' => ['required', 'string', 'max:2000'],
+            'description' => ['required', 'string', 'max:500'],
+            'fileName' => ['required', 'string', 'max:500'],
+            'lineNumber' => ['required', 'integer', 'min:1'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string'],
+        ]);
+
         $result = app(AiFixer::class)->suggestFix(
-            $request->htmlSnippet,
-            $request->description,
-            $request->fileName,
-            $request->lineNumber,
-            $request->input('tags', [])
+            $validated['htmlSnippet'],
+            $validated['description'],
+            $validated['fileName'],
+            $validated['lineNumber'],
+            $validated['tags'] ?? []
         );
 
         return response()->json(['status' => 'success', ...$result]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => collect($e->errors())->flatten()->first() ?? 'Validation failed.',
+        ], 422);
     } catch (\Throwable $e) {
-        // Log the full error internally but never expose provider details
-        // (error messages from AI SDKs can contain API key fragments or account info).
         logger()->error('Lens AI fix suggestion failed', ['error' => $e->getMessage()]);
 
         return response()->json([
             'status' => 'error',
-            'message' => 'The AI provider returned an error. Check your API key configuration and try again.',
+            'message' => app()->isLocal() ? $e->getMessage() : 'The AI provider returned an error. Check your API key configuration and try again.',
         ], 500);
     }
 })->name('lens-for-laravel.fix.suggest')->middleware('throttle:20,1');
 
 Route::post('/fix/apply', function (Request $request) {
-    if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
-    }
+    try {
+        if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
+            return response()->json(['status' => 'error', 'message' => 'Lens For Laravel is not allowed in this environment.'], 403);
+        }
 
-    $request->validate([
-        'fileName'     => ['required', 'string', 'max:500'],
-        'originalCode' => ['required', 'string'],
-        'fixedCode'    => ['required', 'string'],
-    ]);
+        $validated = $request->validate([
+            'fileName'     => ['required', 'string', 'max:500'],
+            'originalCode' => ['required', 'string'],
+            'fixedCode'    => ['required', 'string'],
+        ]);
 
-    // Reject path traversal sequences before hitting the filesystem.
-    if (str_contains($request->fileName, '..')) {
-        return response()->json(['status' => 'error', 'message' => 'Invalid file path.'], 422);
-    }
+        $fileName = $validated['fileName'];
+        $originalCode = $validated['originalCode'];
+        $fixedCode = $validated['fixedCode'];
 
-    // Only Blade templates may be modified.
-    if (! str_ends_with($request->fileName, '.blade.php')) {
-        return response()->json(['status' => 'error', 'message' => 'Only .blade.php files can be modified.'], 422);
-    }
+        // Reject path traversal sequences before hitting the filesystem.
+        if (str_contains($fileName, '..')) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid file path.'], 422);
+        }
 
-    $viewsBase = resource_path('views');
-    $fullPath = realpath($viewsBase.DIRECTORY_SEPARATOR.$request->fileName);
+        // Only Blade templates may be modified.
+        if (! str_ends_with($fileName, '.blade.php')) {
+            return response()->json(['status' => 'error', 'message' => 'Only .blade.php files can be modified.'], 422);
+        }
 
-    if (! $fullPath || ! str_starts_with($fullPath, $viewsBase.DIRECTORY_SEPARATOR)) {
-        return response()->json(['status' => 'error', 'message' => 'File access denied.'], 403);
-    }
+        $viewsBase = resource_path('views');
+        $fullPath = realpath($viewsBase.DIRECTORY_SEPARATOR.$fileName);
 
-    $content = file_get_contents($fullPath);
+        if (! $fullPath || ! str_starts_with($fullPath, $viewsBase.DIRECTORY_SEPARATOR)) {
+            return response()->json(['status' => 'error', 'message' => 'File access denied.'], 403);
+        }
 
-    if (! str_contains($content, $request->originalCode)) {
+        $content = file_get_contents($fullPath);
+
+        if (! str_contains($content, $originalCode)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Original code not found in file. The file may have been modified since the fix was generated.',
+            ], 422);
+        }
+
+        // Protect against prompt-injection attacks where a malicious scanned page causes
+        // the AI to embed RCE payloads in the suggested fix.
+        // Check unconditionally for server-side code execution functions — these have no
+        // place in a Blade template regardless of what was in the original code block.
+        $rcePatterns = ['shell_exec(', 'system(', 'exec(', 'passthru(', 'proc_open(', 'popen(', 'eval('];
+        foreach ($rcePatterns as $pattern) {
+            if (str_contains($fixedCode, $pattern)) {
+                logger()->warning('Lens AI fix blocked: RCE pattern detected in AI response', ['pattern' => $pattern]);
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The AI-generated fix was blocked because it contains potentially dangerous code. Please apply the fix manually after reviewing.',
+                ], 422);
+            }
+        }
+
+        // Reject PHP open tags introduced by the AI that were not present in the
+        // original code block — a legitimate accessibility fix never needs to add raw PHP.
+        foreach (['<?php', '<?='] as $phpTag) {
+            if (str_contains($fixedCode, $phpTag) && ! str_contains($originalCode, $phpTag)) {
+                logger()->warning('Lens AI fix blocked: unexpected PHP tag in AI response', ['tag' => $phpTag]);
+
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The AI-generated fix was blocked because it introduces unexpected PHP code. Please apply the fix manually after reviewing.',
+                ], 422);
+            }
+        }
+
+        // LOCK_EX ensures the write is atomic and prevents concurrent overwrites.
+        file_put_contents($fullPath, str_replace($originalCode, $fixedCode, $content), LOCK_EX);
+
+        return response()->json(['status' => 'success']);
+    } catch (\Illuminate\Validation\ValidationException $e) {
         return response()->json([
             'status' => 'error',
-            'message' => 'Original code not found in file. The file may have been modified since the fix was generated.',
+            'message' => collect($e->errors())->flatten()->first() ?? 'Validation failed.',
         ], 422);
+    } catch (\Throwable $e) {
+        logger()->error('Lens AI fix apply failed', ['error' => $e->getMessage()]);
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Failed to apply fix: '.$e->getMessage(),
+        ], 500);
     }
-
-    // Protect against prompt-injection attacks where a malicious scanned page causes
-    // the AI to embed RCE payloads in the suggested fix.
-    // Check unconditionally for server-side code execution functions — these have no
-    // place in a Blade template regardless of what was in the original code block.
-    $rcePatterns = ['shell_exec(', 'system(', 'exec(', 'passthru(', 'proc_open(', 'popen(', 'eval('];
-    foreach ($rcePatterns as $pattern) {
-        if (str_contains($request->fixedCode, $pattern)) {
-            logger()->warning('Lens AI fix blocked: RCE pattern detected in AI response', ['pattern' => $pattern]);
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'The AI-generated fix was blocked because it contains potentially dangerous code. Please apply the fix manually after reviewing.',
-            ], 422);
-        }
-    }
-
-    // Reject PHP open tags introduced by the AI that were not present in the
-    // original code block — a legitimate accessibility fix never needs to add raw PHP.
-    foreach (['<?php', '<?='] as $phpTag) {
-        if (str_contains($request->fixedCode, $phpTag) && ! str_contains($request->originalCode, $phpTag)) {
-            logger()->warning('Lens AI fix blocked: unexpected PHP tag in AI response', ['tag' => $phpTag]);
-
-            return response()->json([
-                'status' => 'error',
-                'message' => 'The AI-generated fix was blocked because it introduces unexpected PHP code. Please apply the fix manually after reviewing.',
-            ], 422);
-        }
-    }
-
-    // LOCK_EX ensures the write is atomic and prevents concurrent overwrites.
-    file_put_contents($fullPath, str_replace($request->originalCode, $request->fixedCode, $content), LOCK_EX);
-
-    return response()->json(['status' => 'success']);
 })->name('lens-for-laravel.fix.apply')->middleware('throttle:20,1');
 
 Route::post('/report/pdf', function (Request $request) {
