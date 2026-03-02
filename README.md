@@ -4,6 +4,8 @@
 
 Lens for Laravel dynamically scans your local application for WCAG compliance using [Axe-core](https://github.com/dequelabs/axe-core) and attempts to reverse-engineer failing CSS selectors back to the exact **Blade file and line number** causing the issue.
 
+**[Documentation & full feature overview → lens.webcrafts.pl](https://lens.webcrafts.pl/)**
+
 ---
 
 ## Features

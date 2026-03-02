@@ -2,6 +2,7 @@
   "name": "webcrafts-studio/lens-for-laravel",
   "description": "A plug-and-play accessibility auditor for Laravel.",
   "type": "library",
+  "license": "MIT",
   "require": {
     "php": "^8.2",
     "illuminate/support": "^10.0|^11.0|^12.0",
