@@ -8,3 +8,4 @@ phpunit.xml
 .vscode
 .DS_Store
 .claude/
+CONTEXT.md
