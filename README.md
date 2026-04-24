@@ -12,11 +12,11 @@ Lens for Laravel dynamically scans your local application for WCAG compliance us
 
 - **Zero frontend build step** — uses Alpine.js and Tailwind CSS via CDN; works immediately after installation
 - **Powered by Axe-core** — industry-standard accessibility testing engine covering WCAG 2.x rules
-- **Blade file locator** — maps compiled HTML violations back to `resources/views/**/*.blade.php` with heuristic source location detection
+- **Blade + React source locator** — maps compiled HTML violations back to `resources/views/**/*.blade.php` or React files under `resources/js`
 - **WCAG level filtering** — view issues by Level A, AA, AAA, or best-practice separately
 - **Whole-site crawler** — discovers pages via sitemap or link-crawling and scans up to a configurable limit
 - **Multi-URL scanning** — target specific pages in a single run
-- **AI-powered fix suggestions** — generates diff previews and applies fixes directly to Blade files (supports Gemini, OpenAI, Anthropic)
+- **AI-powered fix suggestions** — generates diff previews and applies fixes directly to Blade and React source files (supports Gemini, OpenAI, Anthropic)
 - **IDE integration** — click any source location in the dashboard to open the file at the exact line in VSCode, Cursor, PhpStorm, or Sublime Text
 - **Element preview** — takes a screenshot of the page with the offending element highlighted
 - **PDF reports** — export full accessibility audit results as a formatted PDF
@@ -133,7 +133,7 @@ return [
 
 ## AI Fix Suggestions
 
-The dashboard includes an AI-powered fix assistant. When a violation is expanded, you can request a suggested fix for the affected Blade snippet. The assistant returns a unified diff that can be previewed and applied directly to the file with a single click.
+The dashboard includes an AI-powered fix assistant. When a violation is expanded, you can request a suggested fix for the affected Blade or React snippet. The assistant returns a unified diff that can be previewed and applied directly to the file with a single click.
 
 Configure your preferred provider and API key in `.env`:
 
@@ -152,7 +152,7 @@ The dashboard enforces the following protections:
 
 - **Environment restriction** — only available in environments listed in `enabled_environments` (default: `local`)
 - **Domain restriction** — the scan endpoint only accepts URLs on the same host as `APP_URL`; scanning external domains is blocked
-- **Path traversal prevention** — the fix-apply endpoint restricts file writes to `resources/views`
+- **Path traversal prevention** — the fix-apply endpoint restricts file writes to Blade files in `resources/views` and React files in `resources/js`
 
 ---
 

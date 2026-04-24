@@ -23,6 +23,7 @@ class LensForLaravelServiceProvider extends ServiceProvider
     {
         $this->registerRoutes();
         $this->registerViews();
+        $this->registerMigrations();
         $this->registerPublishing();
         $this->registerCommands();
     }
@@ -46,6 +47,14 @@ class LensForLaravelServiceProvider extends ServiceProvider
     protected function registerViews(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'lens-for-laravel');
+    }
+
+    /**
+     * Register the package database migrations.
+     */
+    protected function registerMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 
     /**
@@ -73,6 +82,10 @@ class LensForLaravelServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/lens-for-laravel'),
             ], 'lens-for-laravel-views');
+
+            $this->publishes([
+                __DIR__.'/../database/migrations' => database_path('migrations'),
+            ], 'lens-for-laravel-migrations');
         }
     }
 }

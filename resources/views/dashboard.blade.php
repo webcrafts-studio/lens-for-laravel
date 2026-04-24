@@ -25,6 +25,8 @@
             },
         }
     </script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
@@ -80,6 +82,12 @@
                     </h1>
                 </div>
                 <div class="flex items-center gap-6 font-mono text-sm">
+                    <button @click="activeTab = 'scanner'"
+                        class="uppercase tracking-widest px-2 py-1 transition-colors"
+                        :class="activeTab === 'scanner' ? 'text-[#E11D48] font-bold border-b-2 border-[#E11D48]' : 'text-neutral-500 hover:text-black dark:hover:text-white'">SCANNER</button>
+                    <button @click="activeTab = 'history'; if (!historyScans.length) loadHistory()"
+                        class="uppercase tracking-widest px-2 py-1 transition-colors"
+                        :class="activeTab === 'history' ? 'text-[#E11D48] font-bold border-b-2 border-[#E11D48]' : 'text-neutral-500 hover:text-black dark:hover:text-white'">HISTORY</button>
                     <a href="https://github.com/webcrafts-studio/lens-for-laravel" target="_blank"
                         class="hover:underline hidden sm:block uppercase tracking-wider">REPOSITORY</a>
                     <!-- Theme Toggle -->
@@ -103,6 +111,9 @@
         <!-- Main Content -->
         <main class="flex-1 py-12 px-4 sm:px-6 lg:px-8">
             <div class="max-w-5xl mx-auto space-y-12">
+
+                <!-- ═══ SCANNER TAB ═══ -->
+                <div x-show="activeTab === 'scanner'">
 
                 <!-- Hero Section & Controls -->
                 <div class="relative mt-4">
@@ -465,6 +476,164 @@
                 </div>
             </div>
 
+                </div><!-- /scanner tab -->
+
+                <!-- ═══ HISTORY TAB ═══ -->
+                <div x-show="activeTab === 'history'" x-cloak>
+
+                    <!-- Trend Chart -->
+                    <div class="bg-white dark:bg-black border border-black dark:border-neutral-700 p-6 sm:p-8">
+                        <h3 class="text-sm font-mono font-bold uppercase tracking-widest mb-6 border-b border-black dark:border-neutral-700 pb-3">Issue Trend (Last 30 Scans)</h3>
+                        <div class="relative" style="height: 260px;">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                        <p x-show="trendData.length === 0" class="text-center font-mono text-sm text-neutral-500 py-8 uppercase tracking-widest">No scan history yet.</p>
+                    </div>
+
+                    <!-- History Table -->
+                    <div class="mt-8 bg-white dark:bg-black border border-black dark:border-neutral-700 overflow-hidden">
+                        <div class="border-b border-black dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 px-6 py-4 flex items-center justify-between">
+                            <h3 class="text-sm font-mono font-bold uppercase tracking-widest">Scan History</h3>
+                            <div class="flex items-center gap-3">
+                                <button @click="loadHistory()" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ REFRESH ]</button>
+                            </div>
+                        </div>
+
+                        <!-- Loading -->
+                        <div x-show="historyLoading" class="py-12 flex justify-center">
+                            <div class="w-5 h-5 rounded-full border-2 border-black dark:border-white border-t-transparent animate-spin"></div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div x-show="!historyLoading && historyScans.length === 0" class="text-center py-16 px-6 font-mono">
+                            <div class="text-2xl mb-2 font-bold dark:text-white">[ NO_HISTORY ]</div>
+                            <p class="text-sm text-neutral-600 dark:text-neutral-300 uppercase tracking-widest">Run a scan to start building your history.</p>
+                        </div>
+
+                        <!-- Scans List -->
+                        <ul x-show="!historyLoading && historyScans.length > 0" class="divide-y divide-black dark:divide-neutral-700">
+                            <template x-for="scan in historyScans" :key="scan.id">
+                                <li class="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex flex-wrap items-center gap-3 mb-1">
+                                            <span class="text-xs font-mono text-neutral-500 uppercase tracking-widest" x-text="new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })"></span>
+                                            <span class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 bg-neutral-50 dark:bg-neutral-900 text-neutral-500 uppercase" x-text="scan.scan_mode"></span>
+                                        </div>
+                                        <p class="text-sm font-mono truncate text-black dark:text-white" x-text="scan.url"></p>
+                                        <div class="flex gap-4 mt-1 text-xs font-mono text-neutral-500">
+                                            <span>Total: <span class="text-[#E11D48] font-bold" x-text="scan.total_issues"></span></span>
+                                            <span>A: <span x-text="scan.level_a_count"></span></span>
+                                            <span>AA: <span x-text="scan.level_aa_count"></span></span>
+                                            <span>AAA: <span x-text="scan.level_aaa_count"></span></span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <button @click="viewHistoryScan(scan.id)"
+                                            class="px-3 py-1.5 border border-black dark:border-white text-xs font-mono font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">VIEW</button>
+                                        <button @click="startCompare(scan)"
+                                            class="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 text-xs font-mono uppercase tracking-widest hover:border-black dark:hover:border-white transition-colors"
+                                            :class="compareBaseScan?.id === scan.id ? 'bg-[#E11D48] text-white border-[#E11D48]' : ''">COMPARE</button>
+                                        <button @click="deleteHistoryScan(scan.id)"
+                                            class="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 text-xs font-mono uppercase tracking-widest text-neutral-500 hover:border-[#E11D48] hover:text-[#E11D48] transition-colors">DEL</button>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+
+                        <!-- Pagination -->
+                        <div x-show="historyPagination.lastPage > 1" class="border-t border-black dark:border-neutral-700 px-6 py-3 flex items-center justify-between">
+                            <button @click="loadHistory(historyPagination.currentPage - 1)" :disabled="historyPagination.currentPage <= 1"
+                                class="text-xs font-mono uppercase tracking-widest disabled:opacity-30 hover:text-[#E11D48] transition-colors">[ PREV ]</button>
+                            <span class="text-xs font-mono text-neutral-500" x-text="`Page ${historyPagination.currentPage} of ${historyPagination.lastPage}`"></span>
+                            <button @click="loadHistory(historyPagination.currentPage + 1)" :disabled="historyPagination.currentPage >= historyPagination.lastPage"
+                                class="text-xs font-mono uppercase tracking-widest disabled:opacity-30 hover:text-[#E11D48] transition-colors">[ NEXT ]</button>
+                        </div>
+                    </div>
+
+                    <!-- Scan Detail Modal (inline) -->
+                    <div x-show="selectedHistoryScan" x-cloak class="mt-8 bg-white dark:bg-black border-2 border-black dark:border-white">
+                        <div class="border-b border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 px-6 py-4 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-mono font-bold uppercase tracking-widest">[ SCAN_DETAIL ]</h3>
+                                <p class="text-xs font-mono text-neutral-500 mt-0.5" x-text="selectedHistoryScan?.url"></p>
+                            </div>
+                            <button @click="selectedHistoryScan = null" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ CLOSE ]</button>
+                        </div>
+                        <div class="divide-y divide-black dark:divide-neutral-700 max-h-[60vh] overflow-y-auto">
+                            <template x-for="(issue, idx) in (selectedHistoryScan?.issues || [])" :key="idx">
+                                <div class="px-6 py-4">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <span class="inline-flex items-center px-2 py-0.5 text-xs font-mono font-bold uppercase tracking-wider"
+                                            :class="getBadgeColor(issue.impact, issue.tags)"
+                                            x-text="issue.tags && issue.tags.includes('wcag2a') ? '[WCAG A]' : (issue.tags && issue.tags.includes('wcag2aa') ? '[WCAG AA]' : (issue.tags && issue.tags.includes('wcag2aaa') ? '[WCAG AAA]' : '[OTHER]'))"></span>
+                                        <span class="text-sm font-mono font-bold tracking-widest text-neutral-700 dark:text-neutral-300" x-text="issue.rule_id"></span>
+                                    </div>
+                                    <p class="text-sm text-black dark:text-white" x-text="issue.description"></p>
+                                    <div x-show="issue.html_snippet" class="mt-2 bg-neutral-100 dark:bg-neutral-900 border-l-4 border-black dark:border-neutral-500 p-3 overflow-x-auto">
+                                        <pre><code class="text-xs font-mono whitespace-pre-wrap text-neutral-800 dark:text-neutral-200" x-text="issue.html_snippet"></code></pre>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Compare View -->
+                    <div x-show="compareData" x-cloak class="mt-8 bg-white dark:bg-black border-2 border-black dark:border-white">
+                        <div class="border-b border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 px-6 py-4 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-mono font-bold uppercase tracking-widest">[ COMPARE ]</h3>
+                                <p class="text-xs font-mono text-neutral-500 mt-0.5">
+                                    Base: #<span x-text="compareData?.base?.id"></span> vs Compare: #<span x-text="compareData?.compare?.id"></span>
+                                </p>
+                            </div>
+                            <button @click="compareData = null; compareBaseScan = null" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ CLOSE ]</button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-0 border-b border-black dark:border-neutral-700">
+                            <div class="px-6 py-5 border-r border-black dark:border-neutral-700 text-center">
+                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-green-600 dark:text-green-400 mb-1">Fixed</dt>
+                                <dd class="text-3xl font-mono font-bold" x-text="compareData?.fixed?.length || 0"></dd>
+                            </div>
+                            <div class="px-6 py-5 border-r border-black dark:border-neutral-700 text-center">
+                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-[#E11D48] mb-1">New</dt>
+                                <dd class="text-3xl font-mono font-bold" x-text="compareData?.new?.length || 0"></dd>
+                            </div>
+                            <div class="px-6 py-5 text-center">
+                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">Remaining</dt>
+                                <dd class="text-3xl font-mono font-bold" x-text="compareData?.remaining?.length || 0"></dd>
+                            </div>
+                        </div>
+
+                        <div class="max-h-[50vh] overflow-y-auto divide-y divide-black dark:divide-neutral-700">
+                            <!-- Fixed issues -->
+                            <template x-for="(issue, idx) in (compareData?.fixed || [])" :key="'f'+idx">
+                                <div class="px-6 py-3 flex items-center gap-3 bg-green-50 dark:bg-green-900/10">
+                                    <span class="text-xs font-mono font-bold text-green-600 dark:text-green-400 shrink-0">FIXED</span>
+                                    <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
+                                    <span class="text-xs font-mono text-neutral-500 truncate" x-text="issue.selector"></span>
+                                </div>
+                            </template>
+                            <!-- New issues -->
+                            <template x-for="(issue, idx) in (compareData?.new || [])" :key="'n'+idx">
+                                <div class="px-6 py-3 flex items-center gap-3 bg-red-50 dark:bg-red-900/10">
+                                    <span class="text-xs font-mono font-bold text-[#E11D48] shrink-0">NEW</span>
+                                    <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
+                                    <span class="text-xs font-mono text-neutral-500 truncate" x-text="issue.selector"></span>
+                                </div>
+                            </template>
+                            <!-- Remaining issues -->
+                            <template x-for="(issue, idx) in (compareData?.remaining || [])" :key="'r'+idx">
+                                <div class="px-6 py-3 flex items-center gap-3">
+                                    <span class="text-xs font-mono font-bold text-neutral-400 shrink-0">SAME</span>
+                                    <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
+                                    <span class="text-xs font-mono text-neutral-500 truncate" x-text="issue.selector"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                </div><!-- /history tab -->
+
     </div>
     </main>
 
@@ -677,6 +846,7 @@
     </div>
 
     <script>
+        const LENS_RESOURCES_PATH = @json(resource_path());
         const LENS_VIEWS_PATH = @json(resource_path('views'));
         const LENS_EDITOR = @json(config('lens-for-laravel.editor', 'vscode'));
 
@@ -704,6 +874,19 @@
                 isLoadingPreview: false,
                 previewScreenshot: null,
                 previewIssue: null,
+
+                // Tab State
+                activeTab: 'scanner',
+
+                // History State
+                historyScans: [],
+                historyLoading: false,
+                historyPagination: { currentPage: 1, lastPage: 1 },
+                selectedHistoryScan: null,
+                compareBaseScan: null,
+                compareData: null,
+                trendData: [],
+                trendChart: null,
 
                 // AI Fix State
                 showFixModal: false,
@@ -793,7 +976,9 @@
 
                 openInEditor(fileName, lineNumber) {
                     if (!fileName || !this.editorEnabled) return;
-                    const path = LENS_VIEWS_PATH + '/' + fileName;
+                    const path = fileName.startsWith('js/')
+                        ? LENS_RESOURCES_PATH + '/' + fileName
+                        : LENS_VIEWS_PATH + '/' + fileName;
                     const line = lineNumber || 1;
                     let url;
                     switch (LENS_EDITOR) {
@@ -993,6 +1178,7 @@
                         }
 
                         this.hasResults = true;
+                        this.saveToHistory();
                     } catch (err) {
                         this.error = err.message;
                     } finally {
@@ -1146,6 +1332,205 @@
                         this.fixData.originalCode.split('\n'),
                         this.fixData.fixedCode.split('\n')
                     );
+                },
+
+                // ─── History Methods ─────────────────────────────────
+
+                async saveToHistory() {
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const urlsScanned = this.scanMode === 'multiple'
+                            ? this.urlsText.split('\n').map(u => u.trim()).filter(Boolean)
+                            : [this.url];
+                        await fetch('{{ route("lens-for-laravel.history.store") }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                            body: JSON.stringify({
+                                url: this.url,
+                                scanMode: this.scanMode,
+                                urlsScanned,
+                                issues: this.issues.map(i => ({
+                                    id: i.id,
+                                    impact: i.impact,
+                                    description: i.description,
+                                    helpUrl: i.helpUrl,
+                                    htmlSnippet: i.htmlSnippet,
+                                    selector: i.selector,
+                                    tags: i.tags,
+                                    url: i.url,
+                                    fileName: i.fileName,
+                                    lineNumber: i.lineNumber,
+                                }))
+                            })
+                        });
+                    } catch (e) {
+                        console.error('Failed to save scan to history:', e);
+                    }
+                },
+
+                async loadHistory(page = 1) {
+                    this.historyLoading = true;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const res = await fetch(`{{ route("lens-for-laravel.history.index") }}?page=${page}`, {
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
+                        });
+                        const data = await res.json();
+                        this.historyScans = data.scans?.data || [];
+                        this.historyPagination = {
+                            currentPage: data.scans?.current_page || 1,
+                            lastPage: data.scans?.last_page || 1,
+                        };
+                    } catch (e) {
+                        console.error('Failed to load history:', e);
+                    } finally {
+                        this.historyLoading = false;
+                    }
+                    this.loadTrends();
+                },
+
+                async loadTrends() {
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const res = await fetch('{{ route("lens-for-laravel.history.trends") }}', {
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
+                        });
+                        const data = await res.json();
+                        this.trendData = data.trends || [];
+                        this.renderTrendChart();
+                    } catch (e) {
+                        console.error('Failed to load trends:', e);
+                    }
+                },
+
+                renderTrendChart() {
+                    const canvas = document.getElementById('trendChart');
+                    if (!canvas) return;
+                    if (this.trendChart) { this.trendChart.destroy(); }
+
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+                    const textColor = isDark ? '#a3a3a3' : '#525252';
+
+                    const labels = this.trendData.map(t => new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    this.trendChart = new Chart(canvas, {
+                        type: 'line',
+                        data: {
+                            labels,
+                            datasets: [
+                                {
+                                    label: 'Total Issues',
+                                    data: this.trendData.map(t => t.total_issues),
+                                    borderColor: '#E11D48',
+                                    backgroundColor: 'rgba(225,29,72,0.1)',
+                                    fill: true,
+                                    tension: 0.3,
+                                    pointRadius: 4,
+                                    pointHoverRadius: 6,
+                                },
+                                {
+                                    label: 'Level A',
+                                    data: this.trendData.map(t => t.level_a_count),
+                                    borderColor: '#dc2626',
+                                    borderDash: [5, 5],
+                                    tension: 0.3,
+                                    pointRadius: 2,
+                                },
+                                {
+                                    label: 'Level AA',
+                                    data: this.trendData.map(t => t.level_aa_count),
+                                    borderColor: isDark ? '#e5e5e5' : '#171717',
+                                    borderDash: [3, 3],
+                                    tension: 0.3,
+                                    pointRadius: 2,
+                                },
+                                {
+                                    label: 'Level AAA',
+                                    data: this.trendData.map(t => t.level_aaa_count),
+                                    borderColor: '#a3a3a3',
+                                    borderDash: [2, 4],
+                                    tension: 0.3,
+                                    pointRadius: 2,
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    labels: { color: textColor, font: { family: 'monospace', size: 11 } }
+                                },
+                            },
+                            scales: {
+                                x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'monospace', size: 10 } } },
+                                y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'monospace', size: 10 } } },
+                            },
+                        }
+                    });
+                },
+
+                async viewHistoryScan(id) {
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const res = await fetch(`{{ url(config('lens-for-laravel.route_prefix', 'lens-for-laravel')) }}/history/${id}`, {
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
+                        });
+                        const data = await res.json();
+                        if (data.scan) {
+                            this.selectedHistoryScan = data.scan;
+                            this.compareData = null;
+                        }
+                    } catch (e) {
+                        console.error('Failed to load scan detail:', e);
+                    }
+                },
+
+                async deleteHistoryScan(id) {
+                    if (!confirm('Delete this scan?')) return;
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        await fetch(`{{ url(config('lens-for-laravel.route_prefix', 'lens-for-laravel')) }}/history/${id}`, {
+                            method: 'DELETE',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
+                        });
+                        this.historyScans = this.historyScans.filter(s => s.id !== id);
+                        if (this.selectedHistoryScan?.id === id) this.selectedHistoryScan = null;
+                        this.loadTrends();
+                    } catch (e) {
+                        console.error('Failed to delete scan:', e);
+                    }
+                },
+
+                startCompare(scan) {
+                    if (this.compareBaseScan?.id === scan.id) {
+                        this.compareBaseScan = null;
+                        this.compareData = null;
+                        return;
+                    }
+                    if (!this.compareBaseScan) {
+                        this.compareBaseScan = scan;
+                        return;
+                    }
+                    this.runCompare(this.compareBaseScan.id, scan.id);
+                },
+
+                async runCompare(baseId, compareId) {
+                    try {
+                        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const res = await fetch(`{{ url(config('lens-for-laravel.route_prefix', 'lens-for-laravel')) }}/history/${baseId}/compare/${compareId}`, {
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            this.compareData = data;
+                            this.selectedHistoryScan = null;
+                        }
+                    } catch (e) {
+                        console.error('Failed to compare scans:', e);
+                    } finally {
+                        this.compareBaseScan = null;
+                    }
                 },
 
                 getBadgeColor(impact, tags) {

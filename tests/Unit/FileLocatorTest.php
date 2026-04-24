@@ -4,17 +4,27 @@ use LensForLaravel\LensForLaravel\Services\FileLocator;
 
 beforeEach(function () {
     $this->viewsPath = $this->app->resourcePath('views');
+    $this->jsPath = $this->app->resourcePath('js');
 
     if (! is_dir($this->viewsPath)) {
         mkdir($this->viewsPath, 0755, true);
     }
 
+    if (! is_dir($this->jsPath.'/Components')) {
+        mkdir($this->jsPath.'/Components', 0755, true);
+    }
+
     $this->bladeFile = $this->viewsPath.'/lens-locator-test.blade.php';
+    $this->reactFile = $this->jsPath.'/Components/LensLocatorTest.jsx';
 });
 
 afterEach(function () {
     if (file_exists($this->bladeFile)) {
         unlink($this->bladeFile);
+    }
+
+    if (file_exists($this->reactFile)) {
+        unlink($this->reactFile);
     }
 });
 
@@ -73,4 +83,50 @@ test('returns correct line number in a multi-line file', function () {
 
     expect($result)->not->toBeNull()
         ->and($result['line'])->toBe(3);
+});
+
+test('locates react element by jsx className from selector', function () {
+    file_put_contents(
+        $this->reactFile,
+        "export default function Header() {\n".
+        "    return <img className=\"main-logo\" src=\"/logo.png\" />;\n".
+        "}\n"
+    );
+
+    $result = (new FileLocator)->locate('<img class="main-logo" src="/logo.png">', '.main-logo');
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toBe('js/Components/LensLocatorTest.jsx')
+        ->and($result['line'])->toBe(2);
+});
+
+test('locates react element by jsx expression attribute', function () {
+    file_put_contents(
+        $this->reactFile,
+        "export function Hero() {\n".
+        "    return <a id={'pricing-link'} href={'/pricing'}>Pricing</a>;\n".
+        "}\n"
+    );
+
+    $result = (new FileLocator)->locate('<a id="pricing-link" href="/pricing">Pricing</a>', '#pricing-link');
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toBe('js/Components/LensLocatorTest.jsx')
+        ->and($result['line'])->toBe(2);
+});
+
+test('prefers react attribute match over weak blade tag fallback', function () {
+    file_put_contents($this->bladeFile, '<a href="/fallback">Fallback</a>');
+    file_put_contents(
+        $this->reactFile,
+        "export function Nav() {\n".
+        "    return <a href={'/pricing'}>Pricing</a>;\n".
+        "}\n"
+    );
+
+    $result = (new FileLocator)->locate('<a href="/pricing">Pricing</a>', 'a');
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toBe('js/Components/LensLocatorTest.jsx')
+        ->and($result['line'])->toBe(2);
 });

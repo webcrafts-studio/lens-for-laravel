@@ -21,6 +21,18 @@ class TestCase extends OrchestraTestCase
         $app['config']->set('lens-for-laravel.middleware', ['web']);
         $app['config']->set('lens-for-laravel.crawl_max_pages', 5);
         $app['config']->set('lens-for-laravel.editor', 'vscode');
+
+        $app['config']->set('database.default', 'testing');
+        $app['config']->set('database.connections.testing', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+        ]);
+    }
+
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 
     protected function setUp(): void

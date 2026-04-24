@@ -2,17 +2,27 @@
 
 beforeEach(function () {
     $this->viewsPath = $this->app->resourcePath('views');
+    $this->jsPath = $this->app->resourcePath('js');
 
     if (! is_dir($this->viewsPath)) {
         mkdir($this->viewsPath, 0755, true);
     }
 
+    if (! is_dir($this->jsPath.'/Components')) {
+        mkdir($this->jsPath.'/Components', 0755, true);
+    }
+
     $this->bladeFile = $this->viewsPath.'/lens-fix-test.blade.php';
+    $this->reactFile = $this->jsPath.'/Components/LensFixTest.jsx';
 });
 
 afterEach(function () {
     if (file_exists($this->bladeFile)) {
         unlink($this->bladeFile);
+    }
+
+    if (file_exists($this->reactFile)) {
+        unlink($this->reactFile);
     }
 });
 
@@ -49,6 +59,23 @@ test('POST /fix/apply applies fix and replaces content in blade file', function 
         ->not->toContain($original);
 });
 
+test('POST /fix/apply applies fix and replaces content in react file', function () {
+    $original = '<img className="logo" src="/logo.png" />';
+    $fixed = '<img className="logo" src="/logo.png" alt="Company logo" />';
+
+    file_put_contents($this->reactFile, "export default function Logo() {\n    return {$original};\n}\n");
+
+    $this->postJson(route('lens-for-laravel.fix.apply'), [
+        'fileName' => 'js/Components/LensFixTest.jsx',
+        'originalCode' => $original,
+        'fixedCode' => $fixed,
+    ])->assertStatus(200)
+        ->assertJson(['status' => 'success']);
+
+    expect(file_get_contents($this->reactFile))->toContain($fixed)
+        ->not->toContain($original);
+});
+
 test('POST /fix/apply returns 422 when original code not found in file', function () {
     file_put_contents($this->bladeFile, '<div>Different content here</div>');
 
@@ -69,13 +96,13 @@ test('POST /fix/apply blocks path traversal attempts', function () {
         ->assertJson(['status' => 'error', 'message' => 'Invalid file path.']);
 });
 
-test('POST /fix/apply blocks access to non-blade files', function () {
+test('POST /fix/apply blocks access to unsupported files', function () {
     $this->postJson(route('lens-for-laravel.fix.apply'), [
         'fileName' => '/etc/hosts',
         'originalCode' => 'localhost',
         'fixedCode' => 'hacked',
     ])->assertStatus(422)
-        ->assertJson(['status' => 'error', 'message' => 'Only .blade.php files can be modified.']);
+        ->assertJson(['status' => 'error', 'message' => 'Invalid file path.']);
 });
 
 test('POST /fix/apply blocks fixedCode containing RCE functions', function () {
