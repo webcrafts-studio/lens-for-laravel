@@ -86,6 +86,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Ignore HTTPS Errors
+    |--------------------------------------------------------------------------
+    |
+    | If true, the scanner will ignore HTTPS errors such as self-signed certificates.
+    | This is useful for local development environments like DDEV or Laravel Valet.
+     |
+     */
+    'ignore_https_errors' => env('LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | AI Provider
     |--------------------------------------------------------------------------
     |

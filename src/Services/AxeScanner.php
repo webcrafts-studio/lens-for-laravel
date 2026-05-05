@@ -31,6 +31,11 @@ class AxeScanner
                 $browsershot->setDelay($scanWaitMs);
             }
 
+            $ignoreHttpsErrors = config('lens-for-laravel.ignore_https_errors', false);
+            if ($ignoreHttpsErrors) {
+                $browsershot->ignoreHttpsErrors();
+            }
+
             // We need to inject the axe-core library and run it.
             // Spatie Browsershot allows evaluating JavaScript on the page.
             $script = <<<'JS'
