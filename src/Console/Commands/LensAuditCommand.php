@@ -8,6 +8,7 @@ use Illuminate\Support\Str;
 use LensForLaravel\LensForLaravel\DTOs\Issue;
 use LensForLaravel\LensForLaravel\Exceptions\ScannerException;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
+use LensForLaravel\LensForLaravel\Services\BaselineManager;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
 
@@ -19,7 +20,10 @@ class LensAuditCommand extends Command
                             {--aa : Report WCAG Level A and AA violations}
                             {--all : Report all violation levels including AAA and best-practice (default)}
                             {--threshold=0 : Exit code 1 if violation count exceeds this threshold}
-                            {--crawl : Crawl the entire website and audit all discovered pages}';
+                            {--crawl : Crawl the entire website and audit all discovered pages}
+                            {--baseline : Save the current filtered violations as the baseline and exit successfully}
+                            {--baseline-file= : Baseline JSON path (defaults to storage/app/lens-for-laravel/baseline.json)}
+                            {--fail-on-new : Compare results against the baseline and fail only when new violations are found}';
 
     protected $description = 'Run an accessibility audit using axe-core via Browsershot and report WCAG violations';
 
@@ -31,6 +35,12 @@ class LensAuditCommand extends Command
         $levelFilter = $this->resolveLevelFilter();
         $multipleMode = count($urls) > 1;
         $crawlMode = (bool) $this->option('crawl') && ! $multipleMode;
+
+        if ($this->option('baseline') && $this->option('fail-on-new')) {
+            $this->components->error('Use either --baseline or --fail-on-new, not both.');
+
+            return self::FAILURE;
+        }
 
         $this->renderHeader($urls[0], $levelFilter, $threshold, $crawlMode, $multipleMode);
 
@@ -67,17 +77,27 @@ class LensAuditCommand extends Command
         if ($violationCount === 0) {
             $this->newLine();
             $this->components->success('No violations found.');
-
-            return self::SUCCESS;
-        }
-
-        if ($multipleMode || $crawlMode) {
+        } elseif ($multipleMode || $crawlMode) {
             $this->renderCrawlTable($filtered);
         } else {
             $this->renderTable($filtered);
         }
 
-        $this->renderSummary($filtered, $scannedUrls);
+        if ($violationCount > 0) {
+            $this->renderSummary($filtered, $scannedUrls);
+        }
+
+        if ($this->option('baseline')) {
+            return $this->writeBaseline($filtered, $scannedUrls, $levelFilter);
+        }
+
+        if ($this->option('fail-on-new')) {
+            return $this->enforceBaseline($filtered);
+        }
+
+        if ($violationCount === 0) {
+            return self::SUCCESS;
+        }
 
         // ── CI/CD quality gate ────────────────────────────────────────────────
         if ($violationCount > $threshold) {
@@ -308,6 +328,120 @@ class LensAuditCommand extends Command
         }
 
         return [$allIssues, $scannedUrls];
+    }
+
+    // ─── Baseline quality gate ────────────────────────────────────────────────
+
+    /**
+     * @param  Collection<int, Issue>  $issues
+     * @param  string[]  $scannedUrls
+     */
+    private function writeBaseline(Collection $issues, array $scannedUrls, string $levelFilter): int
+    {
+        $baseline = app(BaselineManager::class);
+        $path = $baseline->resolvePath($this->option('baseline-file'));
+
+        try {
+            $baseline->write($issues, $path, [
+                'level_filter' => $levelFilter,
+                'urls_scanned' => array_values($scannedUrls),
+            ]);
+        } catch (\RuntimeException $e) {
+            $this->newLine();
+            $this->components->error($e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $this->newLine();
+        $this->components->info("Baseline saved with {$issues->count()} issue(s): {$path}");
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * @param  Collection<int, Issue>  $issues
+     */
+    private function enforceBaseline(Collection $issues): int
+    {
+        $baseline = app(BaselineManager::class);
+        $path = $baseline->resolvePath($this->option('baseline-file'));
+
+        try {
+            $comparison = $baseline->compare($issues, $path);
+        } catch (\RuntimeException $e) {
+            $this->newLine();
+            $this->components->error($e->getMessage());
+            $this->line('  Create a baseline first with: php artisan lens:audit --baseline');
+
+            return self::FAILURE;
+        }
+
+        $this->renderBaselineComparison($comparison, $path);
+
+        $newCount = $comparison['new']->count();
+        if ($newCount > 0) {
+            $this->components->error("Baseline gate failed: {$newCount} new violation(s) found.");
+
+            return self::FAILURE;
+        }
+
+        $this->components->info('Baseline gate passed: no new violations found.');
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * @param  array{
+     *     new: Collection<int, array<string, mixed>>,
+     *     existing: Collection<int, array<string, mixed>>,
+     *     fixed: Collection<int, array<string, mixed>>,
+     *     baseline_count: int
+     * }  $comparison
+     */
+    private function renderBaselineComparison(array $comparison, string $path): void
+    {
+        $this->newLine();
+        $this->line('  <options=bold>Baseline comparison</>');
+        $this->line('  ─────────────────────────────────────────────');
+        $this->line("  Baseline file : {$path}");
+        $this->line('  Baseline size : <options=bold>'.$comparison['baseline_count'].'</>');
+        $this->line('  New           : <fg=red;options=bold>'.$comparison['new']->count().'</>');
+        $this->line('  Existing      : '.$comparison['existing']->count());
+        $this->line('  Fixed         : <fg=green>'.$comparison['fixed']->count().'</>');
+
+        if ($comparison['new']->isNotEmpty()) {
+            $this->newLine();
+            $this->line('  <fg=red;options=bold>New violations:</>');
+
+            $comparison['new']->take(10)->each(function (array $issue) {
+                $this->line('  - '.$this->formatBaselineIssue($issue));
+            });
+
+            if ($comparison['new']->count() > 10) {
+                $remaining = $comparison['new']->count() - 10;
+                $this->line("  - ...and {$remaining} more");
+            }
+        }
+
+        $this->newLine();
+    }
+
+    /**
+     * @param  array<string, mixed>  $issue
+     */
+    private function formatBaselineIssue(array $issue): string
+    {
+        $location = $issue['file_name'] ?? $issue['url'] ?? 'unknown location';
+
+        if (($issue['line_number'] ?? null) !== null && ($issue['file_name'] ?? null) !== null) {
+            $location .= ':'.$issue['line_number'];
+        }
+
+        $selector = $issue['selector'] ?? '';
+        $selectorSuffix = $selector !== '' ? " ({$selector})" : '';
+
+        return "{$issue['rule_id']} at {$location}{$selectorSuffix}";
     }
 
     // ─── Filtering ──────────────────────────────────────────────────────────────

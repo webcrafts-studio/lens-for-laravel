@@ -22,8 +22,10 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Whole-site crawler** - discovers pages from sitemaps and internal links.
 - **SPA crawler mode** - optionally renders JavaScript while crawling React/Vue/Inertia apps.
 - **Multi-URL scans** - scan selected URLs in a single dashboard or CLI run.
+- **Local HTTPS support** - optionally ignore self-signed certificate errors in local environments.
 - **Scan history** - stores scan runs, issue counts, affected URLs, source locations, and trend data.
 - **Scan comparison** - compare two historical scans to see new, fixed, and remaining issues.
+- **Baseline quality gate** - fail CI only when new accessibility regressions appear.
 - **Element preview** - screenshot the page with the failing element highlighted.
 - **PDF reports** - export audit results as a PDF.
 - **CLI audits** - run `php artisan lens:audit` with WCAG filters, crawl mode, and CI thresholds.
@@ -218,9 +220,48 @@ php artisan lens:audit --all
 
 # Fail with exit code 1 when violations exceed a threshold
 php artisan lens:audit --threshold=10
+
+# Save the current violations as a baseline
+php artisan lens:audit --crawl --baseline
+
+# Fail only when new violations appear compared to the baseline
+php artisan lens:audit --crawl --fail-on-new
+
+# Use a custom baseline file path
+php artisan lens:audit --crawl --fail-on-new --baseline-file=.github/lens-baseline.json
 ```
 
 The CLI uses the same scanner, crawler, source locator, and source type metadata as the dashboard.
+
+### Baseline Quality Gate
+
+Use the baseline gate when an existing application already has accessibility issues and you want CI to block only new regressions.
+
+```bash
+# Create or refresh the baseline after reviewing the current state
+php artisan lens:audit --crawl --baseline
+
+# In CI, compare the current scan against that baseline
+php artisan lens:audit --crawl --fail-on-new
+```
+
+By default, Lens stores the baseline in:
+
+```text
+storage/app/lens-for-laravel/baseline.json
+```
+
+The comparison uses stable fingerprints based on the rule, normalized URL path, selector, and source file when available, so a different local or CI host does not invalidate the baseline.
+
+### Local HTTPS Certificates
+
+For local environments with self-signed certificates, such as DDEV or Laravel Valet, enable:
+
+```env
+LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=true
+```
+
+The default is `false`, so production-like scans stay strict unless you explicitly opt in.
 
 ---
 
@@ -246,6 +287,10 @@ return [
 
     'scan_wait_ms' => env('LENS_FOR_LARAVEL_SCAN_WAIT_MS', 0),
 
+    'baseline_path' => env('LENS_FOR_LARAVEL_BASELINE_PATH', storage_path('app/lens-for-laravel/baseline.json')),
+
+    'ignore_https_errors' => env('LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS', false),
+
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),
 ];
 ```
@@ -257,6 +302,8 @@ LENS_FOR_LARAVEL_EDITOR=vscode
 LENS_FOR_LARAVEL_CRAWL_MAX_PAGES=50
 LENS_FOR_LARAVEL_CRAWLER_RENDER_JAVASCRIPT=false
 LENS_FOR_LARAVEL_SCAN_WAIT_MS=0
+LENS_FOR_LARAVEL_BASELINE_PATH=storage/app/lens-for-laravel/baseline.json
+LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=false
 LENS_FOR_LARAVEL_AI_PROVIDER=gemini
 ```
 

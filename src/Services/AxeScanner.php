@@ -22,7 +22,7 @@ class AxeScanner
         try {
             // Configure Browsershot. Note that in some environments you may need
             // to configure the Node/NPM/Puppeteer path explicitly.
-            $browsershot = Browsershot::url($url)
+            $browsershot = $this->browsershotForUrl($url)
                 ->noSandbox()
                 ->waitUntilNetworkIdle(); // Wait for the page to fully load
 
@@ -68,6 +68,11 @@ JS;
         } catch (Throwable $e) {
             throw new ScannerException('Failed to run Axe-core scan: '.$e->getMessage(), 0, $e);
         }
+    }
+
+    protected function browsershotForUrl(string $url): Browsershot
+    {
+        return Browsershot::url($url);
     }
 
     /**

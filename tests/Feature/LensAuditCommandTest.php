@@ -3,6 +3,7 @@
 use LensForLaravel\LensForLaravel\DTOs\Issue;
 use LensForLaravel\LensForLaravel\Exceptions\ScannerException;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
+use LensForLaravel\LensForLaravel\Services\BaselineManager;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
 
@@ -154,4 +155,152 @@ test('--crawl flag uses SiteCrawler and aggregates violations', function () {
         '--crawl' => true,
         '--threshold' => '100',
     ])->assertExitCode(0);
+});
+
+// ── Baseline quality gate ────────────────────────────────────────────────────
+
+test('--baseline writes the current filtered violations and exits 0', function () {
+    $path = tempnam(sys_get_temp_dir(), 'lens-baseline-');
+
+    $issues = collect([
+        new Issue('image-alt', 'critical', 'desc', 'url', '<img>', 'img', ['wcag2a'], 'https://example.com'),
+        new Issue('color-contrast', 'serious', 'desc', 'url', '<p>', 'p', ['wcag2aa'], 'https://example.com'),
+    ]);
+
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scan')->andReturn($issues);
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $locatorMock = Mockery::mock(FileLocator::class);
+    $locatorMock->shouldReceive('locate')->andReturn(null);
+    app()->instance(FileLocator::class, $locatorMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--baseline' => true,
+        '--baseline-file' => $path,
+        '--threshold' => '0',
+    ])
+        ->assertExitCode(0)
+        ->expectsOutputToContain('Baseline saved with 2 issue(s)');
+
+    $baseline = json_decode(file_get_contents($path), true);
+
+    expect($baseline['issue_count'])->toBe(2)
+        ->and($baseline['issues'])->toHaveCount(2);
+
+    @unlink($path);
+});
+
+test('--baseline respects wcag level filters', function () {
+    $path = tempnam(sys_get_temp_dir(), 'lens-baseline-');
+
+    $issues = collect([
+        new Issue('rule-a', 'critical', 'desc', 'url', '<img>', 'img', ['wcag2a'], 'https://example.com'),
+        new Issue('rule-aa', 'serious', 'desc', 'url', '<p>', 'p', ['wcag2aa'], 'https://example.com'),
+    ]);
+
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scan')->andReturn($issues);
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $locatorMock = Mockery::mock(FileLocator::class);
+    $locatorMock->shouldReceive('locate')->andReturn(null);
+    app()->instance(FileLocator::class, $locatorMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--baseline' => true,
+        '--baseline-file' => $path,
+        '--a' => true,
+    ])->assertExitCode(0);
+
+    $baseline = json_decode(file_get_contents($path), true);
+
+    expect($baseline['issue_count'])->toBe(1)
+        ->and($baseline['issues'][0]['rule_id'])->toBe('rule-a');
+
+    @unlink($path);
+});
+
+test('--fail-on-new exits 0 when current violations already exist in baseline', function () {
+    $path = tempnam(sys_get_temp_dir(), 'lens-baseline-');
+    $issue = new Issue('image-alt', 'critical', 'desc', 'url', '<img>', 'img', ['wcag2a'], 'https://example.com');
+
+    app(BaselineManager::class)->write(collect([$issue]), $path);
+
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scan')->andReturn(collect([$issue]));
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $locatorMock = Mockery::mock(FileLocator::class);
+    $locatorMock->shouldReceive('locate')->andReturn(null);
+    app()->instance(FileLocator::class, $locatorMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--fail-on-new' => true,
+        '--baseline-file' => $path,
+    ])
+        ->assertExitCode(0)
+        ->expectsOutputToContain('Baseline gate passed');
+
+    @unlink($path);
+});
+
+test('--fail-on-new exits 1 when a new violation is not in baseline', function () {
+    $path = tempnam(sys_get_temp_dir(), 'lens-baseline-');
+
+    $existing = new Issue('image-alt', 'critical', 'desc', 'url', '<img>', 'img', ['wcag2a'], 'https://example.com');
+    $new = new Issue('color-contrast', 'serious', 'desc', 'url', '<p>', 'p', ['wcag2aa'], 'https://example.com');
+
+    app(BaselineManager::class)->write(collect([$existing]), $path);
+
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scan')->andReturn(collect([$existing, $new]));
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $locatorMock = Mockery::mock(FileLocator::class);
+    $locatorMock->shouldReceive('locate')->andReturn(null);
+    app()->instance(FileLocator::class, $locatorMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--fail-on-new' => true,
+        '--baseline-file' => $path,
+    ])
+        ->assertExitCode(1)
+        ->expectsOutputToContain('Baseline gate failed: 1 new violation(s) found');
+
+    @unlink($path);
+});
+
+test('--fail-on-new exits 1 when baseline file is missing', function () {
+    $path = sys_get_temp_dir().'/lens-missing-baseline-'.bin2hex(random_bytes(6)).'.json';
+
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scan')->andReturn(collect());
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $locatorMock = Mockery::mock(FileLocator::class);
+    $locatorMock->shouldReceive('locate')->andReturn(null);
+    app()->instance(FileLocator::class, $locatorMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--fail-on-new' => true,
+        '--baseline-file' => $path,
+    ])
+        ->assertExitCode(1)
+        ->expectsOutputToContain('Baseline file not found');
+});
+
+test('baseline and fail-on-new options cannot be used together', function () {
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--baseline' => true,
+        '--fail-on-new' => true,
+    ])
+        ->assertExitCode(1)
+        ->expectsOutputToContain('Use either --baseline or --fail-on-new');
 });

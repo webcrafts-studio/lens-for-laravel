@@ -86,13 +86,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Accessibility Baseline Path
+    |--------------------------------------------------------------------------
+    |
+    | The default JSON file used by the CLI baseline quality gate. Existing
+    | applications with a published config can omit this key and Lens will use
+    | the same storage path fallback.
+    |
+    */
+    'baseline_path' => env('LENS_FOR_LARAVEL_BASELINE_PATH', storage_path('app/lens-for-laravel/baseline.json')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Ignore HTTPS Errors
     |--------------------------------------------------------------------------
     |
     | If true, the scanner will ignore HTTPS errors such as self-signed certificates.
     | This is useful for local development environments like DDEV or Laravel Valet.
-     |
-     */
+    |
+    */
     'ignore_https_errors' => env('LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS', false),
 
     /*
