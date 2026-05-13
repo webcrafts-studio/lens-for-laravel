@@ -24,11 +24,11 @@ test('dashboard renders interactive state scan controls', function () {
     $response = $this->get(route('lens-for-laravel.dashboard'));
 
     $response->assertStatus(200)
-        ->assertSee('STATES')
-        ->assertSee('INTERACTIVE_STATE_RECORDER')
+        ->assertSee('States')
+        ->assertSee('Interactive State Recorder')
         ->assertSee('Record')
         ->assertSee('openStateRecorder', false)
-        ->assertSee('INTERACTION_SCRIPT')
+        ->assertSee('Interaction Script')
         ->assertSee('scanInteractiveStates', false)
         ->assertSee(route('lens-for-laravel.scan.states'), false);
 });
@@ -41,4 +41,26 @@ test('state recorder renders for same origin target urls', function () {
     $response->assertStatus(200)
         ->assertSee('Lens State Recorder')
         ->assertSee('Send Script');
+});
+
+test('dashboard can switch to Polish locale', function () {
+    $response = $this->get(route('lens-for-laravel.dashboard', [
+        'lens_locale' => 'pl',
+    ]));
+
+    $response->assertStatus(200)
+        ->assertSee('Skaner')
+        ->assertSee('Cel analizy')
+        ->assertSee('Rejestrator stanów interaktywnych');
+});
+
+test('state recorder can switch to Spanish locale', function () {
+    $response = $this->get(route('lens-for-laravel.states.recorder', [
+        'target' => url('/states'),
+        'lens_locale' => 'es',
+    ]));
+
+    $response->assertStatus(200)
+        ->assertSee('Grabador de estados Lens')
+        ->assertSee('Enviar script');
 });

@@ -5,6 +5,7 @@ namespace LensForLaravel\LensForLaravel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use LensForLaravel\LensForLaravel\Console\Commands\LensAuditCommand;
+use LensForLaravel\LensForLaravel\Http\Middleware\SetLensLocale;
 
 class LensForLaravelServiceProvider extends ServiceProvider
 {
@@ -35,7 +36,7 @@ class LensForLaravelServiceProvider extends ServiceProvider
     {
         Route::group([
             'prefix' => config('lens-for-laravel.route_prefix', 'lens-for-laravel'),
-            'middleware' => config('lens-for-laravel.middleware', ['web']),
+            'middleware' => array_merge(config('lens-for-laravel.middleware', ['web']), [SetLensLocale::class]),
         ], function () {
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         });
@@ -47,6 +48,7 @@ class LensForLaravelServiceProvider extends ServiceProvider
     protected function registerViews(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'lens-for-laravel');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'lens-for-laravel');
     }
 
     /**
@@ -82,6 +84,10 @@ class LensForLaravelServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/lens-for-laravel'),
             ], 'lens-for-laravel-views');
+
+            $this->publishes([
+                __DIR__.'/../resources/lang' => lang_path('vendor/lens-for-laravel'),
+            ], 'lens-for-laravel-translations');
 
             $this->publishes([
                 __DIR__.'/../database/migrations' => database_path('migrations'),

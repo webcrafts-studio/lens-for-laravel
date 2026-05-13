@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lens State Recorder</title>
+    <title>{{ __('lens-for-laravel::messages.recorder.title') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
@@ -21,7 +21,7 @@
                 <div class="min-w-0">
                     <div class="flex items-center gap-3">
                         <span class="h-2.5 w-2.5 rounded-full" :class="recording ? 'bg-[#E11D48]' : 'bg-neutral-500'"></span>
-                        <h1 class="font-mono text-sm font-bold uppercase tracking-widest">Lens State Recorder</h1>
+                        <h1 class="font-mono text-sm font-bold uppercase tracking-widest">{{ __('lens-for-laravel::messages.recorder.title') }}</h1>
                     </div>
                     <p class="mt-1 truncate font-mono text-xs text-neutral-400" x-text="targetUrl"></p>
                 </div>
@@ -30,43 +30,43 @@
                     <button type="button" @click="recording = !recording"
                         class="border px-3 py-2"
                         :class="recording ? 'border-[#E11D48] bg-[#E11D48] text-white' : 'border-white text-white hover:bg-white hover:text-black'">
-                        <span x-text="recording ? 'Recording' : 'Record'"></span>
+                        <span x-text="recording ? t.recording : t.record"></span>
                     </button>
                     <button type="button" @click="reloadPreview()"
-                        class="border border-white/30 px-3 py-2 text-white hover:border-white">Reload</button>
+                        class="border border-white/30 px-3 py-2 text-white hover:border-white">{{ __('lens-for-laravel::messages.recorder.reload') }}</button>
                     <button type="button" @click="addState()"
-                        class="border border-white/30 px-3 py-2 text-white hover:border-white">New State</button>
+                        class="border border-white/30 px-3 py-2 text-white hover:border-white">{{ __('lens-for-laravel::messages.recorder.new_state') }}</button>
                     <button type="button" @click="sendToDashboard()"
-                        class="border border-[#E11D48] px-3 py-2 text-[#E11D48] hover:bg-[#E11D48] hover:text-white">Send Script</button>
+                        class="border border-[#E11D48] px-3 py-2 text-[#E11D48] hover:bg-[#E11D48] hover:text-white">{{ __('lens-for-laravel::messages.recorder.send_script') }}</button>
                 </div>
             </div>
 
             <div class="grid gap-3 border-t border-white/10 px-4 py-3 lg:grid-cols-[0.8fr_1.2fr]">
                 <div class="min-w-0">
                     <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-                        Current State
+                        {{ __('lens-for-laravel::messages.recorder.current_state') }}
                     </label>
                     <div class="mt-2 flex gap-2">
                         <select x-model.number="activeStateIndex"
                             class="min-w-0 flex-1 rounded-none border border-white/20 bg-black px-3 py-2 font-mono text-xs text-white outline-none focus:border-[#E11D48]">
                             <template x-for="(state, index) in states" :key="state.id">
-                                <option :value="index" x-text="`${index + 1}. ${state.label || 'Unnamed state'} (${state.actions.length})`"></option>
+                                <option :value="index" x-text="`${index + 1}. ${state.label || t.unnamedState} (${state.actions.length})`"></option>
                             </template>
                         </select>
                         <input type="text" x-model="activeState.label" maxlength="80"
                             class="min-w-0 flex-1 rounded-none border border-white/20 bg-black px-3 py-2 font-mono text-xs text-white outline-none focus:border-[#E11D48]"
-                            placeholder="State label">
+                            placeholder="{{ __('lens-for-laravel::messages.recorder.state_label') }}">
                     </div>
                     <p class="mt-2 font-mono text-[11px] text-neutral-500">
-                        Create a new state before performing the interactions that should lead to that scan state.
+                        {{ __('lens-for-laravel::messages.recorder.hint') }}
                     </p>
                 </div>
 
                 <div class="min-w-0">
                     <div class="flex items-center justify-between gap-3">
-                        <span class="font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-400">Recorded Script</span>
+                        <span class="font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-400">{{ __('lens-for-laravel::messages.recorder.recorded_script') }}</span>
                         <button type="button" @click="clearActions()"
-                            class="font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-[#E11D48]">Clear</button>
+                            class="font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-[#E11D48]">{{ __('lens-for-laravel::messages.recorder.clear') }}</button>
                     </div>
                     <textarea readonly x-text="script"
                         class="mt-2 h-24 w-full resize-none rounded-none border border-white/20 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-200 outline-none"></textarea>
@@ -89,13 +89,25 @@
             return {
                 targetUrl: @json($targetUrl),
                 previewUrl: @json($targetUrl),
+                t: {{ Illuminate\Support\Js::from([
+                    'record' => __('lens-for-laravel::messages.recorder.record'),
+                    'recording' => __('lens-for-laravel::messages.recorder.recording'),
+                    'unnamedState' => __('lens-for-laravel::messages.recorder.unnamed_state'),
+                    'initialPage' => __('lens-for-laravel::messages.recorder.initial_page'),
+                    'state' => __('lens-for-laravel::messages.recorder.state'),
+                    'newStateReady' => __('lens-for-laravel::messages.recorder.new_state_ready'),
+                    'cleared' => __('lens-for-laravel::messages.recorder.cleared'),
+                    'cannotRecord' => __('lens-for-laravel::messages.recorder.cannot_record'),
+                    'attached' => __('lens-for-laravel::messages.recorder.attached'),
+                    'sent' => __('lens-for-laravel::messages.recorder.sent'),
+                ]) }},
                 recording: true,
                 activeStateIndex: 0,
                 message: '',
                 messageType: 'info',
                 cleanup: null,
                 states: [
-                    { id: 1, label: 'Initial page', actions: [] },
+                    { id: 1, label: @json(__('lens-for-laravel::messages.recorder.initial_page')), actions: [] },
                 ],
 
                 init() {
@@ -124,17 +136,17 @@
                 addState() {
                     this.states.push({
                         id: Date.now() + Math.random(),
-                        label: `State ${this.states.length + 1}`,
+                        label: this.t.state.replace(':number', this.states.length + 1),
                         actions: [],
                     });
                     this.activeStateIndex = this.states.length - 1;
-                    this.flash('New state ready. Perform interactions for this state.');
+                    this.flash(this.t.newStateReady);
                 },
 
                 clearActions() {
-                    this.states = [{ id: 1, label: 'Initial page', actions: [] }];
+                    this.states = [{ id: 1, label: this.t.initialPage, actions: [] }];
                     this.activeStateIndex = 0;
-                    this.flash('Recorder cleared.');
+                    this.flash(this.t.cleared);
                 },
 
                 reloadPreview() {
@@ -152,7 +164,7 @@
                     try {
                         doc = this.$refs.preview.contentDocument || this.$refs.preview.contentWindow.document;
                     } catch (e) {
-                        this.flash('Cannot record this page because it is not same-origin or blocks embedding.', 'error');
+                        this.flash(this.t.cannotRecord, 'error');
                         return;
                     }
 
@@ -194,7 +206,7 @@
                         doc.removeEventListener('click', onClick, true);
                         doc.removeEventListener('change', onChange, true);
                     };
-                    this.flash('Recorder attached. Interact with the page.');
+                    this.flash(this.t.attached);
                 },
 
                 detachFrameListeners() {
@@ -235,7 +247,7 @@
                     localStorage.setItem('lens-state-recorder-script', JSON.stringify(payload));
                     this.channel?.postMessage(payload);
                     window.opener?.postMessage(payload, window.location.origin);
-                    this.flash('Script sent to Lens dashboard.');
+                    this.flash(this.t.sent);
                 },
 
                 flash(message, type = 'info') {

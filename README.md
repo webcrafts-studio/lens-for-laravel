@@ -295,6 +295,18 @@ return [
         'local',
     ],
 
+    'locale' => env('LENS_FOR_LARAVEL_LOCALE', app()->getLocale()),
+
+    'fallback_locale' => env('LENS_FOR_LARAVEL_FALLBACK_LOCALE', 'en'),
+
+    'supported_locales' => [
+        'en' => 'English',
+        'pl' => 'Polski',
+        'es' => 'Español',
+        'fr' => 'Français',
+        'de' => 'Deutsch',
+    ],
+
     'editor' => env('LENS_FOR_LARAVEL_EDITOR', 'vscode'),
 
     'crawl_max_pages' => env('LENS_FOR_LARAVEL_CRAWL_MAX_PAGES', 50),
@@ -315,6 +327,8 @@ return [
 
 ```env
 LENS_FOR_LARAVEL_EDITOR=vscode
+LENS_FOR_LARAVEL_LOCALE=en
+LENS_FOR_LARAVEL_FALLBACK_LOCALE=en
 LENS_FOR_LARAVEL_CRAWL_MAX_PAGES=50
 LENS_FOR_LARAVEL_CRAWLER_RENDER_JAVASCRIPT=false
 LENS_FOR_LARAVEL_SCAN_WAIT_MS=0

@@ -38,6 +38,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Locale
+    |--------------------------------------------------------------------------
+    |
+    | The default language for Lens UI. Users can override this in the dashboard
+    | with the built-in switcher; the override is stored in their session.
+    |
+    */
+    'locale' => env('LENS_FOR_LARAVEL_LOCALE', app()->getLocale()),
+
+    'fallback_locale' => env('LENS_FOR_LARAVEL_FALLBACK_LOCALE', 'en'),
+
+    'supported_locales' => [
+        'en' => 'English',
+        'pl' => 'Polski',
+        'es' => 'Español',
+        'fr' => 'Français',
+        'de' => 'Deutsch',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Editor / IDE Integration
     |--------------------------------------------------------------------------
     |

@@ -84,14 +84,22 @@
                 <div class="flex items-center gap-2 sm:gap-6 font-mono text-xs sm:text-sm shrink-0">
                     <button @click="activeTab = 'scanner'"
                         class="uppercase tracking-widest px-2 py-1 transition-colors"
-                        :class="activeTab === 'scanner' ? 'text-[#E11D48] font-bold border-b-2 border-[#E11D48]' : 'text-neutral-500 hover:text-black dark:hover:text-white'">SCANNER</button>
+                        :class="activeTab === 'scanner' ? 'text-[#E11D48] font-bold border-b-2 border-[#E11D48]' : 'text-neutral-500 hover:text-black dark:hover:text-white'">{{ __('lens-for-laravel::messages.nav.scanner') }}</button>
                     <button @click="activeTab = 'history'; if (!historyScans.length) loadHistory()"
                         class="uppercase tracking-widest px-2 py-1 transition-colors"
-                        :class="activeTab === 'history' ? 'text-[#E11D48] font-bold border-b-2 border-[#E11D48]' : 'text-neutral-500 hover:text-black dark:hover:text-white'">HISTORY</button>
+                        :class="activeTab === 'history' ? 'text-[#E11D48] font-bold border-b-2 border-[#E11D48]' : 'text-neutral-500 hover:text-black dark:hover:text-white'">{{ __('lens-for-laravel::messages.nav.history') }}</button>
                     <a href="https://github.com/webcrafts-studio/lens-for-laravel" target="_blank"
-                        class="hover:underline hidden sm:block uppercase tracking-wider">REPOSITORY</a>
+                        class="hover:underline hidden sm:block uppercase tracking-wider">{{ __('lens-for-laravel::messages.nav.repository') }}</a>
+                    <div class="hidden md:flex items-center gap-1" aria-label="{{ __('lens-for-laravel::messages.language') }}">
+                        @foreach (config('lens-for-laravel.supported_locales', []) as $localeCode => $localeLabel)
+                            <a href="{{ request()->fullUrlWithQuery(['lens_locale' => $localeCode]) }}"
+                                class="px-1.5 py-1 border text-[10px] uppercase tracking-widest {{ app()->getLocale() === $localeCode ? 'border-[#E11D48] text-[#E11D48]' : 'border-transparent text-neutral-500 hover:text-black dark:hover:text-white' }}">
+                                {{ $localeCode }}
+                            </a>
+                        @endforeach
+                    </div>
                     <!-- Theme Toggle -->
-                    <button @click="toggleTheme" aria-label="Toggle Color Theme"
+                    <button @click="toggleTheme" aria-label="{{ __('lens-for-laravel::messages.nav.theme_toggle') }}"
                         class="p-1.5 border border-black dark:border-neutral-500 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors flex items-center justify-center">
                         <svg x-show="theme === 'dark'" x-cloak xmlns="http://www.w3.org/2000/svg" fill="none"
                             viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
@@ -122,19 +130,16 @@
                         <div class="max-w-2xl min-w-0 relative z-10">
                             <h2
                                 class="text-2xl font-mono font-bold uppercase tracking-widest border-b border-black dark:border-neutral-700 pb-4 mb-4">
-                                Target Designation</h2>
+                                {{ __('lens-for-laravel::messages.scanner.title') }}</h2>
                             <p class="mt-2 text-base font-sans text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                                Enter target URL for comprehensive accessibility analysis. This auditor utilizes <a
-                                    href="https://github.com/dequelabs/axe-core" target="_blank"
-                                    class="underline decoration-black/20 hover:decoration-black dark:decoration-white/20 dark:hover:decoration-white transition-all">Axe-core</a>
-                                via <a href="https://spatie.be/docs/browsershot" target="_blank"
-                                    class="underline decoration-black/20 hover:decoration-black dark:decoration-white/20 dark:hover:decoration-white transition-all">Spatie
-                                    Browsershot</a> to identify WCAG violations.
+                                {!! __('lens-for-laravel::messages.scanner.intro', [
+                                    'axe' => '<a href="https://github.com/dequelabs/axe-core" target="_blank" class="underline decoration-black/20 hover:decoration-black dark:decoration-white/20 dark:hover:decoration-white transition-all">Axe-core</a>',
+                                    'browsershot' => '<a href="https://spatie.be/docs/browsershot" target="_blank" class="underline decoration-black/20 hover:decoration-black dark:decoration-white/20 dark:hover:decoration-white transition-all">Spatie Browsershot</a>',
+                                ]) !!}
                             </p>
                             <p
                                 class="mt-4 text-sm font-sans text-neutral-600 dark:text-neutral-400 leading-relaxed italic">
-                                System evaluates Level A, AA, and AAA compliance, identifies best practice improvements,
-                                and provides experimental remediation proposals powered by AI.
+                                {{ __('lens-for-laravel::messages.scanner.intro_2') }}
                             </p>
                         </div>
 
@@ -146,28 +151,28 @@
                                     :class="scanMode === 'single' ?
                                         'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' :
                                         'border-neutral-300 dark:border-neutral-600 text-neutral-500 hover:border-neutral-500 dark:hover:border-neutral-400 hover:text-black dark:hover:text-neutral-200'">
-                                    SINGLE_URL
+                                    {{ __('lens-for-laravel::messages.scanner.single_url') }}
                                 </button>
                                 <button type="button" @click="scanMode = 'website'"
                                     class="min-w-0 px-3 py-2 border transition-colors text-center"
                                     :class="scanMode === 'website' ?
                                         'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' :
                                         'border-neutral-300 dark:border-neutral-600 text-neutral-500 hover:border-neutral-500 dark:hover:border-neutral-400 hover:text-black dark:hover:text-neutral-200'">
-                                    WHOLE_WEBSITE
+                                    {{ __('lens-for-laravel::messages.scanner.whole_website') }}
                                 </button>
                                 <button type="button" @click="scanMode = 'multiple'"
                                     class="min-w-0 px-3 py-2 border transition-colors text-center"
                                     :class="scanMode === 'multiple' ?
                                         'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' :
                                         'border-neutral-300 dark:border-neutral-600 text-neutral-500 hover:border-neutral-500 dark:hover:border-neutral-400 hover:text-black dark:hover:text-neutral-200'">
-                                    MULTIPLE_URLS
+                                    {{ __('lens-for-laravel::messages.scanner.multiple_urls') }}
                                 </button>
                                 <button type="button" @click="scanMode = 'states'"
                                     class="min-w-0 px-3 py-2 border transition-colors text-center"
                                     :class="scanMode === 'states' ?
                                         'bg-black text-white dark:bg-white dark:text-black border-black dark:border-white' :
                                         'border-neutral-300 dark:border-neutral-600 text-neutral-500 hover:border-neutral-500 dark:hover:border-neutral-400 hover:text-black dark:hover:text-neutral-200'">
-                                    STATES
+                                    {{ __('lens-for-laravel::messages.scanner.states') }}
                                 </button>
                             </div>
 
@@ -190,9 +195,9 @@
                                 </div>
                                 <button type="submit" :disabled="isLoading"
                                     class="inline-flex items-center justify-center rounded-none bg-[#E11D48] text-white px-8 py-3 text-sm font-mono font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap border-l sm:border-t-0 border-t border-[#E11D48] hover:border-black sm:ml-1 mt-1 sm:mt-0">
-                                    <span x-show="!isLoading">EXECUTE</span>
+                                    <span x-show="!isLoading">{{ __('lens-for-laravel::messages.scanner.execute') }}</span>
                                     <span x-show="isLoading" class="flex items-center gap-2" x-cloak>
-                                        PROCESSING...
+                                        {{ __('lens-for-laravel::messages.scanner.processing') }}
                                     </span>
                                 </button>
                             </div>
@@ -202,27 +207,27 @@
                                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <p class="text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
-                                                INTERACTIVE_STATE_RECORDER
+                                                {{ __('lens-for-laravel::messages.states.title') }}
                                             </p>
                                             <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                                                Record browser interactions in a separate window, or paste a raw interaction script below.
+                                                {{ __('lens-for-laravel::messages.states.description') }}
                                             </p>
                                         </div>
                                         <div class="grid grid-cols-2 gap-1 font-mono text-[10px] uppercase tracking-widest">
                                             <button type="button" @click="openStateRecorder()"
                                                 class="border border-[#E11D48] bg-[#E11D48] px-3 py-2 text-white">
-                                                Record
+                                                {{ __('lens-for-laravel::messages.states.record') }}
                                             </button>
                                             <button type="button"
                                                 class="border border-black dark:border-white bg-black px-3 py-2 text-white dark:bg-white dark:text-black">
-                                                Raw
+                                                {{ __('lens-for-laravel::messages.states.raw') }}
                                             </button>
                                         </div>
                                     </div>
 
                                     <label for="interaction-script"
                                         class="block text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
-                                        INTERACTION_SCRIPT
+                                        {{ __('lens-for-laravel::messages.states.script') }}
                                     </label>
                                     <textarea id="interaction-script" x-model="statesScript" :required="scanMode === 'states'"
                                         rows="8"
@@ -256,7 +261,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-sm font-mono font-bold uppercase tracking-wider text-[#E11D48]">
-                                        Exception Caught</h3>
+                                        {{ __('lens-for-laravel::messages.scanner.exception_caught') }}</h3>
                                     <div class="mt-1 text-sm font-mono">
                                         <p x-text="error"></p>
                                     </div>
@@ -274,13 +279,13 @@
                         <h3 class="text-xl font-mono font-bold uppercase tracking-widest">Diagnostic Report</h3>
                         <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
                             <div class="text-sm font-mono">
-                                <span class="text-neutral-600 dark:text-neutral-300 uppercase">TOTAL_VIOLATIONS:</span>
+                                <span class="text-neutral-600 dark:text-neutral-300 uppercase">{{ __('lens-for-laravel::messages.scanner.total_violations') }}:</span>
                                 <span class="text-[#E11D48] font-bold" x-text="totalIssues"></span>
                             </div>
                             <button @click="generatePdf()" :disabled="isGeneratingPdf"
                                 class="inline-flex items-center justify-center gap-2 px-4 py-2 border-2 border-black dark:border-white font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black disabled:opacity-40 disabled:cursor-not-allowed">
-                                <span x-show="!isGeneratingPdf">⬇ Export PDF</span>
-                                <span x-show="isGeneratingPdf" x-cloak>Generating...</span>
+                                <span x-show="!isGeneratingPdf">⬇ {{ __('lens-for-laravel::messages.scanner.export_pdf') }}</span>
+                                <span x-show="isGeneratingPdf" x-cloak>{{ __('lens-for-laravel::messages.scanner.generating') }}</span>
                             </button>
                         </div>
                     </div>
@@ -904,6 +909,15 @@
         const LENS_RESOURCES_PATH = @json(resource_path());
         const LENS_VIEWS_PATH = @json(resource_path('views'));
         const LENS_EDITOR = @json(config('lens-for-laravel.editor', 'vscode'));
+        const LENS_I18N = {{ Illuminate\Support\Js::from([
+            'initializing' => __('lens-for-laravel::messages.progress.initializing'),
+            'scanningPage' => __('lens-for-laravel::messages.progress.scanning_page'),
+            'crawling' => __('lens-for-laravel::messages.progress.crawling'),
+            'scanComplete' => __('lens-for-laravel::messages.progress.scan_complete'),
+            'noScript' => __('lens-for-laravel::messages.states.no_script'),
+            'executingStates' => __('lens-for-laravel::messages.states.executing'),
+            'stateScanComplete' => __('lens-for-laravel::messages.states.complete'),
+        ]) }};
 
         document.addEventListener('alpine:init', () => {
             Alpine.data('scanner', () => ({
@@ -920,7 +934,7 @@
                 urlsText: '', // textarea content for multiple mode, one URL per line
                 statesScript: '',
                 recorderChannel: null,
-                progressStatus: 'Initializing...',
+                progressStatus: LENS_I18N.initializing,
                 progressPercent: 0,
 
                 // PDF Export State
@@ -1204,12 +1218,12 @@
                             .getAttribute('content');
 
                         if (this.scanMode === 'single') {
-                            this.progressStatus = 'Scanning page...';
+                            this.progressStatus = LENS_I18N.scanningPage;
                             this.progressPercent = 50;
                             await this.scanSingleUrl(this.url, token);
                             this.progressPercent = 100;
                         } else if (this.scanMode === 'website') {
-                            this.progressStatus = 'Crawling website...';
+                            this.progressStatus = LENS_I18N.crawling;
                             this.progressPercent = 10;
 
                             // 1. Crawl
@@ -1247,7 +1261,7 @@
                                 }
                             }
                             this.progressPercent = 100;
-                            this.progressStatus = 'Scan complete.';
+                            this.progressStatus = LENS_I18N.scanComplete;
                         } else if (this.scanMode === 'multiple') {
                             const urlList = this.urlsText
                                 .split('\n')
@@ -1268,15 +1282,15 @@
                                 }
                             }
                             this.progressPercent = 100;
-                            this.progressStatus = 'Scan complete.';
+                            this.progressStatus = LENS_I18N.scanComplete;
                         } else if (this.scanMode === 'states') {
-                            if (!this.statesScript.trim()) throw new Error('No interaction states provided.');
+                            if (!this.statesScript.trim()) throw new Error(LENS_I18N.noScript);
 
-                            this.progressStatus = 'Executing states...';
+                            this.progressStatus = LENS_I18N.executingStates;
                             this.progressPercent = 25;
                             await this.scanInteractiveStates(this.url, token);
                             this.progressPercent = 100;
-                            this.progressStatus = 'State scan complete.';
+                            this.progressStatus = LENS_I18N.stateScanComplete;
                         }
 
                         this.hasResults = true;
