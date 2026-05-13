@@ -78,6 +78,22 @@ Route::get('/dashboard', function () {
     return view('lens-for-laravel::dashboard');
 })->name('lens-for-laravel.dashboard');
 
+Route::get('/states/recorder', function (Request $request) use ($domainRule) {
+    if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
+        abort(403, 'Lens For Laravel is not allowed in this environment.');
+    }
+
+    $target = $request->query('target', url('/'));
+
+    validator(['target' => $target], [
+        'target' => ['required', 'url', $domainRule],
+    ])->validate();
+
+    return view('lens-for-laravel::state-recorder', [
+        'targetUrl' => $target,
+    ]);
+})->name('lens-for-laravel.states.recorder');
+
 Route::post('/crawl', function (Request $request) use ($domainRule) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
         abort(403, 'Lens For Laravel is not allowed in this environment.');

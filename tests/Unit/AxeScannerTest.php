@@ -126,5 +126,7 @@ test('interactive scanner maps state labels onto violations', function () {
         ->and($issues->first()->id)->toBe('button-name')
         ->and($issues->first()->selector)->toBe('button.close')
         ->and($issues->first()->stateLabel)->toBe('Modal open')
-        ->and($fakeBrowsershot->lastScript)->toContain('const states =');
+        ->and($fakeBrowsershot->lastScript)->toContain('const states =')
+        ->and($fakeBrowsershot->lastScript)->toContain('clickWithoutNavigation')
+        ->and($fakeBrowsershot->lastScript)->toContain("document.addEventListener('submit', preventDefault, true)");
 });

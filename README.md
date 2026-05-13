@@ -185,7 +185,7 @@ Run scans in four modes:
 
 Each issue can be expanded to inspect the failing node, copy the selector, preview the element, open the source file in your editor, or request an AI fix.
 
-Interactive state scans use a small line-based script:
+Interactive state scans can be recorded visually in the dashboard. Click **Record** to open a recorder window, interact with the target page, create named states as you move through the flow, and send the generated script back to Lens. You can also paste or edit the raw script directly. The generated format stays copyable and CI-friendly:
 
 ```text
 state: Navigation open

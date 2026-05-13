@@ -198,14 +198,37 @@
                             </div>
                             <div x-show="scanMode === 'states'" x-cloak
                                 class="border border-black dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 p-1 min-w-0">
-                                <label for="interaction-script"
-                                    class="block px-3 pt-3 pb-2 text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
-                                    INTERACTION_SCRIPT
-                                </label>
-                                <textarea id="interaction-script" x-model="statesScript" :required="scanMode === 'states'"
-                                    rows="8"
-                                    class="block w-full min-w-0 rounded-none border-0 py-3 px-4 text-black dark:text-white dark:bg-black ring-1 ring-inset ring-black dark:ring-neutral-700 placeholder:text-neutral-500 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-inset focus:ring-[#E11D48] sm:text-sm font-mono bg-white outline-none resize-y min-h-52"
-                                    placeholder="state: Navigation open&#10;click: [data-menu-button]&#10;&#10;state: Form validation&#10;click: button[type=submit]&#10;wait: 300"></textarea>
+                                <div class="flex flex-col gap-3 border border-black dark:border-neutral-700 bg-white dark:bg-black p-4">
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <p class="text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
+                                                INTERACTIVE_STATE_RECORDER
+                                            </p>
+                                            <p class="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                                                Record browser interactions in a separate window, or paste a raw interaction script below.
+                                            </p>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-1 font-mono text-[10px] uppercase tracking-widest">
+                                            <button type="button" @click="openStateRecorder()"
+                                                class="border border-[#E11D48] bg-[#E11D48] px-3 py-2 text-white">
+                                                Record
+                                            </button>
+                                            <button type="button"
+                                                class="border border-black dark:border-white bg-black px-3 py-2 text-white dark:bg-white dark:text-black">
+                                                Raw
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <label for="interaction-script"
+                                        class="block text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
+                                        INTERACTION_SCRIPT
+                                    </label>
+                                    <textarea id="interaction-script" x-model="statesScript" :required="scanMode === 'states'"
+                                        rows="8"
+                                        class="block w-full min-w-0 rounded-none border-0 py-3 px-4 text-black dark:text-white dark:bg-black ring-1 ring-inset ring-black dark:ring-neutral-700 placeholder:text-neutral-500 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-inset focus:ring-[#E11D48] sm:text-sm font-mono bg-white outline-none resize-y min-h-52"
+                                        placeholder="state: Navigation open&#10;click: [data-menu-button]&#10;&#10;state: Form validation&#10;click: button[type=submit]&#10;wait: 300"></textarea>
+                                </div>
                             </div>
                         </form>
 
@@ -896,6 +919,7 @@
                 scanMode: 'single', // 'single' | 'website' | 'multiple' | 'states'
                 urlsText: '', // textarea content for multiple mode, one URL per line
                 statesScript: '',
+                recorderChannel: null,
                 progressStatus: 'Initializing...',
                 progressPercent: 0,
 
@@ -937,6 +961,7 @@
                         document.documentElement.classList.toggle('dark', val === 'dark');
                         localStorage.setItem('theme', val);
                     });
+                    this.initStateRecorderListener();
                 },
 
                 toggleTheme() {
@@ -1005,6 +1030,42 @@
                         sublime: 'Sublime Text'
                     };
                     return labels[LENS_EDITOR] || LENS_EDITOR;
+                },
+
+                openStateRecorder() {
+                    const recorderUrl = new URL(@json(route('lens-for-laravel.states.recorder')), window.location.origin);
+                    recorderUrl.searchParams.set('target', this.url);
+                    window.open(recorderUrl.toString(), 'lens-state-recorder', 'width=1440,height=1000');
+                },
+
+                initStateRecorderListener() {
+                    const applyPayload = (payload) => {
+                        if (!payload || payload.type !== 'lens-state-script' || !payload.script) return;
+
+                        this.scanMode = 'states';
+                        this.statesScript = payload.script;
+                        if (payload.targetUrl) this.url = payload.targetUrl;
+                    };
+
+                    if ('BroadcastChannel' in window) {
+                        this.recorderChannel = new BroadcastChannel('lens-state-recorder');
+                        this.recorderChannel.onmessage = (event) => applyPayload(event.data);
+                    }
+
+                    window.addEventListener('message', (event) => {
+                        if (event.origin !== window.location.origin) return;
+                        applyPayload(event.data);
+                    });
+
+                    const stored = localStorage.getItem('lens-state-recorder-script');
+                    if (stored) {
+                        try {
+                            applyPayload(JSON.parse(stored));
+                            localStorage.removeItem('lens-state-recorder-script');
+                        } catch (e) {
+                            localStorage.removeItem('lens-state-recorder-script');
+                        }
+                    }
                 },
 
                 openInEditor(fileName, lineNumber) {

@@ -159,6 +159,23 @@ JS;
                     el.dispatchEvent(new Event(eventName, { bubbles: true }));
                 }
 
+                async function clickWithoutNavigation(el) {
+                    const preventDefault = (event) => {
+                        event.preventDefault();
+                    };
+
+                    document.addEventListener('click', preventDefault, true);
+                    document.addEventListener('submit', preventDefault, true);
+
+                    try {
+                        el.click();
+                        await wait(150);
+                    } finally {
+                        document.removeEventListener('click', preventDefault, true);
+                        document.removeEventListener('submit', preventDefault, true);
+                    }
+                }
+
                 async function runAction(action) {
                     if (action.type === 'wait') {
                         await wait(action.ms);
@@ -174,8 +191,7 @@ JS;
                     await wait(50);
 
                     if (action.type === 'click') {
-                        el.click();
-                        await wait(150);
+                        await clickWithoutNavigation(el);
                         return;
                     }
 
