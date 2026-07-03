@@ -78,6 +78,7 @@ Do not commit that temporary dependency as a mandatory production requirement.
 - Route tests must verify that unavailable AI Fix endpoints return a clear `503` without exposing provider internals.
 - Dashboard tests must verify that unavailable features are explained and their actions are hidden.
 - Preserve existing tests for Blade, React, Vue, crawler, state scripts, history, baseline, PDF, preview, and CLI behavior.
+- Keep dashboard and CLI state scripts on the same `InteractionScriptParser` grammar and limits. CLI state mode must remain single-URL and incompatible with crawl mode.
 
 ## Documentation Contract
 

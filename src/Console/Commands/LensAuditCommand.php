@@ -5,11 +5,13 @@ namespace LensForLaravel\LensForLaravel\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use LensForLaravel\LensForLaravel\DTOs\Issue;
 use LensForLaravel\LensForLaravel\Exceptions\ScannerException;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\BaselineManager;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
+use LensForLaravel\LensForLaravel\Services\InteractionScriptParser;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
 use LensForLaravel\LensForLaravel\Support\Wcag;
 
@@ -23,6 +25,7 @@ class LensAuditCommand extends Command
                             {--wcag= : WCAG standard version: 2.0, 2.1, or 2.2 (defaults to configuration)}
                             {--threshold=0 : Exit code 1 if violation count exceeds this threshold}
                             {--crawl : Crawl the entire website and audit all discovered pages}
+                            {--states= : Run interactive states from a script file (single URL only)}
                             {--baseline : Save the current filtered violations as the baseline and exit successfully}
                             {--baseline-file= : Baseline JSON path (defaults to storage/app/lens-for-laravel/baseline.json)}
                             {--fail-on-new : Compare results against the baseline and fail only when new violations are found}';
@@ -37,9 +40,23 @@ class LensAuditCommand extends Command
         $levelFilter = $this->resolveLevelFilter();
         $wcagVersion = $this->resolveWcagVersion();
         $multipleMode = count($urls) > 1;
+        $statesFile = $this->resolveStatesFileOption();
+        $statesMode = $statesFile !== null;
         $crawlMode = (bool) $this->option('crawl') && ! $multipleMode;
 
         if ($wcagVersion === null) {
+            return self::FAILURE;
+        }
+
+        if ($this->input->hasParameterOption('--states') && $statesFile === null) {
+            $this->components->error('The --states option requires a script file path.');
+
+            return self::FAILURE;
+        }
+
+        if ($statesMode && ($multipleMode || $this->option('crawl'))) {
+            $this->components->error('Interactive states require exactly one URL and cannot be combined with --crawl.');
+
             return self::FAILURE;
         }
 
@@ -49,10 +66,17 @@ class LensAuditCommand extends Command
             return self::FAILURE;
         }
 
-        $this->renderHeader($urls[0], $levelFilter, $wcagVersion, $threshold, $crawlMode, $multipleMode);
+        $this->renderHeader($urls[0], $levelFilter, $wcagVersion, $threshold, $crawlMode, $multipleMode, $statesMode);
 
         // ── Scan ──────────────────────────────────────────────────────────────
-        if ($multipleMode) {
+        if ($statesMode) {
+            $issues = $this->runInteractiveStateScan($urls[0], $statesFile, $wcagVersion);
+            $scannedUrls = [$urls[0]];
+
+            if ($issues === null) {
+                return self::FAILURE;
+            }
+        } elseif ($multipleMode) {
             $result = $this->runMultipleUrlScan($urls, $wcagVersion);
 
             if ($result === null) {
@@ -124,6 +148,62 @@ class LensAuditCommand extends Command
         return self::SUCCESS;
     }
 
+    // ─── Interactive-state scan ────────────────────────────────────────────────
+
+    private function runInteractiveStateScan(string $url, string $scriptFile, string $wcagVersion): ?Collection
+    {
+        $this->newLine();
+
+        try {
+            $path = $this->resolveFilePath($scriptFile);
+
+            if (! is_file($path) || ! is_readable($path)) {
+                $this->components->error("Interaction script file not found or unreadable: {$path}");
+
+                return null;
+            }
+
+            $script = file_get_contents($path);
+            if ($script === false) {
+                $this->components->error("Unable to read interaction script file: {$path}");
+
+                return null;
+            }
+
+            if (strlen($script) > 10000) {
+                $this->components->error('Interaction script may not exceed 10000 bytes.');
+
+                return null;
+            }
+
+            $states = app(InteractionScriptParser::class)->parse($script);
+            $scanner = app(AxeScanner::class);
+            $issues = null;
+            $stateCount = count($states);
+
+            $this->components->task(
+                "Executing {$stateCount} interactive state(s) from {$scriptFile}",
+                function () use ($url, $states, $wcagVersion, $scanner, &$issues) {
+                    $issues = $scanner->scanInteractiveStates($url, $states, $wcagVersion);
+                }
+            );
+
+            $this->components->task('Resolving source locations', fn () => $this->resolveSourceLocations($issues));
+
+            return $issues;
+        } catch (InvalidArgumentException $e) {
+            $this->components->error('Invalid interaction script: '.$e->getMessage());
+
+            return null;
+        } catch (ScannerException $e) {
+            $this->newLine();
+            $this->components->error('Interactive state scan failed: '.$e->getMessage());
+            $this->renderTroubleshooting();
+
+            return null;
+        }
+    }
+
     // ─── Single-URL scan ────────────────────────────────────────────────────────
 
     private function runScan(string $url, string $wcagVersion): ?Collection
@@ -140,17 +220,7 @@ class LensAuditCommand extends Command
                 $issues = $scanner->scan($url, $wcagVersion);
             });
 
-            $this->components->task('Resolving Blade source locations', function () use ($issues) {
-                $locator = app(FileLocator::class);
-                foreach ($issues as $issue) {
-                    $location = $locator->locate($issue->htmlSnippet, $issue->selector);
-                    if ($location) {
-                        $issue->fileName = $location['file'];
-                        $issue->lineNumber = $location['line'];
-                        $issue->sourceType = $location['type'] ?? null;
-                    }
-                }
-            });
+            $this->components->task('Resolving source locations', fn () => $this->resolveSourceLocations($issues));
 
             return $issues;
         } catch (ScannerException $e) {
@@ -474,13 +544,46 @@ class LensAuditCommand extends Command
 
         try {
             Wcag::assertVersion($version);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             $this->components->error($e->getMessage());
 
             return null;
         }
 
         return $version;
+    }
+
+    private function resolveStatesFileOption(): ?string
+    {
+        $option = $this->option('states');
+
+        return is_string($option) && trim($option) !== '' ? trim($option) : null;
+    }
+
+    private function resolveFilePath(string $path): string
+    {
+        if (str_starts_with($path, DIRECTORY_SEPARATOR) || preg_match('/^[A-Za-z]:[\\\\\/]/', $path)) {
+            return $path;
+        }
+
+        return base_path($path);
+    }
+
+    /**
+     * @param  Collection<int, Issue>  $issues
+     */
+    private function resolveSourceLocations(Collection $issues): void
+    {
+        $locator = app(FileLocator::class);
+
+        foreach ($issues as $issue) {
+            $location = $locator->locate($issue->htmlSnippet, $issue->selector);
+            if ($location) {
+                $issue->fileName = $location['file'];
+                $issue->lineNumber = $location['line'];
+                $issue->sourceType = $location['type'] ?? null;
+            }
+        }
     }
 
     private function filterByLevel(Collection $issues, string $level): Collection
@@ -493,7 +596,7 @@ class LensAuditCommand extends Command
 
     // ─── Rendering ──────────────────────────────────────────────────────────────
 
-    private function renderHeader(string $url, string $levelFilter, string $wcagVersion, int $threshold, bool $crawlMode, bool $multipleMode = false): void
+    private function renderHeader(string $url, string $levelFilter, string $wcagVersion, int $threshold, bool $crawlMode, bool $multipleMode = false, bool $statesMode = false): void
     {
         $levelLabel = match ($levelFilter) {
             'a' => 'WCAG A only',
@@ -502,6 +605,7 @@ class LensAuditCommand extends Command
         };
 
         $modeLabel = match (true) {
+            $statesMode => '<fg=yellow>INTERACTIVE_STATES</>',
             $multipleMode => '<fg=magenta>MULTIPLE_URLS</>',
             $crawlMode => '<fg=cyan>WHOLE_WEBSITE</>',
             default => '<fg=gray>SINGLE_URL</>',
@@ -523,6 +627,7 @@ class LensAuditCommand extends Command
     private function renderTable(Collection $issues): void
     {
         $verbose = $this->output->isVerbose();
+        $includeState = $issues->contains(fn (Issue $issue) => $issue->stateLabel !== null);
 
         $this->newLine();
         $this->line('  <options=bold>Diagnostic Report</>');
@@ -533,20 +638,30 @@ class LensAuditCommand extends Command
 
         $nodeHeader = $verbose ? 'Failing Node (full)' : 'Node';
 
-        $rows = $issues->values()->map(function (Issue $issue) use ($verbose) {
-            return [
+        $rows = $issues->values()->map(function (Issue $issue) use ($verbose, $includeState) {
+            $row = [
                 $this->formatLevel($issue->tags),
                 wordwrap($issue->id, 30, "\n", true),
                 $this->formatImpact($issue->impact),
                 $this->formatNode($issue->htmlSnippet, $verbose),
-                $issue->fileName ? "{$issue->fileName}:{$issue->lineNumber}" : '—',
             ];
+
+            if ($includeState) {
+                $row[] = $issue->stateLabel ?? '—';
+            }
+
+            $row[] = $issue->fileName ? "{$issue->fileName}:{$issue->lineNumber}" : '—';
+
+            return $row;
         })->all();
 
-        $this->table(
-            ['Level', 'Rule ID', 'Impact', $nodeHeader, 'Location'],
-            $rows
-        );
+        $headers = ['Level', 'Rule ID', 'Impact', $nodeHeader];
+        if ($includeState) {
+            $headers[] = 'State';
+        }
+        $headers[] = 'Location';
+
+        $this->table($headers, $rows);
     }
 
     /**

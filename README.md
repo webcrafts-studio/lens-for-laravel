@@ -220,6 +220,14 @@ wait: 300
 
 Supported actions are `click`, `type`, `select`, `check`, `uncheck`, and `wait`.
 
+Save the same script in a file to run it from the CLI:
+
+```bash
+php artisan lens:audit http://your-app.test --states=tests/accessibility/navigation.states
+```
+
+Interactive-state CLI scans support WCAG selection, level filters, thresholds, and baselines. They require one URL and cannot be combined with `--crawl`.
+
 ### History
 
 History stores scan runs and issue metadata in your database. It supports:
@@ -258,6 +266,9 @@ php artisan lens:audit --all
 # Run the cumulative WCAG 2.2 rule set
 php artisan lens:audit --wcag=2.2
 
+# Execute a reusable interactive-state script
+php artisan lens:audit http://your-app.test --states=tests/accessibility/navigation.states
+
 # Fail with exit code 1 when violations exceed a threshold
 php artisan lens:audit --threshold=10
 
@@ -271,7 +282,7 @@ php artisan lens:audit --crawl --fail-on-new
 php artisan lens:audit --crawl --fail-on-new --baseline-file=.github/lens-baseline.json
 ```
 
-The CLI uses the same scanner, crawler, source locator, and source type metadata as the dashboard.
+The CLI uses the same scanner, crawler, interaction-script parser, source locator, and source type metadata as the dashboard. State labels are printed in the diagnostic table and preserved in baselines.
 
 `--wcag=2.0`, `--wcag=2.1`, and `--wcag=2.2` select the standard version. This is independent from `--a`, `--aa`, and `--all`, which select the conformance levels shown in the result. The default standard is WCAG 2.0. When changing the standard used by a baseline workflow, create a fresh reviewed baseline.
 
@@ -577,6 +588,7 @@ Version 3 is the current development line. Completed v3 changes include:
 - WCAG 2.0 as the backward-compatible default
 - persisted WCAG version metadata in scan history, comparisons, baselines, and PDF reports
 - URL-aware history comparisons that distinguish identical rules and selectors on different pages
+- reusable interactive-state scripts in the CLI through `--states=path`
 - core support for PHP 8.2+ and Laravel 10–13
 - AI Fix isolated as an optional feature requiring PHP 8.3+, Laravel 12+, and `laravel/ai`
 

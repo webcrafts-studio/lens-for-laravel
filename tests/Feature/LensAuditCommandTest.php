@@ -45,6 +45,148 @@ test('--wcag rejects unsupported standards before scanning', function () {
         ->expectsOutputToContain('Unsupported WCAG version');
 });
 
+test('--states runs an interactive state script for one URL', function () {
+    $path = tempnam(sys_get_temp_dir(), 'lens-states-');
+    file_put_contents($path, "state: Navigation open\nclick: [data-menu-button]\nwait: 300\n");
+
+    $issue = new Issue(
+        'button-name',
+        'critical',
+        'Buttons must have discernible text',
+        'https://example.com/help',
+        '<button></button>',
+        'button.close',
+        ['wcag2a'],
+        'https://example.com',
+        stateLabel: 'Navigation open'
+    );
+
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scanInteractiveStates')
+        ->once()
+        ->with('https://example.com', Mockery::on(function (array $states) {
+            return count($states) === 1
+                && $states[0]['label'] === 'Navigation open'
+                && $states[0]['actions'][0]['type'] === 'click';
+        }), '2.1')
+        ->andReturn(collect([$issue]));
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $locatorMock = Mockery::mock(FileLocator::class);
+    $locatorMock->shouldReceive('locate')->once()->andReturn(null);
+    app()->instance(FileLocator::class, $locatorMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--states' => $path,
+        '--wcag' => '2.1',
+        '--threshold' => '1',
+    ])->assertExitCode(0)
+        ->expectsOutputToContain('INTERACTIVE_STATES')
+        ->expectsOutputToContain('Navigation open');
+
+    @unlink($path);
+});
+
+test('--states preserves state labels in CLI baselines', function () {
+    $scriptPath = tempnam(sys_get_temp_dir(), 'lens-states-');
+    $baselinePath = tempnam(sys_get_temp_dir(), 'lens-baseline-');
+    file_put_contents($scriptPath, 'state: Modal open');
+
+    $issue = new Issue(
+        'dialog-name',
+        'serious',
+        'Dialogs must have accessible names',
+        'https://example.com/help',
+        '<div role="dialog"></div>',
+        '[role="dialog"]',
+        ['wcag2a'],
+        'https://example.com',
+        stateLabel: 'Modal open'
+    );
+
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scanInteractiveStates')->once()->andReturn(collect([$issue]));
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $locatorMock = Mockery::mock(FileLocator::class);
+    $locatorMock->shouldReceive('locate')->once()->andReturn(null);
+    app()->instance(FileLocator::class, $locatorMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--states' => $scriptPath,
+        '--baseline' => true,
+        '--baseline-file' => $baselinePath,
+    ])->assertExitCode(0);
+
+    $baseline = json_decode(file_get_contents($baselinePath), true);
+    expect($baseline['issues'][0]['state_label'])->toBe('Modal open');
+
+    @unlink($scriptPath);
+    @unlink($baselinePath);
+});
+
+test('--states requires a script path', function () {
+    $this->artisan('lens:audit https://example.com --states')
+        ->assertExitCode(1)
+        ->expectsOutputToContain('requires a script file path');
+});
+
+test('--states rejects malformed interaction scripts before scanning', function () {
+    $path = tempnam(sys_get_temp_dir(), 'lens-states-');
+    file_put_contents($path, 'click: button');
+
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldNotReceive('scanInteractiveStates');
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--states' => $path,
+    ])->assertExitCode(1)
+        ->expectsOutputToContain('Invalid interaction script');
+
+    @unlink($path);
+});
+
+test('--states reports a missing script file', function () {
+    $path = sys_get_temp_dir().'/lens-missing-states-'.bin2hex(random_bytes(6)).'.txt';
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--states' => $path,
+    ])->assertExitCode(1)
+        ->expectsOutputToContain('Interaction script file not found or unreadable');
+});
+
+test('--states cannot be combined with crawl mode', function () {
+    $path = tempnam(sys_get_temp_dir(), 'lens-states-');
+    file_put_contents($path, 'state: Initial');
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--states' => $path,
+        '--crawl' => true,
+    ])->assertExitCode(1)
+        ->expectsOutputToContain('cannot be combined with --crawl');
+
+    @unlink($path);
+});
+
+test('--states cannot be used with multiple URLs', function () {
+    $path = tempnam(sys_get_temp_dir(), 'lens-states-');
+    file_put_contents($path, 'state: Initial');
+
+    $this->artisan('lens:audit', [
+        'url' => ['https://example.com', 'https://example.com/about'],
+        '--states' => $path,
+    ])->assertExitCode(1)
+        ->expectsOutputToContain('require exactly one URL');
+
+    @unlink($path);
+});
+
 // ── Exit code 0: no violations ────────────────────────────────────────────────
 
 test('exits 0 and shows success when no violations found', function () {
