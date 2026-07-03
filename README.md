@@ -380,6 +380,8 @@ LENS_FOR_LARAVEL_AI_ENABLED=true
 LENS_FOR_LARAVEL_AI_PROVIDER=gemini
 ```
 
+Set `LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=true` only for trusted local environments with self-signed certificates. In v3.0 the setting consistently covers axe scans, sitemap and page requests made by the crawler, optional JavaScript-rendered crawling, and element preview screenshots. Its default remains `false`.
+
 Supported editors:
 
 - `vscode`
@@ -591,6 +593,7 @@ Version 3 is the current development line. Completed v3 changes include:
 - persisted WCAG version metadata in scan history, comparisons, baselines, and PDF reports
 - URL-aware history comparisons that distinguish identical rules and selectors on different pages
 - reusable interactive-state scripts in the CLI through `--states=path`
+- consistent `ignore_https_errors` handling for scans, HTTP/browser crawling, and previews
 - core support for PHP 8.2+ and Laravel 10–13
 - AI Fix isolated as an optional feature requiring PHP 8.3+, Laravel 12+, and `laravel/ai`
 - stabilized AI Fix with semantic source fragments, minimal replacements, bounded Gemini thinking, one controlled structured-output retry, safe errors, and provider/model/token diagnostics

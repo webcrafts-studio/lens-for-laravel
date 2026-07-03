@@ -1,5 +1,36 @@
 <?php
 
+use LensForLaravel\LensForLaravel\Services\HttpsClientConfiguration;
+use Spatie\Browsershot\Browsershot;
+
+class FakeBrowsershotForPreviewHttpsTest extends Browsershot
+{
+    public function noSandbox(): static
+    {
+        return $this;
+    }
+
+    public function waitUntilNetworkIdle(bool $strict = true): static
+    {
+        return $this;
+    }
+
+    public function windowSize(int $width, int $height): static
+    {
+        return $this;
+    }
+
+    public function setOption($key, $value): static
+    {
+        return $this;
+    }
+
+    public function screenshot(): string
+    {
+        return 'preview-png';
+    }
+}
+
 test('POST /preview requires url', function () {
     $this->postJson(route('lens-for-laravel.preview'), ['selector' => 'img'])
         ->assertStatus(422)
@@ -36,4 +67,21 @@ test('POST /preview returns error json when browsershot fails', function () {
         'selector' => 'img.logo',
     ])->assertStatus(500)
         ->assertJson(['status' => 'error']);
+});
+
+test('POST /preview uses the shared HTTPS browser configuration', function () {
+    $fakeBrowser = new FakeBrowsershotForPreviewHttpsTest;
+    $configuration = Mockery::mock(HttpsClientConfiguration::class);
+    $configuration->shouldReceive('configureBrowser')
+        ->once()
+        ->with(Mockery::type(Browsershot::class))
+        ->andReturn($fakeBrowser);
+    app()->instance(HttpsClientConfiguration::class, $configuration);
+
+    $this->postJson(route('lens-for-laravel.preview'), [
+        'url' => 'http://localhost',
+        'selector' => 'img.logo',
+    ])->assertOk()
+        ->assertHeader('Content-Type', 'image/png')
+        ->assertContent('preview-png');
 });

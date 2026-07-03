@@ -20,6 +20,7 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 
 - `src/Services/AxeScanner.php` — browser-based axe-core scans, including interactive states
 - `src/Services/SiteCrawler.php` — sitemap and internal-link discovery
+- `src/Services/HttpsClientConfiguration.php` — shared TLS behavior for HTTP and Chromium clients
 - `src/Services/FileLocator.php` — heuristic Blade/React/Vue source mapping
 - `src/Services/InteractionScriptParser.php` — state script validation and parsing
 - `src/Services/BaselineManager.php` — stable CI baseline fingerprints
@@ -84,6 +85,7 @@ Do not commit that temporary dependency as a mandatory production requirement.
 - Dashboard tests must verify that unavailable features are explained and their actions are hidden.
 - Preserve existing tests for Blade, React, Vue, crawler, state scripts, history, baseline, PDF, preview, and CLI behavior.
 - Keep dashboard and CLI state scripts on the same `InteractionScriptParser` grammar and limits. CLI state mode must remain single-URL and incompatible with crawl mode.
+- Keep `ignore_https_errors` consistent across axe scans, sitemap/page HTTP crawling, browser-rendered crawling, and element previews.
 
 ## Documentation Contract
 

@@ -121,12 +121,7 @@ JS;
             $browsershot->setDelay($scanWaitMs);
         }
 
-        $ignoreHttpsErrors = config('lens-for-laravel.ignore_https_errors', false);
-        if ($ignoreHttpsErrors) {
-            $browsershot->ignoreHttpsErrors();
-        }
-
-        return $browsershot;
+        return app(HttpsClientConfiguration::class)->configureBrowser($browsershot);
     }
 
     protected function interactiveScanScript(string $statesJson, string $tagsJson): string

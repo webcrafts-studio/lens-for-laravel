@@ -1,7 +1,27 @@
 <?php
 
 use Illuminate\Support\Facades\Http;
+use LensForLaravel\LensForLaravel\Services\HttpsClientConfiguration;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
+use Spatie\Browsershot\Browsershot;
+
+class FakeBrowsershotForCrawlerHttpsTest extends Browsershot
+{
+    public function noSandbox(): static
+    {
+        return $this;
+    }
+
+    public function waitUntilNetworkIdle(bool $strict = true): static
+    {
+        return $this;
+    }
+
+    public function evaluate(string $pageFunction): string
+    {
+        return '["/browser-only"]';
+    }
+}
 
 function fakeSitemapNotFound(): array
 {
@@ -159,4 +179,31 @@ test('does not visit the same url twice', function () {
     $urls = (new SiteCrawler)->crawl('https://example.com', 20);
 
     expect(array_unique($urls))->toHaveCount(count($urls));
+});
+
+test('uses shared HTTPS configuration for HTTP and browser-rendered crawling', function () {
+    config()->set('lens-for-laravel.crawler_render_javascript', true);
+
+    Http::fake([
+        ...fakeSitemapNotFound(),
+    ]);
+
+    $fakeBrowser = new FakeBrowsershotForCrawlerHttpsTest;
+    $configuration = Mockery::mock(HttpsClientConfiguration::class);
+    $configuration->shouldReceive('configureHttp')
+        ->atLeast()
+        ->once()
+        ->andReturnUsing(fn ($request) => $request);
+    $configuration->shouldReceive('configureBrowser')
+        ->twice()
+        ->with(Mockery::type(Browsershot::class))
+        ->andReturn($fakeBrowser);
+    app()->instance(HttpsClientConfiguration::class, $configuration);
+
+    $urls = (new SiteCrawler)->crawl('https://example.com', 2);
+
+    expect($urls)->toBe([
+        'https://example.com',
+        'https://example.com/browser-only',
+    ]);
 });

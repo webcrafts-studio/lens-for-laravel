@@ -11,6 +11,7 @@ use LensForLaravel\LensForLaravel\Services\AiFixAvailability;
 use LensForLaravel\LensForLaravel\Services\AiFixer;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
+use LensForLaravel\LensForLaravel\Services\HttpsClientConfiguration;
 use LensForLaravel\LensForLaravel\Services\InteractionScriptParser;
 use LensForLaravel\LensForLaravel\Services\ScanComparator;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
@@ -255,7 +256,8 @@ Route::post('/preview', function (Request $request) use ($domainRule) {
     JS;
 
     try {
-        $screenshot = Browsershot::url($request->url)
+        $screenshot = app(HttpsClientConfiguration::class)
+            ->configureBrowser(Browsershot::url($request->url))
             ->noSandbox()
             ->waitUntilNetworkIdle()
             ->windowSize(1280, 800)

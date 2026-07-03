@@ -4,6 +4,7 @@ namespace LensForLaravel\LensForLaravel\Services;
 
 use DOMDocument;
 use DOMXPath;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Spatie\Browsershot\Browsershot;
 use Throwable;
@@ -25,10 +26,8 @@ class SiteCrawler
      *
      * Strategy:
      *  1. Try to seed URLs from sitemap.xml / sitemap_index.xml (instant, covers all product pages etc.)
-     *  2. BFS crawl by following <a href> links discovered via plain HTTP (no headless browser needed).
-     *
-     * Browsershot is intentionally NOT used here — it is only needed for the axe-core scan phase.
-     * Using a plain HTTP client is orders of magnitude faster for link discovery.
+     *  2. BFS crawl by following <a href> links discovered via plain HTTP.
+     *  3. Optionally render JavaScript in Chromium before falling back to plain HTTP.
      */
     public function crawl(string $url, int $maxPages = 50): array
     {
@@ -88,7 +87,7 @@ class SiteCrawler
 
         foreach ($candidates as $sitemapUrl) {
             try {
-                $response = Http::timeout(5)->get($sitemapUrl);
+                $response = $this->httpRequest(5)->get($sitemapUrl);
 
                 if (! $response->successful()) {
                     continue;
@@ -131,7 +130,7 @@ class SiteCrawler
     protected function parseSitemapXml(string $sitemapUrl): void
     {
         try {
-            $response = Http::timeout(5)->get($sitemapUrl);
+            $response = $this->httpRequest(5)->get($sitemapUrl);
 
             if (! $response->successful()) {
                 return;
@@ -170,7 +169,7 @@ class SiteCrawler
             }
         }
 
-        $response = Http::timeout(10)
+        $response = $this->httpRequest(10)
             ->withHeaders(['Accept' => 'text/html,application/xhtml+xml'])
             ->get($url);
 
@@ -189,7 +188,8 @@ class SiteCrawler
     protected function extractLinksWithBrowser(string $url): array
     {
         try {
-            $json = Browsershot::url($url)
+            $json = app(HttpsClientConfiguration::class)
+                ->configureBrowser(Browsershot::url($url))
                 ->noSandbox()
                 ->waitUntilNetworkIdle()
                 ->evaluate(<<<'JS'
@@ -212,6 +212,13 @@ class SiteCrawler
         } catch (Throwable) {
             return [];
         }
+    }
+
+    protected function httpRequest(int $timeout): PendingRequest
+    {
+        return app(HttpsClientConfiguration::class)->configureHttp(
+            Http::timeout($timeout)
+        );
     }
 
     protected function parseLinksFromHtml(string $html, string $baseUrl): array
