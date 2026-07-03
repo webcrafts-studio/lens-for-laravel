@@ -25,7 +25,10 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 - `src/Services/BaselineManager.php` — stable CI baseline fingerprints
 - `src/Services/ScanComparator.php` — URL- and state-aware history comparison
 - `src/Services/AiFixAvailability.php` — runtime and optional-SDK capability checks
-- `src/Services/AiFixer.php` — optional AI-generated fix suggestions
+- `src/Ai/AccessibilityFixAgent.php` — structured v3 AI agent options and provider-specific controls
+- `src/Services/AiFixContextExtractor.php` — bounded semantic element/component extraction
+- `src/Services/AiFixPromptRunner.php` — optional Laravel AI SDK boundary and response metadata
+- `src/Services/AiFixer.php` — prompt orchestration, controlled retry, safe errors, and diagnostics
 - `src/Support/Wcag.php` — supported WCAG versions, cumulative axe-core tags, and result-level classification
 - `src/Console/Commands/LensAuditCommand.php` — CLI audit workflow
 - `routes/web.php` — dashboard JSON endpoints
@@ -76,6 +79,8 @@ Do not commit that temporary dependency as a mandatory production requirement.
 - Every behavior change requires a focused Pest test.
 - Capability tests must cover supported runtime, old PHP, old Laravel, missing SDK, and explicit disablement.
 - Route tests must verify that unavailable AI Fix endpoints return a clear `503` without exposing provider internals.
+- AI Fix tests must cover semantic context boundaries, malformed structured output, token-limit finish reasons, one retry only, non-retryable provider errors, safe user messages, and provider/model/token logging.
+- Keep the AI model implicit. Lens selects the provider, while `laravel/ai` resolves that provider's configured default model.
 - Dashboard tests must verify that unavailable features are explained and their actions are hidden.
 - Preserve existing tests for Blade, React, Vue, crawler, state scripts, history, baseline, PDF, preview, and CLI behavior.
 - Keep dashboard and CLI state scripts on the same `InteractionScriptParser` grammar and limits. CLI state mode must remain single-URL and incompatible with crawl mode.
@@ -86,7 +91,8 @@ The package README is the concise installation and feature reference. The websit
 
 - core: PHP 8.2+, Laravel 10–13
 - AI Fix: PHP 8.3+, Laravel 12+, optional `laravel/ai`
-- AI Fix sends a limited source-code context and issue metadata to the configured external provider
+- AI Fix sends a bounded semantic element/component and issue metadata to the configured external provider
+- v3 AI Fix uses a minimal replacement, one controlled retry for truncated/invalid structured output, and the provider's default `laravel/ai` model
 - all non-AI features remain available when AI Fix is unsupported or disabled
 - dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default
 

@@ -78,6 +78,25 @@ test('POST /fix/apply applies fix and replaces content in blade file', function 
         ->not->toContain($original);
 });
 
+test('POST /fix/apply replaces only the reviewed occurrence', function () {
+    $viewsPath = $this->app->resourcePath('views');
+    if (! is_dir($viewsPath)) {
+        mkdir($viewsPath, 0755, true);
+    }
+    $file = $viewsPath.'/duplicate-fix.blade.php';
+    file_put_contents($file, "<button>Save</button>\n<button>Save</button>");
+
+    $this->postJson(route('lens-for-laravel.fix.apply'), [
+        'fileName' => 'duplicate-fix.blade.php',
+        'originalCode' => '<button>Save</button>',
+        'fixedCode' => '<button type="button">Save</button>',
+    ])->assertOk();
+
+    expect(file_get_contents($file))->toBe("<button type=\"button\">Save</button>\n<button>Save</button>");
+
+    unlink($file);
+});
+
 test('POST /fix/apply invalidates compiled blade view after replacing content', function () {
     $original = '<img src="logo.png">';
     $fixed = '<img src="logo.png" alt="Company logo">';

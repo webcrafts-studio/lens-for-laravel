@@ -3,7 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use LensForLaravel\LensForLaravel\Exceptions\AiFixGenerationException;
 use LensForLaravel\LensForLaravel\Models\Scan;
 use LensForLaravel\LensForLaravel\Services\AiFixAvailability;
 use LensForLaravel\LensForLaravel\Services\AiFixer;
@@ -300,12 +302,17 @@ Route::post('/fix/suggest', function (Request $request) {
             'message' => $e->getMessage(),
             'errors' => $e->errors(),
         ], 422);
+    } catch (AiFixGenerationException $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+        ], 502);
     } catch (Throwable $e) {
-        logger()->error('Lens AI fix suggestion failed', ['error' => $e->getMessage()]);
+        logger()->error('Lens AI fix suggestion failed', ['exception' => $e::class]);
 
         return response()->json([
             'status' => 'error',
-            'message' => app()->isLocal() ? $e->getMessage() : 'The AI provider returned an error. Check your API key configuration and try again.',
+            'message' => __('lens-for-laravel::messages.ai_fix.generation_failed'),
         ], 500);
     }
 })->name('lens-for-laravel.fix.suggest')->middleware('throttle:20,1');
@@ -375,7 +382,7 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
         }
 
         // LOCK_EX ensures the write is atomic and prevents concurrent overwrites.
-        file_put_contents($source['path'], str_replace($originalCode, $fixedCode, $content), LOCK_EX);
+        file_put_contents($source['path'], Str::replaceFirst($originalCode, $fixedCode, $content), LOCK_EX);
 
         clearstatcache(true, $source['path']);
 

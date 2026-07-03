@@ -443,13 +443,15 @@ On older supported applications, only AI Fix is disabled. The accessibility scan
 The AI Fix workflow:
 
 1. Lens locates the source file and line.
-2. It reads a context window around the issue.
-3. It sends the issue, failing DOM snippet, WCAG tags, and source context to the configured AI provider.
-4. It returns an explanation and full replacement code block.
+2. It extracts the smallest relevant element or component instead of an arbitrary line window.
+3. It sends the issue, failing DOM snippet, WCAG tags, and selected source fragment to the configured AI provider.
+4. A dedicated accessibility agent returns a minimal replacement and explanation.
 5. The dashboard shows a diff preview.
 6. You can accept and apply the change.
 
-> **Privacy:** AI Fix sends the failing DOM snippet, accessibility issue details, WCAG tags, and a limited source-code context to the configured Gemini, OpenAI, or Anthropic provider. It does not send the entire repository. Review the selected source context for secrets or sensitive information before requesting a fix, and follow the chosen provider's data-handling policy.
+The v3.0 agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Lens does not select or expose a model: `laravel/ai` uses the default model configured for the chosen provider. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
+
+> **Privacy:** AI Fix sends the failing DOM snippet, accessibility issue details, WCAG tags, and a bounded element/component source fragment to the configured Gemini, OpenAI, or Anthropic provider. It does not send the entire repository. Review the selected source context for secrets or sensitive information before requesting a fix, and follow the chosen provider's data-handling policy.
 
 Configure provider credentials:
 
@@ -591,6 +593,7 @@ Version 3 is the current development line. Completed v3 changes include:
 - reusable interactive-state scripts in the CLI through `--states=path`
 - core support for PHP 8.2+ and Laravel 10–13
 - AI Fix isolated as an optional feature requiring PHP 8.3+, Laravel 12+, and `laravel/ai`
+- stabilized AI Fix with semantic source fragments, minimal replacements, bounded Gemini thinking, one controlled structured-output retry, safe errors, and provider/model/token diagnostics
 
 After upgrading to v3:
 

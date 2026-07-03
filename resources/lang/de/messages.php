@@ -46,6 +46,8 @@ return [
         'disabled' => 'AI Fix ist in der Konfiguration deaktiviert. Der grundlegende Barrierefreiheits-Scan bleibt verfügbar.',
         'unsupported_runtime' => 'AI Fix erfordert PHP 8.3 oder neuer und Laravel 12 oder neuer. Der grundlegende Barrierefreiheits-Scan bleibt in dieser Anwendung verfügbar.',
         'sdk_missing' => 'Installiere das optionale Paket laravel/ai, um AI Fix zu aktivieren. Der grundlegende Barrierefreiheits-Scan bleibt verfügbar.',
+        'incomplete_response' => 'AI Fix konnte nach einem erneuten Versuch keinen vollständigen und gültigen Vorschlag erzeugen. Es wurde keine Datei geändert. Versuche es erneut oder behebe das Problem manuell.',
+        'generation_failed' => 'AI Fix konnte den konfigurierten KI-Anbieter nicht erreichen oder verwenden. Es wurde keine Datei geändert. Prüfe die Zugangsdaten und versuche es erneut.',
     ],
     'recorder' => [
         'title' => 'Lens Zustandsrecorder',
