@@ -1,5 +1,22 @@
 <?php
 
+test('PDF report includes the selected WCAG version and classifies WCAG 2.2 tags', function () {
+    $html = view('lens-for-laravel::report', [
+        'issues' => [[
+            'id' => 'target-size',
+            'impact' => 'serious',
+            'description' => 'Targets must have sufficient size',
+            'tags' => ['wcag22aa'],
+        ]],
+        'url' => 'https://example.com',
+        'wcagVersion' => '2.2',
+        'generatedAt' => now(),
+    ])->render();
+
+    expect($html)->toContain('WCAG 2.2')
+        ->and($html)->toContain('<div class="stat-value">1</div>');
+});
+
 test('POST /report/pdf requires issues array', function () {
     $this->postJson(route('lens-for-laravel.report.pdf'), ['url' => 'https://example.com'])
         ->assertStatus(422)

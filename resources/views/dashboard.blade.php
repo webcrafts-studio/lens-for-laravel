@@ -184,6 +184,28 @@
                                 </button>
                             </div>
 
+                            <fieldset class="border border-black dark:border-neutral-700 p-4">
+                                <legend class="px-1 text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
+                                    {{ __('lens-for-laravel::messages.scanner.wcag_version') }}
+                                </legend>
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                                        {{ __('lens-for-laravel::messages.scanner.wcag_version_help') }}
+                                    </p>
+                                    <div class="grid grid-cols-3 gap-1 font-mono text-xs" role="radiogroup" aria-label="{{ __('lens-for-laravel::messages.scanner.wcag_version') }}">
+                                        <template x-for="version in ['2.0', '2.1', '2.2']" :key="version">
+                                            <button type="button" @click="wcagVersion = version" role="radio"
+                                                :aria-checked="wcagVersion === version"
+                                                class="border px-4 py-2 transition-colors"
+                                                :class="wcagVersion === version
+                                                    ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                                    : 'border-neutral-300 text-neutral-500 hover:border-neutral-500 dark:border-neutral-700 dark:hover:border-neutral-400'"
+                                                x-text="`WCAG ${version}`"></button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </fieldset>
+
                             <div
                                 class="flex flex-col sm:flex-row gap-0 border border-black dark:border-neutral-700 p-1 bg-neutral-50 dark:bg-neutral-900 min-w-0">
                                 <label for="target-url" class="sr-only">Target URL to scan</label>
@@ -301,10 +323,10 @@
                     <!-- Summary Cards (Filters) -->
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
                         <!-- Level A: Solid Background -->
-                        <button @click="activeFilter = (activeFilter === 'wcag2a' ? null : 'wcag2a')"
+                        <button @click="activeFilter = (activeFilter === 'a' ? null : 'a')"
                             class="relative group text-left transition-colors">
                             <div class="bg-[#E11D48] text-white border-2 px-6 py-5 flex flex-col justify-between h-full relative z-10 transition-colors"
-                                :class="activeFilter === 'wcag2a' ?
+                                :class="activeFilter === 'a' ?
                                     'border-black dark:border-white ring-2 ring-inset ring-white/20' :
                                     'border-[#E11D48] opacity-90 group-hover:opacity-100'">
                                 <dt
@@ -317,10 +339,10 @@
                         </button>
 
                         <!-- Level AA: Solid Border -->
-                        <button @click="activeFilter = (activeFilter === 'wcag2aa' ? null : 'wcag2aa')"
+                        <button @click="activeFilter = (activeFilter === 'aa' ? null : 'aa')"
                             class="relative group text-left transition-colors">
                             <div class="bg-white dark:bg-black border-2 px-6 py-5 flex flex-col justify-between h-full relative z-10 transition-colors text-black dark:text-white"
-                                :class="activeFilter === 'wcag2aa' ?
+                                :class="activeFilter === 'aa' ?
                                     'border-black dark:border-white bg-neutral-100 dark:bg-neutral-800' :
                                     'border-neutral-300 dark:border-neutral-700 border-solid group-hover:border-neutral-500 dark:group-hover:border-neutral-400 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900'">
                                 <dt
@@ -333,10 +355,10 @@
                         </button>
 
                         <!-- Level AAA: Dashed Border -->
-                        <button @click="activeFilter = (activeFilter === 'wcag2aaa' ? null : 'wcag2aaa')"
+                        <button @click="activeFilter = (activeFilter === 'aaa' ? null : 'aaa')"
                             class="relative group text-left transition-colors">
                             <div class="bg-white dark:bg-black border-2 px-6 py-5 flex flex-col justify-between h-full relative z-10 transition-colors text-black dark:text-white"
-                                :class="activeFilter === 'wcag2aaa' ?
+                                :class="activeFilter === 'aaa' ?
                                     'border-black dark:border-white border-solid bg-neutral-100 dark:bg-neutral-800' :
                                     'border-neutral-300 dark:border-neutral-700 border-dashed group-hover:border-neutral-500 dark:group-hover:border-neutral-400 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900'">
                                 <dt
@@ -423,7 +445,7 @@
                                                 <span
                                                     class="inline-flex items-center px-2 py-0.5 text-xs font-mono font-bold uppercase tracking-wider"
                                                     :class="getBadgeColor(issue.impact, issue.tags)"
-                                                    x-text="issue.tags && issue.tags.includes('wcag2a') ? '[WCAG A]' : (issue.tags && issue.tags.includes('wcag2aa') ? '[WCAG AA]' : (issue.tags && issue.tags.includes('wcag2aaa') ? '[WCAG AAA]' : '[OTHER]'))"></span>
+                                                    x-text="getLevelBadge(issue.tags)"></span>
                                                 <span
                                                     class="text-sm font-mono font-bold tracking-widest text-neutral-700 dark:text-neutral-300"
                                                     x-text="issue.id"></span>
@@ -580,6 +602,7 @@
                                         <div class="flex flex-wrap items-center gap-3 mb-1">
                                             <span class="text-xs font-mono text-neutral-500 uppercase tracking-widest" x-text="new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })"></span>
                                             <span class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 bg-neutral-50 dark:bg-neutral-900 text-neutral-500 uppercase" x-text="scan.scan_mode"></span>
+                                            <span class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 bg-neutral-50 dark:bg-neutral-900 text-neutral-500 uppercase" x-text="`WCAG ${scan.wcag_version || '2.0'}`"></span>
                                         </div>
                                         <p class="text-sm font-mono truncate text-black dark:text-white" x-text="scan.url"></p>
                                         <div class="flex gap-4 mt-1 text-xs font-mono text-neutral-500">
@@ -618,6 +641,7 @@
                             <div>
                                 <h3 class="text-sm font-mono font-bold uppercase tracking-widest">[ SCAN_DETAIL ]</h3>
                                 <p class="text-xs font-mono text-neutral-500 mt-0.5" x-text="selectedHistoryScan?.url"></p>
+                                <p class="text-[10px] font-mono text-neutral-500 mt-0.5" x-text="`WCAG ${selectedHistoryScan?.wcag_version || '2.0'}`"></p>
                             </div>
                             <button @click="selectedHistoryScan = null" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ CLOSE ]</button>
                         </div>
@@ -627,7 +651,7 @@
                                     <div class="flex flex-wrap items-center gap-2 mb-2">
                                         <span class="inline-flex items-center px-2 py-0.5 text-xs font-mono font-bold uppercase tracking-wider"
                                             :class="getBadgeColor(issue.impact, issue.tags)"
-                                            x-text="issue.tags && issue.tags.includes('wcag2a') ? '[WCAG A]' : (issue.tags && issue.tags.includes('wcag2aa') ? '[WCAG AA]' : (issue.tags && issue.tags.includes('wcag2aaa') ? '[WCAG AAA]' : '[OTHER]'))"></span>
+                                            x-text="getLevelBadge(issue.tags)"></span>
                                         <span class="text-sm font-mono font-bold tracking-widest text-neutral-700 dark:text-neutral-300" x-text="issue.rule_id"></span>
                                         <template x-if="issue.state_label">
                                             <span
@@ -919,6 +943,7 @@
         const LENS_RESOURCES_PATH = @json(resource_path());
         const LENS_VIEWS_PATH = @json(resource_path('views'));
         const LENS_EDITOR = @json(config('lens-for-laravel.editor', 'vscode'));
+        const LENS_DEFAULT_WCAG_VERSION = @json(\LensForLaravel\LensForLaravel\Support\Wcag::configuredVersion());
         const LENS_I18N = {{ Illuminate\Support\Js::from([
             'initializing' => __('lens-for-laravel::messages.progress.initializing'),
             'scanningPage' => __('lens-for-laravel::messages.progress.scanning_page'),
@@ -941,6 +966,7 @@
 
                 // Scan Mode & Progress
                 scanMode: 'single', // 'single' | 'website' | 'multiple' | 'states'
+                wcagVersion: LENS_DEFAULT_WCAG_VERSION,
                 urlsText: '', // textarea content for multiple mode, one URL per line
                 statesScript: '',
                 recorderChannel: null,
@@ -1014,26 +1040,25 @@
 
                 // WCAG Level Counts
                 get levelAIssues() {
-                    return this.issues.filter(i => i.tags && i.tags.includes('wcag2a')).length;
+                    return this.issues.filter(i => this.getIssueLevel(i.tags) === 'a').length;
                 },
                 get levelAAIssues() {
-                    return this.issues.filter(i => i.tags && i.tags.includes('wcag2aa')).length;
+                    return this.issues.filter(i => this.getIssueLevel(i.tags) === 'aa').length;
                 },
                 get levelAAAIssues() {
-                    return this.issues.filter(i => i.tags && i.tags.includes('wcag2aaa')).length;
+                    return this.issues.filter(i => this.getIssueLevel(i.tags) === 'aaa').length;
                 },
                 get otherIssuesCount() {
-                    return this.issues.filter(i => !i.tags || (!i.tags.includes('wcag2a') && !i.tags
-                        .includes('wcag2aa') && !i.tags.includes('wcag2aaa'))).length;
+                    return this.issues.filter(i => this.getIssueLevel(i.tags) === 'other').length;
                 },
 
                 get levelDescription() {
                     switch (this.activeFilter) {
-                        case 'wcag2a':
+                        case 'a':
                             return 'Level A is the minimum level of accessibility. These issues are critical blockers for users with disabilities.';
-                        case 'wcag2aa':
+                        case 'aa':
                             return 'Level AA is the standard for accessibility. It removes most common barriers for people with a wide range of disabilities.';
-                        case 'wcag2aaa':
+                        case 'aaa':
                             return 'Level AAA is the highest level of accessibility. It provides an enhanced experience, though it can be difficult to achieve for all content.';
                         case 'other':
                             return 'These are best practice recommendations and general improvements that don\'t strictly fall into a WCAG level but improve UX.';
@@ -1118,22 +1143,13 @@
 
                 get filteredIssues() {
                     if (this.activeFilter) {
-                        if (this.activeFilter === 'other') {
-                            return this.issues.filter(i => !i.tags || (!i.tags.includes('wcag2a') &&
-                                !i.tags.includes('wcag2aa') && !i.tags.includes('wcag2aaa')
-                            ));
-                        }
-                        return this.issues.filter(i => i.tags && i.tags.includes(this
-                            .activeFilter));
+                        return this.issues.filter(i => this.getIssueLevel(i.tags) === this.activeFilter);
                     }
 
                     // Sort issues by WCAG level when no filter is active
                     return [...this.issues].sort((a, b) => {
                         const getWeight = (issue) => {
-                            if (issue.tags && issue.tags.includes('wcag2a')) return 1;
-                            if (issue.tags && issue.tags.includes('wcag2aa')) return 2;
-                            if (issue.tags && issue.tags.includes('wcag2aaa')) return 3;
-                            return 4;
+                            return { a: 1, aa: 2, aaa: 3, other: 4 }[this.getIssueLevel(issue.tags)];
                         };
                         return getWeight(a) - getWeight(b);
                     });
@@ -1192,7 +1208,8 @@
                             },
                             body: JSON.stringify({
                                 issues: this.issues,
-                                url: this.url
+                                url: this.url,
+                                wcagVersion: this.wcagVersion
                             })
                         });
 
@@ -1322,7 +1339,8 @@
                         },
                         body: JSON.stringify({
                             url: targetUrl,
-                            script: this.statesScript
+                            script: this.statesScript,
+                            wcagVersion: this.wcagVersion
                         })
                     });
 
@@ -1344,7 +1362,8 @@
                             'X-CSRF-TOKEN': token
                         },
                         body: JSON.stringify({
-                            url: targetUrl
+                            url: targetUrl,
+                            wcagVersion: this.wcagVersion
                         })
                     });
 
@@ -1497,6 +1516,7 @@
                             body: JSON.stringify({
                                 url: this.url,
                                 scanMode: this.scanMode,
+                                wcagVersion: this.wcagVersion,
                                 urlsScanned,
                                 issues: this.issues.map(i => ({
                                     id: i.id,
@@ -1685,15 +1705,32 @@
                 },
 
                 getBadgeColor(impact, tags) {
-                    if (tags && tags.includes('wcag2a'))
+                    if (this.getIssueLevel(tags) === 'a')
                         return 'bg-[#E11D48] text-white border border-[#E11D48]';
-                    if (tags && tags.includes('wcag2aa'))
+                    if (this.getIssueLevel(tags) === 'aa')
                         return 'bg-white text-black dark:bg-black dark:text-white border border-black dark:border-white';
-                    if (tags && tags.includes('wcag2aaa'))
+                    if (this.getIssueLevel(tags) === 'aaa')
                         return 'bg-white text-neutral-600 dark:bg-black dark:text-neutral-400 border border-dashed border-neutral-600 dark:border-neutral-400';
 
                     // Fallback to OTHER style (subtle but readable)
                     return 'bg-white text-neutral-700 dark:bg-black dark:text-neutral-300 border border-dotted border-neutral-700 dark:border-neutral-300';
+                },
+
+                getIssueLevel(tags) {
+                    const issueTags = Array.isArray(tags) ? tags : [];
+                    if (['wcag2a', 'wcag21a'].some(tag => issueTags.includes(tag))) return 'a';
+                    if (['wcag2aa', 'wcag21aa', 'wcag22aa'].some(tag => issueTags.includes(tag))) return 'aa';
+                    if (issueTags.includes('wcag2aaa')) return 'aaa';
+                    return 'other';
+                },
+
+                getLevelBadge(tags) {
+                    return {
+                        a: '[WCAG A]',
+                        aa: '[WCAG AA]',
+                        aaa: '[WCAG AAA]',
+                        other: '[OTHER]'
+                    }[this.getIssueLevel(tags)];
                 }
             }));
         });

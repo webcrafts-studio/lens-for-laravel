@@ -4,7 +4,7 @@
 
 Lens for Laravel scans your application with [axe-core](https://github.com/dequelabs/axe-core), renders JavaScript through [Spatie Browsershot](https://github.com/spatie/browsershot), maps violations back to source files, and can generate AI-assisted fixes for Blade, React, and Vue code.
 
-**v2.0.0 focus:** Laravel teams using Blade, Livewire, Inertia, React, Vue, or mixed frontends.
+**v3.0.0 development line:** selectable WCAG standards, safer optional AI integration, and more reliable auditing workflows for Blade, Livewire, Inertia, React, Vue, and mixed frontends.
 
 **[Documentation & full feature overview -> lens.webcrafts.pl](https://lens.webcrafts.pl/)**
 
@@ -13,6 +13,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 ## Features
 
 - **Axe-core scanning** - WCAG 2.x and best-practice checks through the industry-standard axe engine.
+- **Selectable WCAG standard** - run cumulative WCAG 2.0, 2.1, or 2.2 rule sets in the dashboard and CLI; 2.0 remains the default for backward compatibility.
 - **JavaScript rendering** - scans the hydrated browser DOM through Browsershot/Chromium.
 - **Blade, React, and Vue source locator** - maps DOM violations back to `resources/views/**/*.blade.php` and frontend files under `resources/js`.
 - **Source type labels** - results include `sourceType` values: `blade`, `react`, or `vue`.
@@ -118,6 +119,8 @@ Enter a URL from the same host as `APP_URL`, then run a scan. Results include:
 - CSS selector
 - source file, line number, and source type when located
 - Deque/WCAG documentation links
+
+Choose **WCAG 2.0**, **2.1**, or **2.2** before starting the scan. Later versions include the rules from earlier versions plus axe-core rules for the newer success criteria. Existing installations continue to default to WCAG 2.0.
 - element preview screenshot
 - optional AI fix workflow
 
@@ -252,6 +255,9 @@ php artisan lens:audit --aa
 # All levels, including AAA and best-practice
 php artisan lens:audit --all
 
+# Run the cumulative WCAG 2.2 rule set
+php artisan lens:audit --wcag=2.2
+
 # Fail with exit code 1 when violations exceed a threshold
 php artisan lens:audit --threshold=10
 
@@ -266,6 +272,8 @@ php artisan lens:audit --crawl --fail-on-new --baseline-file=.github/lens-baseli
 ```
 
 The CLI uses the same scanner, crawler, source locator, and source type metadata as the dashboard.
+
+`--wcag=2.0`, `--wcag=2.1`, and `--wcag=2.2` select the standard version. This is independent from `--a`, `--aa`, and `--all`, which select the conformance levels shown in the result. The default standard is WCAG 2.0. When changing the standard used by a baseline workflow, create a fresh reviewed baseline.
 
 ### Baseline Quality Gate
 
@@ -333,6 +341,8 @@ return [
 
     'scan_wait_ms' => env('LENS_FOR_LARAVEL_SCAN_WAIT_MS', 0),
 
+    'wcag_version' => env('LENS_FOR_LARAVEL_WCAG_VERSION', '2.0'),
+
     'baseline_path' => env('LENS_FOR_LARAVEL_BASELINE_PATH', storage_path('app/lens-for-laravel/baseline.json')),
 
     'ignore_https_errors' => env('LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS', false),
@@ -352,6 +362,7 @@ LENS_FOR_LARAVEL_FALLBACK_LOCALE=en
 LENS_FOR_LARAVEL_CRAWL_MAX_PAGES=50
 LENS_FOR_LARAVEL_CRAWLER_RENDER_JAVASCRIPT=false
 LENS_FOR_LARAVEL_SCAN_WAIT_MS=0
+LENS_FOR_LARAVEL_WCAG_VERSION=2.0
 LENS_FOR_LARAVEL_BASELINE_PATH=storage/app/lens-for-laravel/baseline.json
 LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=false
 LENS_FOR_LARAVEL_AI_ENABLED=true
@@ -558,7 +569,36 @@ Always complement Lens with:
 
 ---
 
-## Upgrade Notes for v2.0.0
+## Upgrade Notes for v3.0.0
+
+Version 3 is the current development line. Completed v3 changes include:
+
+- selectable WCAG 2.0, 2.1, and 2.2 standards in the dashboard and CLI
+- WCAG 2.0 as the backward-compatible default
+- persisted WCAG version metadata in scan history, comparisons, baselines, and PDF reports
+- core support for PHP 8.2+ and Laravel 10–13
+- AI Fix isolated as an optional feature requiring PHP 8.3+, Laravel 12+, and `laravel/ai`
+
+After upgrading to v3:
+
+```bash
+php artisan migrate
+```
+
+If you published the config before v3.0.0, add:
+
+```php
+'wcag_version' => env('LENS_FOR_LARAVEL_WCAG_VERSION', '2.0'),
+'ai_enabled' => env('LENS_FOR_LARAVEL_AI_ENABLED', true),
+```
+
+Install the optional AI SDK only on a supported runtime when AI Fix is needed:
+
+```bash
+composer require laravel/ai:^0.3.2 --dev
+```
+
+### Historical: Upgrade Notes for v2.0.0
 
 Version 2 adds major frontend support and persistence features:
 

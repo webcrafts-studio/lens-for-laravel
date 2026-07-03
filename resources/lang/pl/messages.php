@@ -16,6 +16,8 @@ return [
         'whole_website' => 'Cała strona',
         'multiple_urls' => 'Wiele URL-i',
         'states' => 'Stany',
+        'wcag_version' => 'Standard WCAG',
+        'wcag_version_help' => 'Wybierz zestaw reguł axe-core. Domyślnie używany jest WCAG 2.0.',
         'execute' => 'Uruchom',
         'processing' => 'Przetwarzanie...',
         'exception_caught' => 'Wykryto wyjątek',

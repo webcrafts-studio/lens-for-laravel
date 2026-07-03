@@ -80,6 +80,21 @@ test('store accepts interactive states scan mode', function () {
         ->assertJsonPath('scan.scan_mode', 'states');
 });
 
+test('store preserves the selected WCAG version and classifies newer tags', function () {
+    $response = $this->postJson(route('lens-for-laravel.history.store'), createScanPayload([
+        'wcagVersion' => '2.2',
+        'issues' => [[
+            'id' => 'target-size',
+            'impact' => 'serious',
+            'tags' => ['wcag22aa'],
+        ]],
+    ]));
+
+    $response->assertCreated()
+        ->assertJsonPath('scan.wcag_version', '2.2')
+        ->assertJsonPath('scan.level_aa_count', 1);
+});
+
 test('store validates issues max count', function () {
     $issues = array_fill(0, 1001, [
         'id' => 'rule-1',

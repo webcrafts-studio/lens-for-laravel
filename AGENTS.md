@@ -4,6 +4,8 @@
 
 Lens for Laravel is a local-first accessibility auditing package for Laravel applications. It renders application pages in Chromium, runs axe-core, maps violations back to Blade/React/Vue source files, and exposes the results through a dashboard and the `lens:audit` Artisan command.
 
+The current development line is v3.0.0. New compatibility, WCAG selection, reliability, localization, and documentation work in this branch must be described as v3 functionality. Keep v2.0/v2.1 upgrade notes as historical documentation.
+
 The package supports PHP 8.2+ and Laravel 10–13 for its core, non-AI features.
 
 AI Fix is an optional integration with a narrower compatibility range:
@@ -23,6 +25,7 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 - `src/Services/BaselineManager.php` — stable CI baseline fingerprints
 - `src/Services/AiFixAvailability.php` — runtime and optional-SDK capability checks
 - `src/Services/AiFixer.php` — optional AI-generated fix suggestions
+- `src/Support/Wcag.php` — supported WCAG versions, cumulative axe-core tags, and result-level classification
 - `src/Console/Commands/LensAuditCommand.php` — CLI audit workflow
 - `routes/web.php` — dashboard JSON endpoints
 - `resources/views/dashboard.blade.php` — dashboard interface
@@ -35,6 +38,8 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 - Keep core dependencies compatible with Laravel 10, 11, 12, and 13.
 - Treat AI Fix as unavailable when the runtime or optional SDK is unsupported.
 - Never let a missing AI SDK break scanning, crawling, history, PDF reports, previews, interactive states, or the CLI.
+- Keep WCAG 2.0 as the default unless a breaking release explicitly changes it. WCAG 2.1 and 2.2 scans must include the earlier cumulative rule tags.
+- Treat the WCAG version and conformance level as separate controls: `--wcag` selects 2.0/2.1/2.2, while `--a`, `--aa`, and `--all` filter result levels.
 - When compatibility changes, update `composer.json`, `README.md`, `CONTEXT.md`, tests, and the separate `lens-for-laravel-website` documentation together.
 
 ## Development Workflow
@@ -81,5 +86,6 @@ The package README is the concise installation and feature reference. The websit
 - AI Fix: PHP 8.3+, Laravel 12+, optional `laravel/ai`
 - AI Fix sends a limited source-code context and issue metadata to the configured external provider
 - all non-AI features remain available when AI Fix is unsupported or disabled
+- dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default
 
 Avoid describing optional or partial functionality as universally available.

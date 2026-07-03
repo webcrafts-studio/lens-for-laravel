@@ -68,6 +68,23 @@ test('POST /scan/states returns interactive state issues with source locations',
         ->assertJsonPath('issues.0.lineNumber', 14);
 });
 
+test('POST /scan/states passes the selected WCAG version to the scanner', function () {
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scanInteractiveStates')
+        ->once()
+        ->with('http://localhost', Mockery::type('array'), '2.1')
+        ->andReturn(collect());
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    app()->instance(FileLocator::class, Mockery::mock(FileLocator::class));
+
+    $this->postJson(route('lens-for-laravel.scan.states'), [
+        'url' => 'http://localhost',
+        'script' => 'state: Initial',
+        'wcagVersion' => '2.1',
+    ])->assertOk();
+});
+
 test('POST /scan/states is blocked in non-allowed environment', function () {
     $this->app['config']->set('lens-for-laravel.enabled_environments', ['production']);
 

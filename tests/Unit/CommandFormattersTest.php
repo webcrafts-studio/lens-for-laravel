@@ -81,6 +81,9 @@ function sampleIssues(): Collection
         new Issue('rule-a', 'critical', 'desc', 'url', 'html', 'sel', ['wcag2a']),
         new Issue('rule-aa', 'serious', 'desc', 'url', 'html', 'sel', ['wcag2aa']),
         new Issue('rule-aaa', 'moderate', 'desc', 'url', 'html', 'sel', ['wcag2aaa']),
+        new Issue('rule-21-a', 'critical', 'desc', 'url', 'html', 'sel', ['wcag21a']),
+        new Issue('rule-21-aa', 'serious', 'desc', 'url', 'html', 'sel', ['wcag21aa']),
+        new Issue('rule-22-aa', 'serious', 'desc', 'url', 'html', 'sel', ['wcag22aa']),
         new Issue('rule-bp', 'minor', 'desc', 'url', 'html', 'sel', ['best-practice']),
     ]);
 }
@@ -88,22 +91,22 @@ function sampleIssues(): Collection
 test('filterByLevel a returns only wcag2a issues', function () {
     $result = callMethod(cmd(), 'filterByLevel', [sampleIssues(), 'a']);
 
-    expect($result)->toHaveCount(1)
+    expect($result)->toHaveCount(2)
         ->and($result->first()->id)->toBe('rule-a');
 });
 
 test('filterByLevel aa returns wcag2a and wcag2aa issues', function () {
     $result = callMethod(cmd(), 'filterByLevel', [sampleIssues(), 'aa']);
 
-    expect($result)->toHaveCount(2);
+    expect($result)->toHaveCount(5);
     $ids = $result->pluck('id')->all();
-    expect($ids)->toContain('rule-a')->toContain('rule-aa');
+    expect($ids)->toContain('rule-a')->toContain('rule-aa')->toContain('rule-21-a')->toContain('rule-21-aa')->toContain('rule-22-aa');
 });
 
 test('filterByLevel all returns every issue', function () {
     $result = callMethod(cmd(), 'filterByLevel', [sampleIssues(), 'all']);
 
-    expect($result)->toHaveCount(4);
+    expect($result)->toHaveCount(7);
 });
 
 // ── resolveLevelFilter ────────────────────────────────────────────────────────

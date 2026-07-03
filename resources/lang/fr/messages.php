@@ -16,6 +16,8 @@ return [
         'whole_website' => 'Site complet',
         'multiple_urls' => 'URL multiples',
         'states' => 'États',
+        'wcag_version' => 'Norme WCAG',
+        'wcag_version_help' => 'Choisissez le jeu cumulatif de règles axe-core. WCAG 2.0 reste la valeur par défaut.',
         'execute' => 'Exécuter',
         'processing' => 'Traitement...',
         'exception_caught' => 'Exception détectée',

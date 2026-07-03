@@ -43,6 +43,14 @@ test('dashboard renders interactive state scan controls', function () {
         ->assertSee(route('lens-for-laravel.scan.states'), false);
 });
 
+test('dashboard renders the WCAG standard selector with a 2.0 default', function () {
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('WCAG standard')
+        ->assertSee("['2.0', '2.1', '2.2']", false)
+        ->assertSee('const LENS_DEFAULT_WCAG_VERSION = "2.0"', false);
+});
+
 test('state recorder renders for same origin target urls', function () {
     $response = $this->get(route('lens-for-laravel.states.recorder', [
         'target' => url('/states'),

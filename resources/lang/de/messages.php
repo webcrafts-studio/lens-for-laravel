@@ -16,6 +16,8 @@ return [
         'whole_website' => 'Ganze Website',
         'multiple_urls' => 'Mehrere URLs',
         'states' => 'Zustände',
+        'wcag_version' => 'WCAG-Standard',
+        'wcag_version_help' => 'Wähle den kumulativen axe-core-Regelsatz. WCAG 2.0 bleibt die Standardeinstellung.',
         'execute' => 'Ausführen',
         'processing' => 'Verarbeitung...',
         'exception_caught' => 'Ausnahme erkannt',

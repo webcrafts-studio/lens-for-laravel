@@ -11,6 +11,7 @@ use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\BaselineManager;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
+use LensForLaravel\LensForLaravel\Support\Wcag;
 
 class LensAuditCommand extends Command
 {
@@ -19,6 +20,7 @@ class LensAuditCommand extends Command
                             {--a : Report only WCAG Level A violations}
                             {--aa : Report WCAG Level A and AA violations}
                             {--all : Report all violation levels including AAA and best-practice (default)}
+                            {--wcag= : WCAG standard version: 2.0, 2.1, or 2.2 (defaults to configuration)}
                             {--threshold=0 : Exit code 1 if violation count exceeds this threshold}
                             {--crawl : Crawl the entire website and audit all discovered pages}
                             {--baseline : Save the current filtered violations as the baseline and exit successfully}
@@ -33,8 +35,13 @@ class LensAuditCommand extends Command
         $urls = empty($urlArgs) ? [url('/')] : $urlArgs;
         $threshold = (int) $this->option('threshold');
         $levelFilter = $this->resolveLevelFilter();
+        $wcagVersion = $this->resolveWcagVersion();
         $multipleMode = count($urls) > 1;
         $crawlMode = (bool) $this->option('crawl') && ! $multipleMode;
+
+        if ($wcagVersion === null) {
+            return self::FAILURE;
+        }
 
         if ($this->option('baseline') && $this->option('fail-on-new')) {
             $this->components->error('Use either --baseline or --fail-on-new, not both.');
@@ -42,11 +49,11 @@ class LensAuditCommand extends Command
             return self::FAILURE;
         }
 
-        $this->renderHeader($urls[0], $levelFilter, $threshold, $crawlMode, $multipleMode);
+        $this->renderHeader($urls[0], $levelFilter, $wcagVersion, $threshold, $crawlMode, $multipleMode);
 
         // ── Scan ──────────────────────────────────────────────────────────────
         if ($multipleMode) {
-            $result = $this->runMultipleUrlScan($urls);
+            $result = $this->runMultipleUrlScan($urls, $wcagVersion);
 
             if ($result === null) {
                 return self::FAILURE;
@@ -54,7 +61,7 @@ class LensAuditCommand extends Command
 
             [$issues, $scannedUrls] = $result;
         } elseif ($crawlMode) {
-            $result = $this->runCrawlScan($urls[0]);
+            $result = $this->runCrawlScan($urls[0], $wcagVersion);
 
             if ($result === null) {
                 return self::FAILURE;
@@ -62,7 +69,7 @@ class LensAuditCommand extends Command
 
             [$issues, $scannedUrls] = $result;
         } else {
-            $issues = $this->runScan($urls[0]);
+            $issues = $this->runScan($urls[0], $wcagVersion);
             $scannedUrls = [$urls[0]];
 
             if ($issues === null) {
@@ -88,7 +95,7 @@ class LensAuditCommand extends Command
         }
 
         if ($this->option('baseline')) {
-            return $this->writeBaseline($filtered, $scannedUrls, $levelFilter);
+            return $this->writeBaseline($filtered, $scannedUrls, $levelFilter, $wcagVersion);
         }
 
         if ($this->option('fail-on-new')) {
@@ -119,7 +126,7 @@ class LensAuditCommand extends Command
 
     // ─── Single-URL scan ────────────────────────────────────────────────────────
 
-    private function runScan(string $url): ?Collection
+    private function runScan(string $url, string $wcagVersion): ?Collection
     {
         $this->newLine();
 
@@ -129,8 +136,8 @@ class LensAuditCommand extends Command
 
             $this->components->task('Launching Browsershot + axe-core', function () {});
 
-            $this->components->task("Scanning <href={$url}>{$url}</>", function () use ($url, $scanner, &$issues) {
-                $issues = $scanner->scan($url);
+            $this->components->task("Scanning <href={$url}>{$url}</>", function () use ($url, $wcagVersion, $scanner, &$issues) {
+                $issues = $scanner->scan($url, $wcagVersion);
             });
 
             $this->components->task('Resolving Blade source locations', function () use ($issues) {
@@ -164,7 +171,7 @@ class LensAuditCommand extends Command
      * @param  string[]  $urls
      * @return array{0: Collection<Issue>, 1: string[]}|null
      */
-    private function runMultipleUrlScan(array $urls): ?array
+    private function runMultipleUrlScan(array $urls, string $wcagVersion): ?array
     {
         $total = count($urls);
         $this->newLine();
@@ -186,7 +193,7 @@ class LensAuditCommand extends Command
             $bar->display();
 
             try {
-                $pageIssues = $scanner->scan($pageUrl);
+                $pageIssues = $scanner->scan($pageUrl, $wcagVersion);
 
                 foreach ($pageIssues as $issue) {
                     $location = $locator->locate($issue->htmlSnippet, $issue->selector);
@@ -236,7 +243,7 @@ class LensAuditCommand extends Command
      *
      * @return array{0: Collection<Issue>, 1: string[]}|null
      */
-    private function runCrawlScan(string $url): ?array
+    private function runCrawlScan(string $url, string $wcagVersion): ?array
     {
         $maxPages = (int) config('lens-for-laravel.crawl_max_pages', 50);
 
@@ -287,7 +294,7 @@ class LensAuditCommand extends Command
             $bar->display();
 
             try {
-                $pageIssues = $scanner->scan($pageUrl);
+                $pageIssues = $scanner->scan($pageUrl, $wcagVersion);
 
                 foreach ($pageIssues as $issue) {
                     $location = $locator->locate($issue->htmlSnippet, $issue->selector);
@@ -336,7 +343,7 @@ class LensAuditCommand extends Command
      * @param  Collection<int, Issue>  $issues
      * @param  string[]  $scannedUrls
      */
-    private function writeBaseline(Collection $issues, array $scannedUrls, string $levelFilter): int
+    private function writeBaseline(Collection $issues, array $scannedUrls, string $levelFilter, string $wcagVersion): int
     {
         $baseline = app(BaselineManager::class);
         $path = $baseline->resolvePath($this->option('baseline-file'));
@@ -344,6 +351,7 @@ class LensAuditCommand extends Command
         try {
             $baseline->write($issues, $path, [
                 'level_filter' => $levelFilter,
+                'wcag_version' => $wcagVersion,
                 'urls_scanned' => array_values($scannedUrls),
             ]);
         } catch (\RuntimeException $e) {
@@ -459,18 +467,33 @@ class LensAuditCommand extends Command
         return 'all';
     }
 
+    private function resolveWcagVersion(): ?string
+    {
+        $option = $this->option('wcag');
+        $version = is_string($option) && $option !== '' ? $option : Wcag::configuredVersion();
+
+        try {
+            Wcag::assertVersion($version);
+        } catch (\InvalidArgumentException $e) {
+            $this->components->error($e->getMessage());
+
+            return null;
+        }
+
+        return $version;
+    }
+
     private function filterByLevel(Collection $issues, string $level): Collection
     {
         return match ($level) {
-            'a' => $issues->filter(fn (Issue $i) => in_array('wcag2a', $i->tags)),
-            'aa' => $issues->filter(fn (Issue $i) => in_array('wcag2a', $i->tags) || in_array('wcag2aa', $i->tags)),
+            'a', 'aa' => $issues->filter(fn (Issue $i) => Wcag::matchesLevel($i->tags, $level)),
             default => $issues,
         };
     }
 
     // ─── Rendering ──────────────────────────────────────────────────────────────
 
-    private function renderHeader(string $url, string $levelFilter, int $threshold, bool $crawlMode, bool $multipleMode = false): void
+    private function renderHeader(string $url, string $levelFilter, string $wcagVersion, int $threshold, bool $crawlMode, bool $multipleMode = false): void
     {
         $levelLabel = match ($levelFilter) {
             'a' => 'WCAG A only',
@@ -489,6 +512,7 @@ class LensAuditCommand extends Command
         $this->line('  ─────────────────────────────────────────────');
         $this->line("  <fg=gray>URL</>       : {$url}");
         $this->line("  <fg=gray>Mode</>      : {$modeLabel}");
+        $this->line("  <fg=gray>Standard</>  : WCAG {$wcagVersion}");
         $this->line("  <fg=gray>Levels</>    : {$levelLabel}");
         $this->line("  <fg=gray>Threshold</> : {$threshold}");
     }
@@ -578,10 +602,10 @@ class LensAuditCommand extends Command
         $isCrawl = count($scannedUrls) > 1;
 
         $levelCounts = [
-            'A' => $issues->filter(fn (Issue $i) => in_array('wcag2a', $i->tags))->count(),
-            'AA' => $issues->filter(fn (Issue $i) => in_array('wcag2aa', $i->tags) && ! in_array('wcag2a', $i->tags))->count(),
-            'AAA' => $issues->filter(fn (Issue $i) => in_array('wcag2aaa', $i->tags) && ! in_array('wcag2a', $i->tags) && ! in_array('wcag2aa', $i->tags))->count(),
-            'Best Practice' => $issues->filter(fn (Issue $i) => ! in_array('wcag2a', $i->tags) && ! in_array('wcag2aa', $i->tags) && ! in_array('wcag2aaa', $i->tags))->count(),
+            'A' => $issues->filter(fn (Issue $i) => Wcag::level($i->tags) === 'a')->count(),
+            'AA' => $issues->filter(fn (Issue $i) => Wcag::level($i->tags) === 'aa')->count(),
+            'AAA' => $issues->filter(fn (Issue $i) => Wcag::level($i->tags) === 'aaa')->count(),
+            'Best Practice' => $issues->filter(fn (Issue $i) => Wcag::level($i->tags) === 'other')->count(),
         ];
 
         $this->line('  <options=bold>Summary</>');
@@ -619,13 +643,13 @@ class LensAuditCommand extends Command
 
     private function formatLevel(array $tags): string
     {
-        if (in_array('wcag2a', $tags)) {
+        if (Wcag::level($tags) === 'a') {
             return '<fg=red;options=bold>A</>';
         }
-        if (in_array('wcag2aa', $tags)) {
+        if (Wcag::level($tags) === 'aa') {
             return '<fg=yellow>AA</>';
         }
-        if (in_array('wcag2aaa', $tags)) {
+        if (Wcag::level($tags) === 'aaa') {
             return '<fg=blue>AAA</>';
         }
 

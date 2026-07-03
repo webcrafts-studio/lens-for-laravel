@@ -258,6 +258,7 @@
     </div>
     <div class="scanned-url">
         <strong>Target:</strong> {{ $url }}
+        <span style="margin-left: 16px"><strong>Standard:</strong> WCAG {{ $wcagVersion }}</span>
     </div>
 </div>
 
@@ -265,10 +266,10 @@
 @php
     $col     = collect($issues);
     $total   = $col->count();
-    $levelA  = $col->filter(fn($i) =>  in_array('wcag2a',   $i['tags'] ?? []))->count();
-    $levelAA = $col->filter(fn($i) =>  in_array('wcag2aa',  $i['tags'] ?? []))->count();
-    $levelAAA= $col->filter(fn($i) =>  in_array('wcag2aaa', $i['tags'] ?? []))->count();
-    $other   = $col->filter(fn($i) => !array_intersect(['wcag2a','wcag2aa','wcag2aaa'], $i['tags'] ?? []))->count();
+    $levelA  = $col->filter(fn($i) => \LensForLaravel\LensForLaravel\Support\Wcag::level($i['tags'] ?? []) === 'a')->count();
+    $levelAA = $col->filter(fn($i) => \LensForLaravel\LensForLaravel\Support\Wcag::level($i['tags'] ?? []) === 'aa')->count();
+    $levelAAA= $col->filter(fn($i) => \LensForLaravel\LensForLaravel\Support\Wcag::level($i['tags'] ?? []) === 'aaa')->count();
+    $other   = $col->filter(fn($i) => \LensForLaravel\LensForLaravel\Support\Wcag::level($i['tags'] ?? []) === 'other')->count();
 @endphp
 
 <div class="summary">

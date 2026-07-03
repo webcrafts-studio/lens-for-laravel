@@ -107,6 +107,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | WCAG Version
+    |--------------------------------------------------------------------------
+    |
+    | Default WCAG standard used by the dashboard and CLI. WCAG 2.0 preserves
+    | the scanner behaviour from earlier Lens releases. Users can override it
+    | per scan in the dashboard or with the CLI --wcag option.
+    |
+    | Supported values: '2.0', '2.1', '2.2'
+    |
+    */
+    'wcag_version' => env('LENS_FOR_LARAVEL_WCAG_VERSION', '2.0'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Accessibility Baseline Path
     |--------------------------------------------------------------------------
     |

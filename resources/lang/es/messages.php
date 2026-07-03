@@ -16,6 +16,8 @@ return [
         'whole_website' => 'Sitio completo',
         'multiple_urls' => 'Varias URL',
         'states' => 'Estados',
+        'wcag_version' => 'Estándar WCAG',
+        'wcag_version_help' => 'Elige el conjunto acumulativo de reglas de axe-core. WCAG 2.0 sigue siendo el valor predeterminado.',
         'execute' => 'Ejecutar',
         'processing' => 'Procesando...',
         'exception_caught' => 'Excepción detectada',

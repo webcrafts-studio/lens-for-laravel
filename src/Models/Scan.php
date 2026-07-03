@@ -12,6 +12,7 @@ class Scan extends Model
     protected $fillable = [
         'url',
         'scan_mode',
+        'wcag_version',
         'urls_scanned',
         'total_issues',
         'level_a_count',

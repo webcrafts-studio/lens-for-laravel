@@ -11,6 +11,7 @@ use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 use LensForLaravel\LensForLaravel\Services\InteractionScriptParser;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
+use LensForLaravel\LensForLaravel\Support\Wcag;
 use Spatie\Browsershot\Browsershot;
 
 // The prefix and middleware for these routes are automatically applied
@@ -129,11 +130,14 @@ Route::post('/scan', function (Request $request) use ($domainRule) {
 
     $request->validate([
         'url' => ['required', 'url', $domainRule],
+        'wcagVersion' => ['sometimes', 'string', 'in:2.0,2.1,2.2'],
     ]);
 
     try {
         $scanner = app(AxeScanner::class);
-        $issues = $scanner->scan($request->url);
+        $issues = $request->filled('wcagVersion')
+            ? $scanner->scan($request->url, $request->wcagVersion)
+            : $scanner->scan($request->url);
 
         $fileLocator = app(FileLocator::class);
 
@@ -167,13 +171,16 @@ Route::post('/scan/states', function (Request $request) use ($domainRule) {
     $validated = $request->validate([
         'url' => ['required', 'url', $domainRule],
         'script' => ['required', 'string', 'max:10000'],
+        'wcagVersion' => ['sometimes', 'string', 'in:2.0,2.1,2.2'],
     ]);
 
     try {
         $states = app(InteractionScriptParser::class)->parse($validated['script']);
 
         $scanner = app(AxeScanner::class);
-        $issues = $scanner->scanInteractiveStates($validated['url'], $states);
+        $issues = isset($validated['wcagVersion'])
+            ? $scanner->scanInteractiveStates($validated['url'], $states, $validated['wcagVersion'])
+            : $scanner->scanInteractiveStates($validated['url'], $states);
 
         $fileLocator = app(FileLocator::class);
 
@@ -419,12 +426,14 @@ Route::post('/report/pdf', function (Request $request) {
         'issues.*.tags.*' => ['string', 'max:50'],
         'issues.*.stateLabel' => ['nullable', 'string', 'max:100'],
         'url' => ['required', 'url', 'max:2048'],
+        'wcagVersion' => ['sometimes', 'string', 'in:2.0,2.1,2.2'],
     ]);
 
     try {
         $html = view('lens-for-laravel::report', [
             'issues' => $request->issues,
             'url' => $request->url,
+            'wcagVersion' => $request->input('wcagVersion', Wcag::configuredVersion()),
             'generatedAt' => now(),
         ])->render();
 
@@ -456,7 +465,7 @@ Route::get('/history/trends', function () {
     }
 
     try {
-        $trends = Scan::select('id', 'url', 'total_issues', 'level_a_count', 'level_aa_count', 'level_aaa_count', 'created_at')
+        $trends = Scan::select('id', 'url', 'wcag_version', 'total_issues', 'level_a_count', 'level_aa_count', 'level_aaa_count', 'created_at')
             ->latest()
             ->take(30)
             ->get()
@@ -496,8 +505,8 @@ Route::get('/history/{id}/compare/{compareId}', function (int $id, int $compareI
 
         return response()->json([
             'status' => 'success',
-            'base' => $base->only('id', 'url', 'created_at', 'total_issues'),
-            'compare' => $compare->only('id', 'url', 'created_at', 'total_issues'),
+            'base' => $base->only('id', 'url', 'wcag_version', 'created_at', 'total_issues'),
+            'compare' => $compare->only('id', 'url', 'wcag_version', 'created_at', 'total_issues'),
             'new' => $new,
             'fixed' => $fixed,
             'remaining' => $remaining,
@@ -516,6 +525,7 @@ Route::post('/history', function (Request $request) {
         $validated = $request->validate([
             'url' => ['required', 'string', 'max:2048'],
             'scanMode' => ['required', 'string', 'in:single,website,multiple,states'],
+            'wcagVersion' => ['sometimes', 'string', 'in:2.0,2.1,2.2'],
             'urlsScanned' => ['nullable', 'array'],
             'urlsScanned.*' => ['string', 'max:2048'],
             'issues' => ['required', 'array', 'max:1000'],
@@ -535,14 +545,15 @@ Route::post('/history', function (Request $request) {
         ]);
 
         $issues = $validated['issues'];
-        $levelA = count(array_filter($issues, fn ($i) => isset($i['tags']) && in_array('wcag2a', $i['tags'])));
-        $levelAA = count(array_filter($issues, fn ($i) => isset($i['tags']) && in_array('wcag2aa', $i['tags'])));
-        $levelAAA = count(array_filter($issues, fn ($i) => isset($i['tags']) && in_array('wcag2aaa', $i['tags'])));
+        $levelA = count(array_filter($issues, fn ($i) => Wcag::level($i['tags'] ?? []) === 'a'));
+        $levelAA = count(array_filter($issues, fn ($i) => Wcag::level($i['tags'] ?? []) === 'aa'));
+        $levelAAA = count(array_filter($issues, fn ($i) => Wcag::level($i['tags'] ?? []) === 'aaa'));
 
         $scan = DB::transaction(function () use ($validated, $issues, $levelA, $levelAA, $levelAAA) {
             $scan = Scan::create([
                 'url' => $validated['url'],
                 'scan_mode' => $validated['scanMode'],
+                'wcag_version' => $validated['wcagVersion'] ?? Wcag::configuredVersion(),
                 'urls_scanned' => $validated['urlsScanned'] ?? [],
                 'total_issues' => count($issues),
                 'level_a_count' => $levelA,
@@ -584,7 +595,7 @@ Route::get('/history', function (Request $request) {
     }
 
     try {
-        $scans = Scan::select('id', 'url', 'scan_mode', 'total_issues', 'level_a_count', 'level_aa_count', 'level_aaa_count', 'created_at')
+        $scans = Scan::select('id', 'url', 'scan_mode', 'wcag_version', 'total_issues', 'level_a_count', 'level_aa_count', 'level_aaa_count', 'created_at')
             ->latest()
             ->paginate(15);
 

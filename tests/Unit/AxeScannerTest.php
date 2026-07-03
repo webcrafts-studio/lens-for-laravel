@@ -92,6 +92,69 @@ test('scanner keeps https errors strict by default', function () {
     expect($fakeBrowsershot->ignoreHttpsErrorsCalled)->toBeFalse();
 });
 
+test('scanner uses WCAG 2.0 tags by default', function () {
+    config()->set('lens-for-laravel.wcag_version', '2.0');
+
+    $fakeBrowsershot = new FakeBrowsershotForAxeScannerTest;
+    $scanner = new class($fakeBrowsershot) extends AxeScanner
+    {
+        public function __construct(private readonly Browsershot $fakeBrowsershot) {}
+
+        protected function browsershotForUrl(string $url): Browsershot
+        {
+            return $this->fakeBrowsershot;
+        }
+    };
+
+    $scanner->scan('https://example.com');
+
+    expect($fakeBrowsershot->lastScript)
+        ->toContain('["wcag2a","wcag2aa","wcag2aaa","best-practice"]')
+        ->not->toContain('wcag21a')
+        ->not->toContain('wcag22aa');
+});
+
+test('scanner adds cumulative WCAG 2.1 tags', function () {
+    $fakeBrowsershot = new FakeBrowsershotForAxeScannerTest;
+    $scanner = new class($fakeBrowsershot) extends AxeScanner
+    {
+        public function __construct(private readonly Browsershot $fakeBrowsershot) {}
+
+        protected function browsershotForUrl(string $url): Browsershot
+        {
+            return $this->fakeBrowsershot;
+        }
+    };
+
+    $scanner->scan('https://example.com', '2.1');
+
+    expect($fakeBrowsershot->lastScript)
+        ->toContain('wcag2a')
+        ->toContain('wcag21a')
+        ->toContain('wcag21aa')
+        ->not->toContain('wcag22aa');
+});
+
+test('scanner adds cumulative WCAG 2.2 tags', function () {
+    $fakeBrowsershot = new FakeBrowsershotForAxeScannerTest;
+    $scanner = new class($fakeBrowsershot) extends AxeScanner
+    {
+        public function __construct(private readonly Browsershot $fakeBrowsershot) {}
+
+        protected function browsershotForUrl(string $url): Browsershot
+        {
+            return $this->fakeBrowsershot;
+        }
+    };
+
+    $scanner->scan('https://example.com', '2.2');
+
+    expect($fakeBrowsershot->lastScript)
+        ->toContain('wcag2a')
+        ->toContain('wcag21aa')
+        ->toContain('wcag22aa');
+});
+
 test('scanner sends no-cache headers when loading pages', function () {
     $fakeBrowsershot = new FakeBrowsershotForAxeScannerTest;
     $scanner = new class($fakeBrowsershot) extends AxeScanner

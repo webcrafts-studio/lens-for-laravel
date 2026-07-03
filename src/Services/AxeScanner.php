@@ -5,6 +5,7 @@ namespace LensForLaravel\LensForLaravel\Services;
 use Illuminate\Support\Collection;
 use LensForLaravel\LensForLaravel\DTOs\Issue;
 use LensForLaravel\LensForLaravel\Exceptions\ScannerException;
+use LensForLaravel\LensForLaravel\Support\Wcag;
 use Spatie\Browsershot\Browsershot;
 use Throwable;
 
@@ -17,16 +18,19 @@ class AxeScanner
      *
      * @throws ScannerException
      */
-    public function scan(string $url): Collection
+    public function scan(string $url, ?string $wcagVersion = null): Collection
     {
         try {
+            $wcagVersion ??= Wcag::configuredVersion();
+            $tagsJson = json_encode(Wcag::tags($wcagVersion), JSON_THROW_ON_ERROR);
+
             // Configure Browsershot. Note that in some environments you may need
             // to configure the Node/NPM/Puppeteer path explicitly.
             $browsershot = $this->configureBrowsershot($this->browsershotForUrl($url));
 
             // We need to inject the axe-core library and run it.
             // Spatie Browsershot allows evaluating JavaScript on the page.
-            $script = <<<'JS'
+            $script = <<<JS
                 (async () => {
                     // Fetch and inject axe-core if it's not already present
                     if (typeof window.axe === 'undefined') {
@@ -43,7 +47,7 @@ class AxeScanner
                     const results = await window.axe.run({
                         runOnly: {
                             type: 'tag',
-                            values: ['wcag2a', 'wcag2aa', 'wcag2aaa', 'best-practice']
+                            values: {$tagsJson}
                         }
                     });
                     return JSON.stringify(results.violations);
@@ -66,13 +70,15 @@ JS;
      *
      * @throws ScannerException
      */
-    public function scanInteractiveStates(string $url, array $states): Collection
+    public function scanInteractiveStates(string $url, array $states, ?string $wcagVersion = null): Collection
     {
         try {
+            $wcagVersion ??= Wcag::configuredVersion();
             $browsershot = $this->configureBrowsershot($this->browsershotForUrl($url));
 
             $statesJson = json_encode($states, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
-            $script = $this->interactiveScanScript($statesJson);
+            $tagsJson = json_encode(Wcag::tags($wcagVersion), JSON_THROW_ON_ERROR);
+            $script = $this->interactiveScanScript($statesJson, $tagsJson);
             $payload = json_decode($browsershot->evaluate($script), true);
 
             $issues = collect();
@@ -123,7 +129,7 @@ JS;
         return $browsershot;
     }
 
-    protected function interactiveScanScript(string $statesJson): string
+    protected function interactiveScanScript(string $statesJson, string $tagsJson): string
     {
         return <<<JS
             (async () => {
@@ -147,7 +153,7 @@ JS;
                     const results = await window.axe.run({
                         runOnly: {
                             type: 'tag',
-                            values: ['wcag2a', 'wcag2aa', 'wcag2aaa', 'best-practice']
+                            values: {$tagsJson}
                         }
                     });
 

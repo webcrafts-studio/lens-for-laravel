@@ -53,6 +53,30 @@ test('POST /scan returns violations on success', function () {
         ->assertJsonStructure(['status', 'issues']);
 });
 
+test('POST /scan passes the selected WCAG version to the scanner', function () {
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scan')
+        ->once()
+        ->with('http://localhost', '2.2')
+        ->andReturn(collect());
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    app()->instance(FileLocator::class, Mockery::mock(FileLocator::class));
+
+    $this->postJson(route('lens-for-laravel.scan'), [
+        'url' => 'http://localhost',
+        'wcagVersion' => '2.2',
+    ])->assertOk();
+});
+
+test('POST /scan rejects unsupported WCAG versions', function () {
+    $this->postJson(route('lens-for-laravel.scan'), [
+        'url' => 'http://localhost',
+        'wcagVersion' => '3.0',
+    ])->assertStatus(422)
+        ->assertJsonValidationErrors(['wcagVersion']);
+});
+
 test('POST /scan returns 500 when scanner throws exception', function () {
     $scannerMock = Mockery::mock(AxeScanner::class);
     $scannerMock->shouldReceive('scan')

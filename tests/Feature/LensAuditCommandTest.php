@@ -14,6 +14,37 @@ test('lens:audit command is registered', function () {
     expect($commands->has('lens:audit'))->toBeTrue();
 });
 
+test('--wcag passes the selected standard to the scanner', function () {
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldReceive('scan')
+        ->once()
+        ->with('https://example.com', '2.2')
+        ->andReturn(collect());
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $locatorMock = Mockery::mock(FileLocator::class);
+    $locatorMock->shouldReceive('locate')->andReturn(null);
+    app()->instance(FileLocator::class, $locatorMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--wcag' => '2.2',
+    ])->assertExitCode(0)
+        ->expectsOutputToContain('WCAG 2.2');
+});
+
+test('--wcag rejects unsupported standards before scanning', function () {
+    $scannerMock = Mockery::mock(AxeScanner::class);
+    $scannerMock->shouldNotReceive('scan');
+    app()->instance(AxeScanner::class, $scannerMock);
+
+    $this->artisan('lens:audit', [
+        'url' => 'https://example.com',
+        '--wcag' => '3.0',
+    ])->assertExitCode(1)
+        ->expectsOutputToContain('Unsupported WCAG version');
+});
+
 // ── Exit code 0: no violations ────────────────────────────────────────────────
 
 test('exits 0 and shows success when no violations found', function () {

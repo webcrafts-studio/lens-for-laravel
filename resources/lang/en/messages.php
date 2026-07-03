@@ -16,6 +16,8 @@ return [
         'whole_website' => 'Whole Website',
         'multiple_urls' => 'Multiple URLs',
         'states' => 'States',
+        'wcag_version' => 'WCAG standard',
+        'wcag_version_help' => 'Choose which cumulative axe-core rule set to run. WCAG 2.0 remains the default.',
         'execute' => 'Execute',
         'processing' => 'Processing...',
         'exception_caught' => 'Exception Caught',
