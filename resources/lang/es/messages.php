@@ -48,6 +48,9 @@ return [
         'sdk_missing' => 'Instala el paquete opcional laravel/ai para activar AI Fix. El escaneo de accesibilidad principal sigue disponible.',
         'incomplete_response' => 'AI Fix no pudo generar una sugerencia completa y válida después de un reintento. No se modificó ningún archivo. Inténtalo de nuevo o corrige el problema manualmente.',
         'generation_failed' => 'AI Fix no pudo conectarse al proveedor de IA configurado o utilizarlo. No se modificó ningún archivo. Comprueba las credenciales e inténtalo de nuevo.',
+        'applied_badge' => 'AI Fix aplicado · nuevo escaneo pendiente',
+        'applied_title' => 'Corrección aplicada correctamente',
+        'applied_description' => 'El archivo fuente se ha actualizado. El problema seguirá contando hasta que un nuevo análisis de axe-core confirme el resultado.',
     ],
     'recorder' => [
         'title' => 'Grabador de estados Lens',

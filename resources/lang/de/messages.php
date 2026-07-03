@@ -48,6 +48,9 @@ return [
         'sdk_missing' => 'Installiere das optionale Paket laravel/ai, um AI Fix zu aktivieren. Der grundlegende Barrierefreiheits-Scan bleibt verfügbar.',
         'incomplete_response' => 'AI Fix konnte nach einem erneuten Versuch keinen vollständigen und gültigen Vorschlag erzeugen. Es wurde keine Datei geändert. Versuche es erneut oder behebe das Problem manuell.',
         'generation_failed' => 'AI Fix konnte den konfigurierten KI-Anbieter nicht erreichen oder verwenden. Es wurde keine Datei geändert. Prüfe die Zugangsdaten und versuche es erneut.',
+        'applied_badge' => 'AI Fix angewendet · erneuter Scan ausstehend',
+        'applied_title' => 'Korrektur erfolgreich angewendet',
+        'applied_description' => 'Die Quelldatei wurde aktualisiert. Das Problem wird weiter gezählt, bis ein neuer axe-core-Scan das Ergebnis bestätigt.',
     ],
     'recorder' => [
         'title' => 'Lens Zustandsrecorder',

@@ -30,6 +30,23 @@ test('dashboard explains when AI Fix is disabled and hides its actions', functio
         ->assertDontSee('title="Fix with AI"', false);
 });
 
+test('dashboard marks an applied AI fix as pending verification until the next scan', function () {
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('AI Fix applied · pending re-scan')
+        ->assertSee('This issue remains counted until a new axe-core scan verifies the result.')
+        ->assertSee("this.fixIssue.aiFixStatus = 'pending_verification'", false)
+        ->assertSee("issue.aiFixStatus === 'pending_verification'", false)
+        ->assertSee("issue.aiFixStatus !== 'pending_verification'", false);
+});
+
+test('dashboard translates the pending AI verification status', function () {
+    $this->get(route('lens-for-laravel.dashboard', ['lens_locale' => 'pl']))
+        ->assertOk()
+        ->assertSee('AI Fix zastosowany · oczekuje na ponowny skan')
+        ->assertSee('Problem pozostaje w statystykach');
+});
+
 test('dashboard renders interactive state scan controls', function () {
     $response = $this->get(route('lens-for-laravel.dashboard'));
 

@@ -450,6 +450,7 @@ The AI Fix workflow:
 4. A dedicated accessibility agent returns a minimal replacement and explanation.
 5. The dashboard shows a diff preview.
 6. You can accept and apply the change.
+7. The issue is immediately marked **AI Fix applied — pending re-scan** while remaining in the violation counts until a new axe-core scan verifies the result.
 
 The v3.0 agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Lens does not select or expose a model: `laravel/ai` uses the default model configured for the chosen provider. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
 
@@ -597,6 +598,7 @@ Version 3 is the current development line. Completed v3 changes include:
 - core support for PHP 8.2+ and Laravel 10–13
 - AI Fix isolated as an optional feature requiring PHP 8.3+, Laravel 12+, and `laravel/ai`
 - stabilized AI Fix with semantic source fragments, minimal replacements, bounded Gemini thinking, one controlled structured-output retry, safe errors, and provider/model/token diagnostics
+- immediate pending-verification status on issues changed by AI Fix, without claiming success before a new axe-core scan
 
 After upgrading to v3:
 

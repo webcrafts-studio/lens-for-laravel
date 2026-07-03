@@ -438,7 +438,9 @@
                         <ul x-show="hasResults && filteredIssues.length > 0" role="list"
                             class="divide-y divide-black dark:divide-neutral-700 relative z-10">
                             <template x-for="(issue, index) in filteredIssues" :key="index">
-                                <li class="p-6 sm:p-8">
+                                <li class="p-6 sm:p-8 transition-colors"
+                                    :class="issue.aiFixStatus === 'pending_verification' ?
+                                        'border-l-4 border-l-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20' : ''">
                                     <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                                         <div class="flex-1 space-y-3">
                                             <div class="flex flex-wrap items-center gap-3">
@@ -449,6 +451,14 @@
                                                 <span
                                                     class="text-sm font-mono font-bold tracking-widest text-neutral-700 dark:text-neutral-300"
                                                     x-text="issue.id"></span>
+                                                <template x-if="issue.aiFixStatus === 'pending_verification'">
+                                                    <span
+                                                        class="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-wider border border-emerald-600 bg-emerald-100 text-emerald-800 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300"
+                                                        title="{{ __('lens-for-laravel::messages.ai_fix.applied_description') }}">
+                                                        <span aria-hidden="true">✓</span>
+                                                        <span>{{ __('lens-for-laravel::messages.ai_fix.applied_badge') }}</span>
+                                                    </span>
+                                                </template>
                                                 <!-- Page URL Badge -->
                                                 <template x-if="scanMode === 'website' && issue.url">
                                                     <span
@@ -473,7 +483,8 @@
                                                     </svg></button>
                                                 <!-- AI Fix Button -->
                                                 @if ($aiFixStatus['available'])
-                                                    <template x-if="issue.fileName">
+                                                    <template
+                                                        x-if="issue.fileName && issue.aiFixStatus !== 'pending_verification'">
                                                         <button @click="requestAiFix(issue)"
                                                             class="inline-flex items-center justify-center px-2.5 py-1.5 border border-black/30 dark:border-white/30 text-xs font-mono font-bold uppercase tracking-widest hover:border-black dark:hover:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
                                                             title="Fix with AI">AI FIX</button>
@@ -813,10 +824,10 @@
 
                 <!-- Applied success -->
                 <div x-show="fixApplied" x-cloak class="border-2 border-green-500 p-6 text-center space-y-2">
-                    <p class="font-mono text-sm font-bold uppercase tracking-widest text-green-500">✓ Fix Applied
-                        Successfully</p>
-                    <p class="font-mono text-xs text-neutral-500 uppercase tracking-widest">The file has been updated.
-                        Re-scan to verify the fix.</p>
+                    <p class="font-mono text-sm font-bold uppercase tracking-widest text-green-500">✓
+                        {{ __('lens-for-laravel::messages.ai_fix.applied_title') }}</p>
+                    <p class="font-mono text-xs text-neutral-500 uppercase tracking-widest">
+                        {{ __('lens-for-laravel::messages.ai_fix.applied_description') }}</p>
                 </div>
 
                 <!-- Fix Data -->
@@ -1442,6 +1453,7 @@
                         });
                         const data = await response.json();
                         if (!response.ok) throw new Error(data.message || 'Failed to apply fix.');
+                        this.fixIssue.aiFixStatus = 'pending_verification';
                         this.fixApplied = true;
                     } catch (err) {
                         this.fixError = err.message;

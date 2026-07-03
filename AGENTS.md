@@ -81,6 +81,7 @@ Do not commit that temporary dependency as a mandatory production requirement.
 - Capability tests must cover supported runtime, old PHP, old Laravel, missing SDK, and explicit disablement.
 - Route tests must verify that unavailable AI Fix endpoints return a clear `503` without exposing provider internals.
 - AI Fix tests must cover semantic context boundaries, malformed structured output, token-limit finish reasons, one retry only, non-retryable provider errors, safe user messages, and provider/model/token logging.
+- Applied AI fixes must be marked as pending verification in the current dashboard results, remain in violation counts, and return to ordinary axe-derived state when a new scan replaces the results.
 - Keep the AI model implicit. Lens selects the provider, while `laravel/ai` resolves that provider's configured default model.
 - Dashboard tests must verify that unavailable features are explained and their actions are hidden.
 - Preserve existing tests for Blade, React, Vue, crawler, state scripts, history, baseline, PDF, preview, and CLI behavior.
@@ -95,6 +96,7 @@ The package README is the concise installation and feature reference. The websit
 - AI Fix: PHP 8.3+, Laravel 12+, optional `laravel/ai`
 - AI Fix sends a bounded semantic element/component and issue metadata to the configured external provider
 - v3 AI Fix uses a minimal replacement, one controlled retry for truncated/invalid structured output, and the provider's default `laravel/ai` model
+- applying an AI fix marks the current issue as pending re-scan but does not present it as axe-verified or remove it from counts
 - all non-AI features remain available when AI Fix is unsupported or disabled
 - dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default
 

@@ -48,6 +48,9 @@ return [
         'sdk_missing' => 'Install the optional laravel/ai package to enable AI Fix. Core accessibility scanning remains available.',
         'incomplete_response' => 'AI Fix could not generate a complete, valid suggestion after one retry. No file was changed. Please try again or fix this issue manually.',
         'generation_failed' => 'AI Fix could not contact or use the configured AI provider. No file was changed. Check the provider credentials and try again.',
+        'applied_badge' => 'AI Fix applied · pending re-scan',
+        'applied_title' => 'Fix applied successfully',
+        'applied_description' => 'The source file was updated. This issue remains counted until a new axe-core scan verifies the result.',
     ],
     'recorder' => [
         'title' => 'Lens State Recorder',
