@@ -39,6 +39,12 @@ return [
         'crawling' => 'Indeksowanie strony...',
         'scan_complete' => 'Skan zakończony.',
     ],
+    'ai_fix' => [
+        'unavailable_title' => 'AI Fix niedostępny',
+        'disabled' => 'AI Fix został wyłączony w konfiguracji. Podstawowe skanowanie dostępności nadal działa.',
+        'unsupported_runtime' => 'AI Fix wymaga PHP 8.3 lub nowszego oraz Laravel 12 lub nowszego. Podstawowe skanowanie dostępności nadal działa w tej aplikacji.',
+        'sdk_missing' => 'Zainstaluj opcjonalny pakiet laravel/ai, aby włączyć AI Fix. Podstawowe skanowanie dostępności nadal działa.',
+    ],
     'recorder' => [
         'title' => 'Rejestrator stanów Lens',
         'record' => 'Nagraj',

@@ -22,19 +22,7 @@ class AxeScanner
         try {
             // Configure Browsershot. Note that in some environments you may need
             // to configure the Node/NPM/Puppeteer path explicitly.
-            $browsershot = $this->browsershotForUrl($url)
-                ->noSandbox()
-                ->waitUntilNetworkIdle(); // Wait for the page to fully load
-
-            $scanWaitMs = (int) config('lens-for-laravel.scan_wait_ms', 0);
-            if ($scanWaitMs > 0) {
-                $browsershot->setDelay($scanWaitMs);
-            }
-
-            $ignoreHttpsErrors = config('lens-for-laravel.ignore_https_errors', false);
-            if ($ignoreHttpsErrors) {
-                $browsershot->ignoreHttpsErrors();
-            }
+            $browsershot = $this->configureBrowsershot($this->browsershotForUrl($url));
 
             // We need to inject the axe-core library and run it.
             // Spatie Browsershot allows evaluating JavaScript on the page.
@@ -81,19 +69,7 @@ JS;
     public function scanInteractiveStates(string $url, array $states): Collection
     {
         try {
-            $browsershot = $this->browsershotForUrl($url)
-                ->noSandbox()
-                ->waitUntilNetworkIdle();
-
-            $scanWaitMs = (int) config('lens-for-laravel.scan_wait_ms', 0);
-            if ($scanWaitMs > 0) {
-                $browsershot->setDelay($scanWaitMs);
-            }
-
-            $ignoreHttpsErrors = config('lens-for-laravel.ignore_https_errors', false);
-            if ($ignoreHttpsErrors) {
-                $browsershot->ignoreHttpsErrors();
-            }
+            $browsershot = $this->configureBrowsershot($this->browsershotForUrl($url));
 
             $statesJson = json_encode($states, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
             $script = $this->interactiveScanScript($statesJson);
@@ -122,6 +98,29 @@ JS;
     protected function browsershotForUrl(string $url): Browsershot
     {
         return Browsershot::url($url);
+    }
+
+    protected function configureBrowsershot(Browsershot $browsershot): Browsershot
+    {
+        $browsershot
+            ->noSandbox()
+            ->waitUntilNetworkIdle()
+            ->setExtraHttpHeaders([
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+            ]);
+
+        $scanWaitMs = (int) config('lens-for-laravel.scan_wait_ms', 0);
+        if ($scanWaitMs > 0) {
+            $browsershot->setDelay($scanWaitMs);
+        }
+
+        $ignoreHttpsErrors = config('lens-for-laravel.ignore_https_errors', false);
+        if ($ignoreHttpsErrors) {
+            $browsershot->ignoreHttpsErrors();
+        }
+
+        return $browsershot;
     }
 
     protected function interactiveScanScript(string $statesJson): string

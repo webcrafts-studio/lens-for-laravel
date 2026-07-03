@@ -123,6 +123,14 @@
                 <!-- ═══ SCANNER TAB ═══ -->
                 <div x-show="activeTab === 'scanner'" class="space-y-12">
 
+                    @if (! $aiFixStatus['available'])
+                        <div class="border-2 border-dashed border-amber-500 bg-amber-50 px-5 py-4 font-mono text-xs text-amber-950 dark:bg-amber-950/30 dark:text-amber-200"
+                            role="status">
+                            <strong class="block uppercase tracking-widest">{{ __('lens-for-laravel::messages.ai_fix.unavailable_title') }}</strong>
+                            <span class="mt-1 block">{{ $aiFixStatus['message'] }}</span>
+                        </div>
+                    @endif
+
                 <!-- Hero Section & Controls -->
                 <div class="relative">
                     <div
@@ -442,11 +450,13 @@
                                                         <circle cx="12" cy="12" r="3" />
                                                     </svg></button>
                                                 <!-- AI Fix Button -->
-                                                <template x-if="issue.fileName">
-                                                    <button @click="requestAiFix(issue)"
-                                                        class="inline-flex items-center justify-center px-2.5 py-1.5 border border-black/30 dark:border-white/30 text-xs font-mono font-bold uppercase tracking-widest hover:border-black dark:hover:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
-                                                        title="Fix with AI">AI FIX</button>
-                                                </template>
+                                                @if ($aiFixStatus['available'])
+                                                    <template x-if="issue.fileName">
+                                                        <button @click="requestAiFix(issue)"
+                                                            class="inline-flex items-center justify-center px-2.5 py-1.5 border border-black/30 dark:border-white/30 text-xs font-mono font-bold uppercase tracking-widest hover:border-black dark:hover:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
+                                                            title="Fix with AI">AI FIX</button>
+                                                    </template>
+                                                @endif
 
                                             </div>
                                             <h4 class="text-base font-sans font-medium text-black dark:text-white"

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use LensForLaravel\LensForLaravel\Models\Scan;
+use LensForLaravel\LensForLaravel\Services\AiFixAvailability;
 use LensForLaravel\LensForLaravel\Services\AiFixer;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
@@ -75,7 +76,9 @@ Route::get('/dashboard', function () {
         abort(403, 'Lens For Laravel is not allowed in this environment.');
     }
 
-    return view('lens-for-laravel::dashboard');
+    return view('lens-for-laravel::dashboard', [
+        'aiFixStatus' => app(AiFixAvailability::class)->status(),
+    ]);
 })->name('lens-for-laravel.dashboard');
 
 Route::get('/states/recorder', function (Request $request) use ($domainRule) {
@@ -261,6 +264,11 @@ Route::post('/fix/suggest', function (Request $request) {
             return response()->json(['status' => 'error', 'message' => 'Lens For Laravel is not allowed in this environment.'], 403);
         }
 
+        $availability = app(AiFixAvailability::class);
+        if (! $availability->available()) {
+            return response()->json(['status' => 'error', 'message' => $availability->message()], 503);
+        }
+
         $validated = $request->validate([
             'htmlSnippet' => ['required', 'string', 'max:2000'],
             'description' => ['required', 'string', 'max:500'],
@@ -298,6 +306,11 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
     try {
         if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
             return response()->json(['status' => 'error', 'message' => 'Lens For Laravel is not allowed in this environment.'], 403);
+        }
+
+        $availability = app(AiFixAvailability::class);
+        if (! $availability->available()) {
+            return response()->json(['status' => 'error', 'message' => $availability->message()], 503);
         }
 
         $validated = $request->validate([
@@ -355,6 +368,24 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
 
         // LOCK_EX ensures the write is atomic and prevents concurrent overwrites.
         file_put_contents($source['path'], str_replace($originalCode, $fixedCode, $content), LOCK_EX);
+
+        clearstatcache(true, $source['path']);
+
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate($source['path'], true);
+        }
+
+        if (($source['type'] ?? null) === 'blade' && app()->bound('blade.compiler')) {
+            $compiledPath = app('blade.compiler')->getCompiledPath($source['path']);
+
+            if (is_file($compiledPath)) {
+                if (function_exists('opcache_invalidate')) {
+                    @opcache_invalidate($compiledPath, true);
+                }
+
+                @unlink($compiledPath);
+            }
+        }
 
         return response()->json(['status' => 'success']);
     } catch (ValidationException $e) {

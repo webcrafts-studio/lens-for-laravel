@@ -39,6 +39,12 @@ return [
         'crawling' => 'Crawling website...',
         'scan_complete' => 'Scan complete.',
     ],
+    'ai_fix' => [
+        'unavailable_title' => 'AI Fix unavailable',
+        'disabled' => 'AI Fix is disabled by configuration. Core accessibility scanning remains available.',
+        'unsupported_runtime' => 'AI Fix requires PHP 8.3 or newer and Laravel 12 or newer. Core accessibility scanning remains available on this application.',
+        'sdk_missing' => 'Install the optional laravel/ai package to enable AI Fix. Core accessibility scanning remains available.',
+    ],
     'recorder' => [
         'title' => 'Lens State Recorder',
         'record' => 'Record',

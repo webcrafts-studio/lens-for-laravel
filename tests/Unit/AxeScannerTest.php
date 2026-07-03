@@ -9,6 +9,8 @@ class FakeBrowsershotForAxeScannerTest extends Browsershot
 
     public bool $delayWasSet = false;
 
+    public ?array $extraHttpHeaders = null;
+
     public string $evaluateResponse = '[]';
 
     public ?string $lastScript = null;
@@ -33,6 +35,13 @@ class FakeBrowsershotForAxeScannerTest extends Browsershot
     public function ignoreHttpsErrors(): static
     {
         $this->ignoreHttpsErrorsCalled = true;
+
+        return $this;
+    }
+
+    public function setExtraHttpHeaders(array $extraHTTPHeaders): static
+    {
+        $this->extraHttpHeaders = $extraHTTPHeaders;
 
         return $this;
     }
@@ -81,6 +90,47 @@ test('scanner keeps https errors strict by default', function () {
     $scanner->scan('https://example.com');
 
     expect($fakeBrowsershot->ignoreHttpsErrorsCalled)->toBeFalse();
+});
+
+test('scanner sends no-cache headers when loading pages', function () {
+    $fakeBrowsershot = new FakeBrowsershotForAxeScannerTest;
+    $scanner = new class($fakeBrowsershot) extends AxeScanner
+    {
+        public function __construct(private readonly Browsershot $fakeBrowsershot) {}
+
+        protected function browsershotForUrl(string $url): Browsershot
+        {
+            return $this->fakeBrowsershot;
+        }
+    };
+
+    $scanner->scan('https://example.com');
+
+    expect($fakeBrowsershot->extraHttpHeaders)
+        ->toHaveKey('Cache-Control', 'no-cache, no-store, must-revalidate')
+        ->toHaveKey('Pragma', 'no-cache');
+});
+
+test('interactive scanner sends no-cache headers when loading pages', function () {
+    $fakeBrowsershot = new FakeBrowsershotForAxeScannerTest;
+    $fakeBrowsershot->evaluateResponse = json_encode(['states' => []]);
+    $scanner = new class($fakeBrowsershot) extends AxeScanner
+    {
+        public function __construct(private readonly Browsershot $fakeBrowsershot) {}
+
+        protected function browsershotForUrl(string $url): Browsershot
+        {
+            return $this->fakeBrowsershot;
+        }
+    };
+
+    $scanner->scanInteractiveStates('https://example.com', [
+        ['label' => 'Initial', 'actions' => []],
+    ]);
+
+    expect($fakeBrowsershot->extraHttpHeaders)
+        ->toHaveKey('Cache-Control', 'no-cache, no-store, must-revalidate')
+        ->toHaveKey('Pragma', 'no-cache');
 });
 
 test('interactive scanner maps state labels onto violations', function () {

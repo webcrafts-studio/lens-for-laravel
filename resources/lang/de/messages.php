@@ -39,6 +39,12 @@ return [
         'crawling' => 'Website wird gecrawlt...',
         'scan_complete' => 'Scan abgeschlossen.',
     ],
+    'ai_fix' => [
+        'unavailable_title' => 'AI Fix nicht verfügbar',
+        'disabled' => 'AI Fix ist in der Konfiguration deaktiviert. Der grundlegende Barrierefreiheits-Scan bleibt verfügbar.',
+        'unsupported_runtime' => 'AI Fix erfordert PHP 8.3 oder neuer und Laravel 12 oder neuer. Der grundlegende Barrierefreiheits-Scan bleibt in dieser Anwendung verfügbar.',
+        'sdk_missing' => 'Installiere das optionale Paket laravel/ai, um AI Fix zu aktivieren. Der grundlegende Barrierefreiheits-Scan bleibt verfügbar.',
+    ],
     'recorder' => [
         'title' => 'Lens Zustandsrecorder',
         'record' => 'Aufzeichnen',

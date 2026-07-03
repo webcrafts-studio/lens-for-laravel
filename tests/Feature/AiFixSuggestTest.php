@@ -37,6 +37,21 @@ test('POST /fix/suggest returns 403 when environment not allowed', function () {
     ])->assertStatus(403);
 });
 
+test('POST /fix/suggest returns 503 when AI Fix is disabled', function () {
+    $this->app['config']->set('lens-for-laravel.ai_enabled', false);
+
+    $this->postJson(route('lens-for-laravel.fix.suggest'), [
+        'htmlSnippet' => '<img src="x.png">',
+        'description' => 'Missing alt',
+        'fileName' => 'test.blade.php',
+        'lineNumber' => 1,
+    ])->assertStatus(503)
+        ->assertJson([
+            'status' => 'error',
+            'message' => 'AI Fix is disabled by configuration. Core accessibility scanning remains available.',
+        ]);
+});
+
 test('POST /fix/suggest blocks path traversal in fileName', function () {
     // AiFixer::suggestFix throws RuntimeException before calling AI
     // when the path traversal is detected; the route catches it and

@@ -39,6 +39,12 @@ return [
         'crawling' => 'Exploration du site...',
         'scan_complete' => 'Scan terminé.',
     ],
+    'ai_fix' => [
+        'unavailable_title' => 'AI Fix indisponible',
+        'disabled' => 'AI Fix est désactivé dans la configuration. Le scan d’accessibilité principal reste disponible.',
+        'unsupported_runtime' => 'AI Fix nécessite PHP 8.3 ou une version ultérieure et Laravel 12 ou une version ultérieure. Le scan d’accessibilité principal reste disponible dans cette application.',
+        'sdk_missing' => 'Installez le paquet optionnel laravel/ai pour activer AI Fix. Le scan d’accessibilité principal reste disponible.',
+    ],
     'recorder' => [
         'title' => 'Enregistreur d’états Lens',
         'record' => 'Enregistrer',

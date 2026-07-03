@@ -130,14 +130,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | AI Provider
+    | AI Fix
     |--------------------------------------------------------------------------
     |
-    | The AI provider used for generating code fixes.
+    | AI Fix is optional and requires PHP 8.3+, Laravel 12+, and the optional
+    | laravel/ai Composer package. Core scanning remains available when this is
+    | disabled or unsupported by the host application's runtime.
     |
     | Supported values: 'gemini', 'openai', 'anthropic'
     |
     */
+    'ai_enabled' => env('LENS_FOR_LARAVEL_AI_ENABLED', true),
+
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),
 
 ];

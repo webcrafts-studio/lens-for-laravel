@@ -47,6 +47,20 @@ test('POST /fix/apply returns 403 when environment not allowed', function () {
     ])->assertStatus(403);
 });
 
+test('POST /fix/apply returns 503 when AI Fix is disabled', function () {
+    $this->app['config']->set('lens-for-laravel.ai_enabled', false);
+
+    $this->postJson(route('lens-for-laravel.fix.apply'), [
+        'fileName' => 'test.blade.php',
+        'originalCode' => '<img src="x.png">',
+        'fixedCode' => '<img src="x.png" alt="Fixed">',
+    ])->assertStatus(503)
+        ->assertJson([
+            'status' => 'error',
+            'message' => 'AI Fix is disabled by configuration. Core accessibility scanning remains available.',
+        ]);
+});
+
 test('POST /fix/apply applies fix and replaces content in blade file', function () {
     $original = '<img src="logo.png">';
     $fixed = '<img src="logo.png" alt="Company logo">';
@@ -62,6 +76,29 @@ test('POST /fix/apply applies fix and replaces content in blade file', function 
 
     expect(file_get_contents($this->bladeFile))->toContain($fixed)
         ->not->toContain($original);
+});
+
+test('POST /fix/apply invalidates compiled blade view after replacing content', function () {
+    $original = '<img src="logo.png">';
+    $fixed = '<img src="logo.png" alt="Company logo">';
+
+    file_put_contents($this->bladeFile, "<div>\n{$original}\n</div>");
+
+    $compiler = app('blade.compiler');
+    $compiler->compile($this->bladeFile);
+    $compiledPath = $compiler->getCompiledPath($this->bladeFile);
+
+    expect(file_exists($compiledPath))->toBeTrue();
+
+    $this->postJson(route('lens-for-laravel.fix.apply'), [
+        'fileName' => basename($this->bladeFile),
+        'originalCode' => $original,
+        'fixedCode' => $fixed,
+    ])->assertStatus(200)
+        ->assertJson(['status' => 'success']);
+
+    expect(file_get_contents($this->bladeFile))->toContain($fixed)
+        ->and(file_exists($compiledPath))->toBeFalse();
 });
 
 test('POST /fix/apply applies fix and replaces content in react file', function () {

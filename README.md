@@ -17,7 +17,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Blade, React, and Vue source locator** - maps DOM violations back to `resources/views/**/*.blade.php` and frontend files under `resources/js`.
 - **Source type labels** - results include `sourceType` values: `blade`, `react`, or `vue`.
 - **Inertia-aware file discovery** - React/Vue pages under `resources/js/Pages/**` are included automatically.
-- **AI Fix assistant** - generates reviewable fixes and applies them to Blade, React, and Vue files.
+- **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through the optional `laravel/ai` SDK.
 - **Diff preview before apply** - inspect AI changes before writing to disk.
 - **Whole-site crawler** - discovers pages from sitemaps and internal links.
 - **SPA crawler mode** - optionally renders JavaScript while crawling React/Vue/Inertia apps.
@@ -53,6 +53,16 @@ npm install puppeteer --save-dev
 
 If your environment requires a custom Chromium, Node, or npm path, configure Browsershot through your application environment as you normally would.
 
+AI Fix has a narrower runtime matrix than the core scanner:
+
+| AI Fix requirement | Version |
+|---|---|
+| PHP | ^8.3 |
+| Laravel | ^12.0 \| ^13.0 |
+| Optional SDK | `laravel/ai` ^0.3.2 |
+
+Laravel 10/11 and PHP 8.2 applications retain scanning, crawling, history, PDF, preview, source location, interactive states, and CLI support. The dashboard hides AI Fix actions and explains why they are unavailable.
+
 ---
 
 ## Installation
@@ -64,6 +74,14 @@ composer require webcrafts-studio/lens-for-laravel --dev
 ```
 
 The service provider is auto-discovered.
+
+The core package intentionally does not require an AI SDK. On a supported runtime, install AI Fix separately when you want generated fixes:
+
+```bash
+composer require laravel/ai:^0.3.2 --dev
+```
+
+AI Fix is optional. Lens continues to work without this package.
 
 Run migrations if you want scan history:
 
@@ -319,6 +337,8 @@ return [
 
     'ignore_https_errors' => env('LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS', false),
 
+    'ai_enabled' => env('LENS_FOR_LARAVEL_AI_ENABLED', true),
+
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),
 ];
 ```
@@ -334,6 +354,7 @@ LENS_FOR_LARAVEL_CRAWLER_RENDER_JAVASCRIPT=false
 LENS_FOR_LARAVEL_SCAN_WAIT_MS=0
 LENS_FOR_LARAVEL_BASELINE_PATH=storage/app/lens-for-laravel/baseline.json
 LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=false
+LENS_FOR_LARAVEL_AI_ENABLED=true
 LENS_FOR_LARAVEL_AI_PROVIDER=gemini
 ```
 
@@ -350,6 +371,12 @@ Supported AI providers:
 - `gemini`
 - `openai`
 - `anthropic`
+
+Disable AI Fix explicitly while keeping all scanning features enabled:
+
+```env
+LENS_FOR_LARAVEL_AI_ENABLED=false
+```
 
 ---
 
@@ -382,6 +409,15 @@ LENS_FOR_LARAVEL_CRAWL_MAX_PAGES=100
 
 ## AI Fix
 
+AI Fix is available only when all of the following are true:
+
+- PHP 8.3 or newer
+- Laravel 12 or newer
+- the optional `laravel/ai` package is installed
+- `LENS_FOR_LARAVEL_AI_ENABLED` is not set to `false`
+
+On older supported applications, only AI Fix is disabled. The accessibility scanner and every non-AI feature remain available.
+
 The AI Fix workflow:
 
 1. Lens locates the source file and line.
@@ -390,6 +426,8 @@ The AI Fix workflow:
 4. It returns an explanation and full replacement code block.
 5. The dashboard shows a diff preview.
 6. You can accept and apply the change.
+
+> **Privacy:** AI Fix sends the failing DOM snippet, accessibility issue details, WCAG tags, and a limited source-code context to the configured Gemini, OpenAI, or Anthropic provider. It does not send the entire repository. Review the selected source context for secrets or sensitive information before requesting a fix, and follow the chosen provider's data-handling policy.
 
 Configure provider credentials:
 

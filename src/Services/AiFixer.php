@@ -26,6 +26,8 @@ class AiFixer
         int $lineNumber,
         array $tags = []
     ): array {
+        app(AiFixAvailability::class)->ensureAvailable();
+
         $source = $this->resolveSourceFile($fileName);
 
         $lines = explode("\n", file_get_contents($source['path']));

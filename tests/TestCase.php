@@ -4,6 +4,7 @@ namespace Tests;
 
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use LensForLaravel\LensForLaravel\LensForLaravelServiceProvider;
+use LensForLaravel\LensForLaravel\Services\AiFixAvailability;
 use Orchestra\Testbench\TestCase as OrchestraTestCase;
 
 class TestCase extends OrchestraTestCase
@@ -21,8 +22,20 @@ class TestCase extends OrchestraTestCase
         $app['config']->set('lens-for-laravel.middleware', ['web']);
         $app['config']->set('lens-for-laravel.crawl_max_pages', 5);
         $app['config']->set('lens-for-laravel.editor', 'vscode');
+        $app['config']->set('lens-for-laravel.ai_enabled', true);
         $app['config']->set('cache.default', 'array');
         $app['config']->set('session.driver', 'array');
+
+        // The Laravel AI SDK is an optional consumer dependency. Tests exercise
+        // the supported-runtime routes without requiring it in this package's
+        // development dependency graph.
+        $app->singleton(AiFixAvailability::class, fn () => new class extends AiFixAvailability
+        {
+            protected function sdkInstalled(): bool
+            {
+                return true;
+            }
+        });
 
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
