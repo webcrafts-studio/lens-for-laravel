@@ -96,6 +96,19 @@ test('dashboard can switch to Polish locale', function () {
         ->assertSee('Rejestrator stanów interaktywnych');
 });
 
+test('Polish dashboard translates history comparisons modals and client errors', function () {
+    $this->get(route('lens-for-laravel.dashboard', ['lens_locale' => 'pl']))
+        ->assertOk()
+        ->assertSee('Trend problemów (ostatnie 30 skanów)')
+        ->assertSee('Historia skanów')
+        ->assertSee('Porównanie')
+        ->assertSee('Naprawione')
+        ->assertSee('Wyjaśnienie AI')
+        ->assertSee('Podgląd elementu')
+        ->assertSee('Nie udało się wygenerować raportu PDF.')
+        ->assertDontSee('Issue Trend (Last 30 Scans)');
+});
+
 test('state recorder can switch to Spanish locale', function () {
     $response = $this->get(route('lens-for-laravel.states.recorder', [
         'target' => url('/states'),

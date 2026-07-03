@@ -22,3 +22,9 @@ test('invalid configured WCAG versions fall back to 2.0', function () {
 
     expect(Wcag::configuredVersion())->toBe('2.0');
 });
+
+test('invalid WCAG errors use the active locale', function () {
+    app()->setLocale('pl');
+
+    Wcag::tags('3.0');
+})->throws(InvalidArgumentException::class, 'Nieobsługiwana wersja WCAG. Wybierz jedną z: 2.0, 2.1, 2.2.');

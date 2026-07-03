@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Accessibility Report</title>
+<title>{{ __('lens-for-laravel::messages.report.title') }}</title>
 <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -252,13 +252,13 @@
     <div class="header-top">
         <div class="brand">Lens for <span>Laravel</span></div>
         <div class="meta">
-            <div>ACCESSIBILITY AUDIT REPORT</div>
-            <div>Generated: {{ $generatedAt->format('Y-m-d H:i') }}</div>
+            <div>{{ __('lens-for-laravel::messages.report.audit_report') }}</div>
+            <div>{{ __('lens-for-laravel::messages.report.generated') }}: {{ $generatedAt->format('Y-m-d H:i') }}</div>
         </div>
     </div>
     <div class="scanned-url">
-        <strong>Target:</strong> {{ $url }}
-        <span style="margin-left: 16px"><strong>Standard:</strong> WCAG {{ $wcagVersion }}</span>
+        <strong>{{ __('lens-for-laravel::messages.report.target') }}:</strong> {{ $url }}
+        <span style="margin-left: 16px"><strong>{{ __('lens-for-laravel::messages.report.standard') }}:</strong> WCAG {{ $wcagVersion }}</span>
     </div>
 </div>
 
@@ -274,29 +274,29 @@
 
 <div class="summary">
     <div class="stat-box all">
-        <div class="stat-label">All</div>
+        <div class="stat-label">{{ __('lens-for-laravel::messages.common.all') }}</div>
         <div class="stat-value">{{ $total }}</div>
     </div>
     <div class="stat-box level-a">
-        <div class="stat-label">A Level</div>
+        <div class="stat-label">{{ __('lens-for-laravel::messages.common.level_a') }}</div>
         <div class="stat-value">{{ $levelA }}</div>
     </div>
     <div class="stat-box level-aa">
-        <div class="stat-label">AA Level</div>
+        <div class="stat-label">{{ __('lens-for-laravel::messages.common.level_aa') }}</div>
         <div class="stat-value">{{ $levelAA }}</div>
     </div>
     <div class="stat-box level-aaa">
-        <div class="stat-label">AAA Level</div>
+        <div class="stat-label">{{ __('lens-for-laravel::messages.common.level_aaa') }}</div>
         <div class="stat-value">{{ $levelAAA }}</div>
     </div>
     <div class="stat-box other">
-        <div class="stat-label">Other</div>
+        <div class="stat-label">{{ __('lens-for-laravel::messages.common.other') }}</div>
         <div class="stat-value">{{ $other }}</div>
     </div>
 </div>
 
 {{-- ── Issues ── --}}
-<div class="section-title"><span>>>></span> VIOLATIONS ({{ $total }})</div>
+<div class="section-title"><span>>>></span> {{ __('lens-for-laravel::messages.report.violations') }} ({{ $total }})</div>
 
 @forelse($issues as $issue)
     @php
@@ -305,7 +305,7 @@
     @endphp
     <div class="issue">
         <div class="issue-header">
-            <div class="impact-badge {{ $impact }}">{{ $impact }}</div>
+            <div class="impact-badge {{ $impact }}">{{ __('lens-for-laravel::messages.report.impact.'.$impact) }}</div>
             <div class="issue-title-wrap">
                 <div class="issue-id">{{ $issue['id'] ?? '' }}</div>
                 <div class="issue-description">{{ $issue['description'] ?? '' }}</div>
@@ -313,7 +313,7 @@
                     <div class="page-url-label">{{ $issue['url'] }}</div>
                 @endif
                 @if(!empty($issue['stateLabel']))
-                    <div class="page-url-label">State: {{ $issue['stateLabel'] }}</div>
+                    <div class="page-url-label">{{ __('lens-for-laravel::messages.report.state') }}: {{ $issue['stateLabel'] }}</div>
                 @endif
             </div>
         </div>
@@ -329,7 +329,7 @@
         <div class="issue-body">
             @if(!empty($issue['htmlSnippet']))
             <div>
-                <div class="field-label">HTML Snippet</div>
+                <div class="field-label">{{ __('lens-for-laravel::messages.report.html_snippet') }}</div>
                 <div class="code-block">{{ $issue['htmlSnippet'] }}</div>
             </div>
             @endif
@@ -337,21 +337,21 @@
             <div>
                 @if(!empty($issue['selector']))
                 <div style="margin-bottom:8px">
-                    <div class="field-label">CSS Selector</div>
+                    <div class="field-label">{{ __('lens-for-laravel::messages.report.css_selector') }}</div>
                     <div class="code-block">{{ $issue['selector'] }}</div>
                 </div>
                 @endif
 
                 @if(!empty($issue['fileName']))
                 <div style="margin-bottom:8px">
-                    <div class="field-label">Source Location</div>
+                    <div class="field-label">{{ __('lens-for-laravel::messages.report.source_location') }}</div>
                     <div class="field-value">{{ $issue['fileName'] }}:{{ $issue['lineNumber'] ?? '?' }}</div>
                 </div>
                 @endif
 
                 @if(!empty($issue['helpUrl']))
                 <div>
-                    <div class="field-label">Reference</div>
+                    <div class="field-label">{{ __('lens-for-laravel::messages.report.reference') }}</div>
                     <div class="help-link">{{ $issue['helpUrl'] }}</div>
                 </div>
                 @endif
@@ -359,12 +359,12 @@
         </div>
     </div>
 @empty
-    <p style="color:#888;font-size:11px;">No violations found.</p>
+    <p style="color:#888;font-size:11px;">{{ __('lens-for-laravel::messages.report.no_violations') }}</p>
 @endforelse
 
 {{-- ── Footer ── --}}
 <div class="footer">
-    <span>Lens For Laravel — Accessibility Auditor</span>
+    <span>{{ __('lens-for-laravel::messages.report.footer') }}</span>
     <span>{{ $generatedAt->format('Y-m-d') }}</span>
 </div>
 

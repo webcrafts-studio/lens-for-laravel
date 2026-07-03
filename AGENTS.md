@@ -87,6 +87,8 @@ Do not commit that temporary dependency as a mandatory production requirement.
 - Preserve existing tests for Blade, React, Vue, crawler, state scripts, history, baseline, PDF, preview, and CLI behavior.
 - Keep dashboard and CLI state scripts on the same `InteractionScriptParser` grammar and limits. CLI state mode must remain single-URL and incompatible with crawl mode.
 - Keep `ignore_https_errors` consistent across axe scans, sitemap/page HTTP crawling, browser-rendered crawling, and element previews.
+- Keep `resources/lang/{en,pl,es,fr,de}/messages.php` on the same key and placeholder contract. Package-owned dashboard, history, comparison, modal, PDF, recorder, and error text must use translation keys rather than hard-coded English.
+- Add or update `TranslationCatalogTest` whenever the catalog contract changes; PDF and JavaScript-rendered dashboard strings must be covered by feature tests as well.
 
 ## Documentation Contract
 
@@ -99,5 +101,6 @@ The package README is the concise installation and feature reference. The websit
 - applying an AI fix marks the current issue as pending re-scan but does not present it as axe-verified or remove it from counts
 - all non-AI features remain available when AI Fix is unsupported or disabled
 - dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default
+- v3 includes complete English, Polish, Spanish, French, and German catalogs for package-owned dashboard, history, comparison, modal, PDF, recorder, and error text; axe-core and framework-supplied messages remain upstream content
 
 Avoid describing optional or partial functionality as universally available.

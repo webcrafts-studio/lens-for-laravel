@@ -22,7 +22,7 @@ class AiFixContextExtractor
         $lines = preg_split('/(?<=\n)/', $content) ?: [];
 
         if ($lineNumber < 1 || $lineNumber > count($lines)) {
-            throw new RuntimeException('The located source line does not exist in the selected file. Run the scan again and retry.');
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.source_line_missing'));
         }
 
         $targetStart = 0;

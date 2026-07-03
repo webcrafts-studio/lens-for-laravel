@@ -46,21 +46,21 @@ class InteractionScriptParser
                 ];
 
                 if (count($states) + 1 > self::MAX_STATES) {
-                    throw new InvalidArgumentException('Interactive scan supports up to '.self::MAX_STATES.' states.');
+                    throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.max_states', ['max' => self::MAX_STATES]));
                 }
 
                 continue;
             }
 
             if ($current === null) {
-                throw new InvalidArgumentException("Line {$lineNumber}: add a state before defining actions.");
+                throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.state_before_actions', ['line' => $lineNumber]));
             }
 
             $current['actions'][] = $this->parseAction($line, $lineNumber);
             $actionCount++;
 
             if ($actionCount > self::MAX_ACTIONS) {
-                throw new InvalidArgumentException('Interactive scan supports up to '.self::MAX_ACTIONS.' actions.');
+                throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.max_actions', ['max' => self::MAX_ACTIONS]));
             }
         }
 
@@ -69,7 +69,7 @@ class InteractionScriptParser
         }
 
         if (empty($states)) {
-            throw new InvalidArgumentException('Add at least one state to scan.');
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.at_least_one_state'));
         }
 
         return $states;
@@ -87,11 +87,11 @@ class InteractionScriptParser
         $label = $this->unquote(trim((string) $label));
 
         if ($label === '') {
-            throw new InvalidArgumentException("Line {$lineNumber}: state label cannot be empty.");
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.empty_label', ['line' => $lineNumber]));
         }
 
         if (mb_strlen($label) > self::MAX_LABEL_LENGTH) {
-            throw new InvalidArgumentException("Line {$lineNumber}: state label is too long.");
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.label_too_long', ['line' => $lineNumber]));
         }
 
         return $label;
@@ -112,7 +112,7 @@ class InteractionScriptParser
             'type' => $this->parseSelectorValueAction('type', $arguments, $lineNumber),
             'select' => $this->parseSelectorValueAction('select', $arguments, $lineNumber),
             'wait' => ['type' => 'wait', 'ms' => $this->parseWait($arguments, $lineNumber)],
-            default => throw new InvalidArgumentException("Line {$lineNumber}: unsupported action '{$command}'."),
+            default => throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.unsupported_action', ['line' => $lineNumber, 'action' => $command])),
         };
     }
 
@@ -122,7 +122,7 @@ class InteractionScriptParser
     protected function splitCommand(string $line, int $lineNumber): array
     {
         if (! preg_match('/^([a-z]+)(?::|\s)\s*(.*)$/i', $line, $matches)) {
-            throw new InvalidArgumentException("Line {$lineNumber}: action must use 'action: value' format.");
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.action_format', ['line' => $lineNumber]));
         }
 
         return [$matches[1], trim($matches[2])];
@@ -162,7 +162,7 @@ class InteractionScriptParser
             ];
         }
 
-        throw new InvalidArgumentException("Line {$lineNumber}: use 'selector => value' for type/select actions.");
+        throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.selector_value_format', ['line' => $lineNumber]));
     }
 
     protected function requireSelector(string $selector, int $lineNumber): string
@@ -170,11 +170,11 @@ class InteractionScriptParser
         $selector = $this->unquote(trim($selector));
 
         if ($selector === '') {
-            throw new InvalidArgumentException("Line {$lineNumber}: selector cannot be empty.");
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.selector_empty', ['line' => $lineNumber]));
         }
 
         if (mb_strlen($selector) > self::MAX_SELECTOR_LENGTH) {
-            throw new InvalidArgumentException("Line {$lineNumber}: selector is too long.");
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.selector_too_long', ['line' => $lineNumber]));
         }
 
         return $selector;
@@ -185,11 +185,11 @@ class InteractionScriptParser
         $value = $this->unquote(trim($value));
 
         if ($value === '') {
-            throw new InvalidArgumentException("Line {$lineNumber}: value cannot be empty.");
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.value_empty', ['line' => $lineNumber]));
         }
 
         if (mb_strlen($value) > self::MAX_VALUE_LENGTH) {
-            throw new InvalidArgumentException("Line {$lineNumber}: value is too long.");
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.value_too_long', ['line' => $lineNumber]));
         }
 
         return $value;
@@ -200,12 +200,12 @@ class InteractionScriptParser
         $arguments = trim($arguments);
 
         if (! preg_match('/^\d+$/', $arguments)) {
-            throw new InvalidArgumentException("Line {$lineNumber}: wait value must be milliseconds.");
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.wait_milliseconds', ['line' => $lineNumber]));
         }
 
         $ms = (int) $arguments;
         if ($ms < 0 || $ms > self::MAX_WAIT_MS) {
-            throw new InvalidArgumentException("Line {$lineNumber}: wait must be between 0 and ".self::MAX_WAIT_MS.'ms.');
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.interaction_errors.wait_range', ['line' => $lineNumber, 'max' => self::MAX_WAIT_MS]));
         }
 
         return $ms;

@@ -382,6 +382,12 @@ LENS_FOR_LARAVEL_AI_PROVIDER=gemini
 
 Set `LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=true` only for trusted local environments with self-signed certificates. In v3.0 the setting consistently covers axe scans, sitemap and page requests made by the crawler, optional JavaScript-rendered crawling, and element preview screenshots. Its default remains `false`.
 
+### Interface languages
+
+Version 3 ships complete package-owned interface catalogs for English, Polish, Spanish, French, and German. The selected language covers the scanner, history and URL-aware comparisons, AI Fix and preview modals, interactive-state recorder, PDF reports, chart labels, and package-generated browser, route, interaction-script, baseline, and CLI error messages. The dashboard language switcher stores its choice in the session; exported PDF reports use that same language. Console errors use the Laravel application locale active for the command.
+
+`locale` defines the initial language, `fallback_locale` is used when a translation is unavailable, and `supported_locales` controls the choices displayed in the dashboard. Accessibility-rule descriptions returned by axe-core and framework validation messages can still follow the language supplied by those upstream libraries rather than Lens's catalog.
+
 Supported editors:
 
 - `vscode`
@@ -599,6 +605,7 @@ Version 3 is the current development line. Completed v3 changes include:
 - AI Fix isolated as an optional feature requiring PHP 8.3+, Laravel 12+, and `laravel/ai`
 - stabilized AI Fix with semantic source fragments, minimal replacements, bounded Gemini thinking, one controlled structured-output retry, safe errors, and provider/model/token diagnostics
 - immediate pending-verification status on issues changed by AI Fix, without claiming success before a new axe-core scan
+- complete English, Polish, Spanish, French, and German catalogs for package-owned dashboard, history, comparison, modal, PDF, and error text
 
 After upgrading to v3:
 

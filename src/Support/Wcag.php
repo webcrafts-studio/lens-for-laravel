@@ -42,9 +42,9 @@ final class Wcag
     public static function assertVersion(string $version): void
     {
         if (! in_array($version, self::VERSIONS, true)) {
-            throw new InvalidArgumentException(
-                'Unsupported WCAG version. Choose one of: '.implode(', ', self::VERSIONS).'.'
-            );
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.errors.invalid_wcag_version', [
+                'versions' => implode(', ', self::VERSIONS),
+            ]));
         }
     }
 

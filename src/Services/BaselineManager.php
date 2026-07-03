@@ -40,7 +40,7 @@ class BaselineManager
         $directory = dirname($path);
 
         if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
-            throw new RuntimeException("Unable to create baseline directory: {$directory}");
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.baseline_directory', ['path' => $directory]));
         }
 
         $payload = [
@@ -57,7 +57,7 @@ class BaselineManager
         $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         if ($json === false || file_put_contents($path, $json.PHP_EOL, LOCK_EX) === false) {
-            throw new RuntimeException("Unable to write baseline file: {$path}");
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.baseline_write', ['path' => $path]));
         }
     }
 
@@ -105,7 +105,7 @@ class BaselineManager
         $json = json_encode($this->fingerprintParts($issue), JSON_UNESCAPED_SLASHES);
 
         if ($json === false) {
-            throw new RuntimeException('Unable to fingerprint baseline issue.');
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.baseline_fingerprint'));
         }
 
         return sha1($json);
@@ -114,14 +114,14 @@ class BaselineManager
     protected function read(string $path): array
     {
         if (! is_file($path)) {
-            throw new RuntimeException("Baseline file not found: {$path}");
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.baseline_missing', ['path' => $path]));
         }
 
         $contents = file_get_contents($path);
         $data = $contents === false ? null : json_decode($contents, true);
 
         if (! is_array($data)) {
-            throw new RuntimeException("Baseline file is not valid JSON: {$path}");
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.baseline_invalid', ['path' => $path]));
         }
 
         return $data;

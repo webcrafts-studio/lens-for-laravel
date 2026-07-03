@@ -32,7 +32,7 @@ class AiFixAvailability
     public function ensureAvailable(): void
     {
         if (! $this->available()) {
-            throw new RuntimeException($this->message() ?? 'AI Fix is unavailable.');
+            throw new RuntimeException($this->message() ?? __('lens-for-laravel::messages.errors.ai_unavailable'));
         }
     }
 

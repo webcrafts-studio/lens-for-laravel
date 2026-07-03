@@ -27,26 +27,26 @@ use Spatie\Browsershot\Browsershot;
 $domainRule = function (string $attribute, string $value, Closure $fail): void {
     $scheme = parse_url($value, PHP_URL_SCHEME);
     if (! in_array($scheme, ['http', 'https'], true)) {
-        $fail('Only HTTP and HTTPS URLs are allowed.');
+        $fail(__('lens-for-laravel::messages.errors.only_http_https'));
 
         return;
     }
 
     $appHost = parse_url(config('app.url', ''), PHP_URL_HOST);
     if (! $appHost) {
-        $fail('APP_URL is not configured correctly. Cannot validate the target domain.');
+        $fail(__('lens-for-laravel::messages.errors.app_url_invalid'));
 
         return;
     }
 
     if (parse_url($value, PHP_URL_HOST) !== $appHost) {
-        $fail("Scanning external domains is not allowed. URL must be on the {$appHost} domain.");
+        $fail(__('lens-for-laravel::messages.errors.external_domain', ['host' => $appHost]));
     }
 };
 
 $resolveEditableSourceFile = function (string $fileName): array {
     if (str_contains($fileName, '..') || str_starts_with($fileName, DIRECTORY_SEPARATOR)) {
-        return ['error' => response()->json(['status' => 'error', 'message' => 'Invalid file path.'], 422)];
+        return ['error' => response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.invalid_file_path')], 422)];
     }
 
     if (str_ends_with($fileName, '.blade.php')) {
@@ -54,7 +54,7 @@ $resolveEditableSourceFile = function (string $fileName): array {
         $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$fileName);
 
         if (! $fullPath || ! str_starts_with($fullPath, $basePath.DIRECTORY_SEPARATOR)) {
-            return ['error' => response()->json(['status' => 'error', 'message' => 'File access denied.'], 403)];
+            return ['error' => response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.access_denied')], 403)];
         }
 
         return ['path' => $fullPath, 'type' => 'blade'];
@@ -67,18 +67,18 @@ $resolveEditableSourceFile = function (string $fileName): array {
         $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$relativePath);
 
         if (! $fullPath || ! str_starts_with($fullPath, $basePath.DIRECTORY_SEPARATOR)) {
-            return ['error' => response()->json(['status' => 'error', 'message' => 'File access denied.'], 403)];
+            return ['error' => response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.access_denied')], 403)];
         }
 
         return ['path' => $fullPath, 'type' => $extension === 'vue' ? 'vue' : 'react'];
     }
 
-    return ['error' => response()->json(['status' => 'error', 'message' => 'Only .blade.php files and React/Vue files under resources/js can be modified.'], 422)];
+    return ['error' => response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.unsupported_source')], 422)];
 };
 
 Route::get('/dashboard', function () {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
+        abort(403, __('lens-for-laravel::messages.errors.environment_not_allowed'));
     }
 
     return view('lens-for-laravel::dashboard', [
@@ -88,7 +88,7 @@ Route::get('/dashboard', function () {
 
 Route::get('/states/recorder', function (Request $request) use ($domainRule) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
+        abort(403, __('lens-for-laravel::messages.errors.environment_not_allowed'));
     }
 
     $target = $request->query('target', url('/'));
@@ -104,7 +104,7 @@ Route::get('/states/recorder', function (Request $request) use ($domainRule) {
 
 Route::post('/crawl', function (Request $request) use ($domainRule) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
+        abort(403, __('lens-for-laravel::messages.errors.environment_not_allowed'));
     }
 
     $request->validate([
@@ -122,14 +122,14 @@ Route::post('/crawl', function (Request $request) use ($domainRule) {
     } catch (Throwable $e) {
         return response()->json([
             'status' => 'error',
-            'message' => $e->getMessage(),
+            'message' => __('lens-for-laravel::messages.errors.crawl_failed'),
         ], 500);
     }
 })->name('lens-for-laravel.crawl')->middleware('throttle:5,1');
 
 Route::post('/scan', function (Request $request) use ($domainRule) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
+        abort(403, __('lens-for-laravel::messages.errors.environment_not_allowed'));
     }
 
     $request->validate([
@@ -162,14 +162,14 @@ Route::post('/scan', function (Request $request) use ($domainRule) {
     } catch (Throwable $e) {
         return response()->json([
             'status' => 'error',
-            'message' => $e->getMessage(),
+            'message' => __('lens-for-laravel::messages.errors.scan_failed'),
         ], 500);
     }
 })->name('lens-for-laravel.scan')->middleware('throttle:10,1');
 
 Route::post('/scan/states', function (Request $request) use ($domainRule) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
+        abort(403, __('lens-for-laravel::messages.errors.environment_not_allowed'));
     }
 
     $validated = $request->validate([
@@ -213,14 +213,14 @@ Route::post('/scan/states', function (Request $request) use ($domainRule) {
     } catch (Throwable $e) {
         return response()->json([
             'status' => 'error',
-            'message' => $e->getMessage(),
+            'message' => __('lens-for-laravel::messages.errors.state_scan_failed'),
         ], 500);
     }
 })->name('lens-for-laravel.scan.states')->middleware('throttle:10,1');
 
 Route::post('/preview', function (Request $request) use ($domainRule) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
+        abort(403, __('lens-for-laravel::messages.errors.environment_not_allowed'));
     }
 
     $request->validate([
@@ -266,14 +266,14 @@ Route::post('/preview', function (Request $request) use ($domainRule) {
 
         return response($screenshot, 200, ['Content-Type' => 'image/png']);
     } catch (Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.screenshot_failed')], 500);
     }
 })->name('lens-for-laravel.preview')->middleware('throttle:20,1');
 
 Route::post('/fix/suggest', function (Request $request) {
     try {
         if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-            return response()->json(['status' => 'error', 'message' => 'Lens For Laravel is not allowed in this environment.'], 403);
+            return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.environment_not_allowed')], 403);
         }
 
         $availability = app(AiFixAvailability::class);
@@ -322,7 +322,7 @@ Route::post('/fix/suggest', function (Request $request) {
 Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourceFile) {
     try {
         if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-            return response()->json(['status' => 'error', 'message' => 'Lens For Laravel is not allowed in this environment.'], 403);
+            return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.environment_not_allowed')], 403);
         }
 
         $availability = app(AiFixAvailability::class);
@@ -350,7 +350,7 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
         if (! str_contains($content, $originalCode)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Original code not found in file. The file may have been modified since the fix was generated.',
+                'message' => __('lens-for-laravel::messages.errors.original_not_found'),
             ], 422);
         }
 
@@ -365,7 +365,7 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
 
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'The AI-generated fix was blocked because it contains potentially dangerous code. Please apply the fix manually after reviewing.',
+                    'message' => __('lens-for-laravel::messages.errors.dangerous_code'),
                 ], 422);
             }
         }
@@ -378,7 +378,7 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
 
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'The AI-generated fix was blocked because it introduces unexpected PHP code. Please apply the fix manually after reviewing.',
+                    'message' => __('lens-for-laravel::messages.errors.unexpected_php'),
                 ], 422);
             }
         }
@@ -415,14 +415,14 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
 
         return response()->json([
             'status' => 'error',
-            'message' => 'Failed to apply fix: '.$e->getMessage(),
+            'message' => __('lens-for-laravel::messages.errors.apply_failed'),
         ], 500);
     }
 })->name('lens-for-laravel.fix.apply')->middleware('throttle:20,1');
 
 Route::post('/report/pdf', function (Request $request) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        abort(403, 'Lens For Laravel is not allowed in this environment.');
+        abort(403, __('lens-for-laravel::messages.errors.environment_not_allowed'));
     }
 
     $request->validate([
@@ -462,7 +462,7 @@ Route::post('/report/pdf', function (Request $request) {
     } catch (Throwable $e) {
         return response()->json([
             'status' => 'error',
-            'message' => $e->getMessage(),
+            'message' => __('lens-for-laravel::messages.errors.pdf_failed'),
         ], 500);
     }
 })->name('lens-for-laravel.report.pdf');
@@ -471,7 +471,7 @@ Route::post('/report/pdf', function (Request $request) {
 
 Route::get('/history/trends', function () {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        return response()->json(['status' => 'error', 'message' => 'Not allowed in this environment.'], 403);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.environment_not_allowed')], 403);
     }
 
     try {
@@ -484,13 +484,13 @@ Route::get('/history/trends', function () {
 
         return response()->json(['status' => 'success', 'trends' => $trends]);
     } catch (Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.history_failed')], 500);
     }
 })->name('lens-for-laravel.history.trends');
 
 Route::get('/history/{id}/compare/{compareId}', function (int $id, int $compareId) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        return response()->json(['status' => 'error', 'message' => 'Not allowed in this environment.'], 403);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.environment_not_allowed')], 403);
     }
 
     try {
@@ -498,7 +498,7 @@ Route::get('/history/{id}/compare/{compareId}', function (int $id, int $compareI
         $compare = Scan::with('issues')->find($compareId);
 
         if (! $base || ! $compare) {
-            return response()->json(['status' => 'error', 'message' => 'Scan not found.'], 404);
+            return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.scan_not_found')], 404);
         }
 
         $comparison = app(ScanComparator::class)->compare($base, $compare);
@@ -512,13 +512,13 @@ Route::get('/history/{id}/compare/{compareId}', function (int $id, int $compareI
             'remaining' => $comparison['remaining'],
         ]);
     } catch (Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.history_failed')], 500);
     }
 })->name('lens-for-laravel.history.compare');
 
 Route::post('/history', function (Request $request) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        return response()->json(['status' => 'error', 'message' => 'Not allowed in this environment.'], 403);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.environment_not_allowed')], 403);
     }
 
     try {
@@ -585,13 +585,13 @@ Route::post('/history', function (Request $request) {
     } catch (ValidationException $e) {
         return response()->json(['message' => $e->getMessage(), 'errors' => $e->errors()], 422);
     } catch (Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.history_failed')], 500);
     }
 })->name('lens-for-laravel.history.store')->middleware('throttle:10,1');
 
 Route::get('/history', function (Request $request) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        return response()->json(['status' => 'error', 'message' => 'Not allowed in this environment.'], 403);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.environment_not_allowed')], 403);
     }
 
     try {
@@ -601,44 +601,44 @@ Route::get('/history', function (Request $request) {
 
         return response()->json(['status' => 'success', 'scans' => $scans]);
     } catch (Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.history_failed')], 500);
     }
 })->name('lens-for-laravel.history.index');
 
 Route::get('/history/{id}', function (int $id) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        return response()->json(['status' => 'error', 'message' => 'Not allowed in this environment.'], 403);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.environment_not_allowed')], 403);
     }
 
     try {
         $scan = Scan::with('issues')->find($id);
 
         if (! $scan) {
-            return response()->json(['status' => 'error', 'message' => 'Scan not found.'], 404);
+            return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.scan_not_found')], 404);
         }
 
         return response()->json(['status' => 'success', 'scan' => $scan]);
     } catch (Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.history_failed')], 500);
     }
 })->name('lens-for-laravel.history.show');
 
 Route::delete('/history/{id}', function (int $id) {
     if (! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']))) {
-        return response()->json(['status' => 'error', 'message' => 'Not allowed in this environment.'], 403);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.environment_not_allowed')], 403);
     }
 
     try {
         $scan = Scan::find($id);
 
         if (! $scan) {
-            return response()->json(['status' => 'error', 'message' => 'Scan not found.'], 404);
+            return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.scan_not_found')], 404);
         }
 
         $scan->delete();
 
         return response()->json(['status' => 'success']);
     } catch (Throwable $e) {
-        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.history_failed')], 500);
     }
 })->name('lens-for-laravel.history.destroy')->middleware('throttle:10,1');

@@ -58,7 +58,7 @@ JS;
 
             return $this->mapViolationsToIssues(is_array($violations) ? $violations : [], $url);
         } catch (Throwable $e) {
-            throw new ScannerException('Failed to run Axe-core scan: '.$e->getMessage(), 0, $e);
+            throw new ScannerException(__('lens-for-laravel::messages.errors.axe_scan_failed', ['message' => $e->getMessage()]), 0, $e);
         }
     }
 
@@ -97,7 +97,7 @@ JS;
 
             return $issues;
         } catch (Throwable $e) {
-            throw new ScannerException('Failed to run interactive Axe-core scan: '.$e->getMessage(), 0, $e);
+            throw new ScannerException(__('lens-for-laravel::messages.errors.axe_state_scan_failed', ['message' => $e->getMessage()]), 0, $e);
         }
     }
 
@@ -126,6 +126,15 @@ JS;
 
     protected function interactiveScanScript(string $statesJson, string $tagsJson): string
     {
+        $selectorNotFound = json_encode(
+            __('lens-for-laravel::messages.errors.selector_not_found', ['selector' => '']),
+            JSON_THROW_ON_ERROR
+        );
+        $unsupportedAction = json_encode(
+            __('lens-for-laravel::messages.errors.unsupported_interaction', ['action' => '']),
+            JSON_THROW_ON_ERROR
+        );
+
         return <<<JS
             (async () => {
                 const states = {$statesJson};
@@ -184,7 +193,7 @@ JS;
 
                     const el = document.querySelector(action.selector);
                     if (!el) {
-                        throw new Error(`Selector not found: \${action.selector}`);
+                        throw new Error({$selectorNotFound} + action.selector);
                     }
 
                     el.scrollIntoView({ block: 'center', inline: 'nearest' });
@@ -220,7 +229,7 @@ JS;
                         return;
                     }
 
-                    throw new Error(`Unsupported action: \${action.type}`);
+                    throw new Error({$unsupportedAction} + action.type);
                 }
 
                 const results = [];

@@ -164,6 +164,15 @@ test('show returns 404 for missing scan', function () {
         ->assertStatus(404);
 });
 
+test('history errors use the selected locale', function () {
+    $this->getJson(route('lens-for-laravel.history.show', [
+        'id' => 999,
+        'lens_locale' => 'pl',
+    ]))
+        ->assertNotFound()
+        ->assertJsonPath('message', 'Nie znaleziono skanu.');
+});
+
 // ─── DELETE /history/{id} ───────────────────────────────────────────
 
 test('destroy deletes scan and cascades issues', function () {

@@ -80,7 +80,7 @@
 
         <main class="relative min-h-0">
             <iframe x-ref="preview" :src="previewUrl" @load="attachFrameListeners()"
-                class="h-full w-full bg-white" title="State recorder preview"></iframe>
+                class="h-full w-full bg-white" title="{{ __('lens-for-laravel::messages.preview.frame_title') }}"></iframe>
         </main>
     </div>
 

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Lens For Laravel - Technical Auditor</title>
+    <title>{{ __('lens-for-laravel::messages.scanner.page_title') }}</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -208,7 +208,7 @@
 
                             <div
                                 class="flex flex-col sm:flex-row gap-0 border border-black dark:border-neutral-700 p-1 bg-neutral-50 dark:bg-neutral-900 min-w-0">
-                                <label for="target-url" class="sr-only">Target URL to scan</label>
+                                <label for="target-url" class="sr-only">{{ __('lens-for-laravel::messages.scanner.target_url_label') }}</label>
                                 <div class="relative flex-grow min-w-0">
                                     <div class="pointer-events-none absolute inset-y-0 left-0 flex"
                                         :class="scanMode === 'multiple' ? 'items-start pt-3 pl-3' : 'items-center pl-3'">
@@ -262,7 +262,7 @@
                                     <textarea id="interaction-script" x-model="statesScript" :required="scanMode === 'states'"
                                         rows="8"
                                         class="block w-full min-w-0 rounded-none border-0 py-3 px-4 text-black dark:text-white dark:bg-black ring-1 ring-inset ring-black dark:ring-neutral-700 placeholder:text-neutral-500 dark:placeholder:text-neutral-500 focus:ring-2 focus:ring-inset focus:ring-[#E11D48] sm:text-sm font-mono bg-white outline-none resize-y min-h-52"
-                                        placeholder="state: Navigation open&#10;click: [data-menu-button]&#10;&#10;state: Form validation&#10;click: button[type=submit]&#10;wait: 300"></textarea>
+                                        placeholder="{{ __('lens-for-laravel::messages.states.script_placeholder') }}"></textarea>
                                 </div>
                             </div>
                         </form>
@@ -306,7 +306,7 @@
 
                     <div
                         class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black dark:border-neutral-700 pb-5 pt-1">
-                        <h3 class="text-xl font-mono font-bold uppercase tracking-widest">Diagnostic Report</h3>
+                        <h3 class="text-xl font-mono font-bold uppercase tracking-widest">{{ __('lens-for-laravel::messages.scanner.diagnostic_report') }}</h3>
                         <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
                             <div class="text-sm font-mono">
                                 <span class="text-neutral-600 dark:text-neutral-300 uppercase">{{ __('lens-for-laravel::messages.scanner.total_violations') }}:</span>
@@ -331,7 +331,7 @@
                                     'border-[#E11D48] opacity-90 group-hover:opacity-100'">
                                 <dt
                                     class="truncate text-xs font-mono font-bold uppercase tracking-widest border-b border-white/30 pb-2 mb-2 relative z-10">
-                                    A Level
+                                    {{ __('lens-for-laravel::messages.common.level_a') }}
                                 </dt>
                                 <dd class="mt-2 text-4xl font-mono font-bold tracking-tight relative z-10"
                                     x-text="levelAIssues"></dd>
@@ -347,7 +347,7 @@
                                     'border-neutral-300 dark:border-neutral-700 border-solid group-hover:border-neutral-500 dark:group-hover:border-neutral-400 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900'">
                                 <dt
                                     class="truncate text-xs font-mono font-bold uppercase tracking-widest border-b border-black/10 dark:border-white/10 pb-2 mb-2 relative z-10">
-                                    AA Level
+                                    {{ __('lens-for-laravel::messages.common.level_aa') }}
                                 </dt>
                                 <dd class="mt-2 text-4xl font-mono font-bold tracking-tight relative z-10"
                                     x-text="levelAAIssues"></dd>
@@ -363,7 +363,7 @@
                                     'border-neutral-300 dark:border-neutral-700 border-dashed group-hover:border-neutral-500 dark:group-hover:border-neutral-400 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900'">
                                 <dt
                                     class="truncate text-xs font-mono font-bold uppercase tracking-widest border-b border-black/10 dark:border-white/10 pb-2 mb-2 relative z-10">
-                                    AAA Level
+                                    {{ __('lens-for-laravel::messages.common.level_aaa') }}
                                 </dt>
                                 <dd class="mt-2 text-4xl font-mono font-bold tracking-tight relative z-10"
                                     x-text="levelAAAIssues"></dd>
@@ -379,7 +379,7 @@
                                     'border-neutral-300 dark:border-neutral-700 border-dotted group-hover:border-neutral-500 dark:group-hover:border-neutral-400 group-hover:bg-neutral-50 dark:group-hover:bg-neutral-900'">
                                 <dt
                                     class="truncate text-xs font-mono font-bold uppercase tracking-widest border-b border-black/10 dark:border-white/10 pb-2 mb-2 relative z-10">
-                                    Other
+                                    {{ __('lens-for-laravel::messages.common.other') }}
                                 </dt>
                                 <dd class="mt-2 text-4xl font-mono font-bold tracking-tight relative z-10"
                                     x-text="otherIssuesCount"></dd>
@@ -390,7 +390,7 @@
                 <!-- Level Description Area -->
                 <div x-show="activeFilter" x-cloak x-transition
                     class="bg-neutral-100 dark:bg-neutral-900 border-l-4 border-black dark:border-white p-4 font-mono text-sm relative">
-                    <span class="text-[#FF2D20] font-bold">INFO:</span> <span x-text="levelDescription"></span>
+                    <span class="text-[#FF2D20] font-bold uppercase">{{ __('lens-for-laravel::messages.scanner.info') }}:</span> <span x-text="levelDescription"></span>
                 </div>
 
                 <!-- Issue List -->
@@ -402,15 +402,15 @@
                         <div
                             class="border-b border-black dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 px-6 py-4 flex items-center justify-between relative z-10">
                             <h3 class="text-sm font-mono font-bold uppercase tracking-widest"
-                                x-text="activeFilter ? `Filtered Logs: ${activeFilter}` : 'Diagnostic Logs'"></h3>
+                                x-text="issueListTitle"></h3>
                             <div class="flex items-center gap-4">
                                 <template x-if="activeFilter">
                                     <button @click="activeFilter = null"
                                         class="text-xs font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-400 hover:text-[#E11D48] dark:hover:text-[#E11D48] transition-colors">[
-                                        CLEAR_FILTER ]</button>
+                                        {{ __('lens-for-laravel::messages.scanner.clear_filter') }} ]</button>
                                 </template>
                                 <template x-if="hasResults">
-                                    <span class="text-xs font-mono dark:text-white">SHOWING: <span
+                                    <span class="text-xs font-mono uppercase dark:text-white">{{ __('lens-for-laravel::messages.scanner.showing') }}: <span
                                             class="text-[#E11D48] font-bold"
                                             x-text="filteredIssues.length"></span></span>
                                 </template>
@@ -420,18 +420,18 @@
                         <!-- Initial State -->
                         <template x-if="!hasResults && !isLoading">
                             <div class="text-center py-16 px-6 font-mono relative z-10">
-                                <div class="text-2xl mb-2 font-bold dark:text-white">[ READY ]</div>
+                                <div class="text-2xl mb-2 font-bold uppercase dark:text-white">[ {{ __('lens-for-laravel::messages.scanner.ready') }} ]</div>
                                 <p class="text-sm text-neutral-600 dark:text-neutral-300 uppercase tracking-widest">
-                                    System idle. Execute target scan to begin analysis.</p>
+                                    {{ __('lens-for-laravel::messages.scanner.idle') }}</p>
                             </div>
                         </template>
 
                         <!-- Results Empty -->
                         <template x-if="hasResults && filteredIssues.length === 0">
                             <div class="text-center py-16 px-6 font-mono relative z-10">
-                                <div class="text-2xl mb-2 font-bold dark:text-white">[ OK ]</div>
-                                <p class="text-sm text-neutral-600 dark:text-neutral-300 uppercase tracking-widest">No
-                                    violations found for this criteria.</p>
+                                <div class="text-2xl mb-2 font-bold uppercase dark:text-white">[ {{ __('lens-for-laravel::messages.scanner.ok') }} ]</div>
+                                <p class="text-sm text-neutral-600 dark:text-neutral-300 uppercase tracking-widest">
+                                    {{ __('lens-for-laravel::messages.scanner.no_violations') }}</p>
                             </div>
                         </template>
 
@@ -473,7 +473,7 @@
                                                 <!-- Preview Button -->
                                                 <button @click="loadPreview(issue)"
                                                     class="inline-flex items-center justify-center px-2.5 py-1.5 border border-black/30 dark:border-white/30 text-xs font-mono font-bold uppercase tracking-widest hover:border-black dark:hover:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
-                                                    title="Preview element on page"><svg
+                                                    title="{{ __('lens-for-laravel::messages.scanner.preview_element') }}"><svg
                                                         xmlns="http://www.w3.org/2000/svg" width="14"
                                                         height="14" viewBox="0 0 24 24" fill="none"
                                                         stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -487,7 +487,7 @@
                                                         x-if="issue.fileName && issue.aiFixStatus !== 'pending_verification'">
                                                         <button @click="requestAiFix(issue)"
                                                             class="inline-flex items-center justify-center px-2.5 py-1.5 border border-black/30 dark:border-white/30 text-xs font-mono font-bold uppercase tracking-widest hover:border-black dark:hover:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
-                                                            title="Fix with AI">AI FIX</button>
+                                                            title="{{ __('lens-for-laravel::messages.scanner.fix_with_ai') }}">{{ __('lens-for-laravel::messages.ai_fix.button') }}</button>
                                                     </template>
                                                 @endif
 
@@ -497,14 +497,14 @@
                                         </div>
                                         <a :href="issue.helpUrl" target="_blank"
                                             class="flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-mono font-bold border border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors uppercase px-2.5 py-1.5 text-black dark:text-white">
-                                            VIEW_DOCS ->
+                                            {{ __('lens-for-laravel::messages.scanner.view_docs') }} ->
                                         </a>
                                     </div>
 
                                     <div class="mt-6">
                                         <p
                                             class="text-xs font-mono font-bold text-neutral-600 dark:text-neutral-300 mb-2 uppercase tracking-widest">
-                                            <span class="text-black dark:text-white">>>></span> FAILING_NODE
+                                            <span class="text-black dark:text-white">>>></span> {{ __('lens-for-laravel::messages.scanner.failing_node') }}
                                         </p>
                                         <div
                                             class="bg-neutral-100 dark:bg-neutral-900 border-l-4 border-black dark:border-neutral-500 p-4 overflow-x-auto">
@@ -517,17 +517,17 @@
                                         <div>
                                             <p
                                                 class="text-xs font-mono font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-widest mb-2">
-                                                <span class="text-black dark:text-white">>>></span> SRC_LOC
+                                                <span class="text-black dark:text-white">>>></span> {{ __('lens-for-laravel::messages.scanner.source_location') }}
                                                 <span x-show="editorEnabled"
                                                     class="normal-case tracking-normal font-normal text-neutral-400 dark:text-neutral-500 ml-1"
-                                                    x-cloak>— click to open</span>
+                                                    x-cloak>— {{ __('lens-for-laravel::messages.scanner.click_to_open') }}</span>
                                             </p>
                                             <template x-if="issue.fileName">
                                                 <div class="flex items-center gap-2 text-sm font-mono bg-white dark:bg-black border border-black dark:border-neutral-700 px-3 py-2 w-max text-black dark:text-white transition-colors"
                                                     :class="editorEnabled ?
                                                         'cursor-pointer hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black group' :
                                                         ''"
-                                                    :title="editorEnabled ? ('Open in ' + editorLabel) : ''"
+                                                    :title="editorEnabled ? LENS_I18N.openInEditor.replace(':editor', editorLabel) : ''"
                                                     @click="openInEditor(issue.fileName, issue.lineNumber)">
                                                     <span x-show="issue.sourceType"
                                                         class="text-[10px] uppercase tracking-widest border border-black/20 dark:border-white/20 px-1"
@@ -541,7 +541,7 @@
                                             <template x-if="!issue.fileName">
                                                 <div
                                                     class="flex items-center gap-2 text-sm font-mono text-[#D01D10] dark:text-[#FF4D40] border border-[#FF2D20] border-dashed px-3 py-2 w-max uppercase bg-[#FF2D20]/10">
-                                                    [ PENDING_LOCATOR ]
+                                                    [ {{ __('lens-for-laravel::messages.scanner.pending_locator') }} ]
                                                 </div>
                                             </template>
                                         </div>
@@ -549,14 +549,14 @@
                                             <p
                                                 class="text-xs font-mono font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-widest mb-2 block sm:inline-block">
                                                 <span class="text-black dark:text-white sm:hidden">>>></span>
-                                                CSS_SELECTOR
+                                                {{ __('lens-for-laravel::messages.scanner.css_selector') }}
                                                 <span
                                                     class="normal-case tracking-normal font-normal text-neutral-400 dark:text-neutral-500 ml-1">—
-                                                    click to copy</span>
+                                                    {{ __('lens-for-laravel::messages.scanner.click_to_copy') }}</span>
                                             </p>
                                             <div class="group cursor-pointer flex items-center gap-2 text-sm font-mono bg-white dark:bg-black border border-black dark:border-neutral-700 px-3 py-2 overflow-x-auto break-all sm:ml-auto w-fit max-w-full text-black dark:text-white transition-colors hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
                                                 @click="navigator.clipboard.writeText(issue.selector).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
-                                                title="Copy selector">
+                                                title="{{ __('lens-for-laravel::messages.scanner.copy_selector') }}">
                                                 <span x-text="issue.selector"></span>
                                                 <span
                                                     class="shrink-0 text-base leading-none opacity-60 group-hover:opacity-100 transition-opacity"
@@ -578,19 +578,19 @@
 
                     <!-- Trend Chart -->
                     <div class="bg-white dark:bg-black border border-black dark:border-neutral-700 p-6 sm:p-8">
-                        <h3 class="text-sm font-mono font-bold uppercase tracking-widest mb-6 border-b border-black dark:border-neutral-700 pb-3">Issue Trend (Last 30 Scans)</h3>
+                        <h3 class="text-sm font-mono font-bold uppercase tracking-widest mb-6 border-b border-black dark:border-neutral-700 pb-3">{{ __('lens-for-laravel::messages.history.trend_title') }}</h3>
                         <div class="relative" style="height: 260px;">
                             <canvas id="trendChart"></canvas>
                         </div>
-                        <p x-show="trendData.length === 0" class="text-center font-mono text-sm text-neutral-500 py-8 uppercase tracking-widest">No scan history yet.</p>
+                        <p x-show="trendData.length === 0" class="text-center font-mono text-sm text-neutral-500 py-8 uppercase tracking-widest">{{ __('lens-for-laravel::messages.history.no_history_short') }}</p>
                     </div>
 
                     <!-- History Table -->
                     <div class="mt-8 bg-white dark:bg-black border border-black dark:border-neutral-700 overflow-hidden">
                         <div class="border-b border-black dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 px-6 py-4 flex items-center justify-between">
-                            <h3 class="text-sm font-mono font-bold uppercase tracking-widest">Scan History</h3>
+                            <h3 class="text-sm font-mono font-bold uppercase tracking-widest">{{ __('lens-for-laravel::messages.history.title') }}</h3>
                             <div class="flex items-center gap-3">
-                                <button @click="loadHistory()" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ REFRESH ]</button>
+                                <button @click="loadHistory()" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ {{ __('lens-for-laravel::messages.common.refresh') }} ]</button>
                             </div>
                         </div>
 
@@ -601,8 +601,8 @@
 
                         <!-- Empty State -->
                         <div x-show="!historyLoading && historyScans.length === 0" class="text-center py-16 px-6 font-mono">
-                            <div class="text-2xl mb-2 font-bold dark:text-white">[ NO_HISTORY ]</div>
-                            <p class="text-sm text-neutral-600 dark:text-neutral-300 uppercase tracking-widest">Run a scan to start building your history.</p>
+                            <div class="text-2xl mb-2 font-bold uppercase dark:text-white">[ {{ __('lens-for-laravel::messages.history.empty_code') }} ]</div>
+                            <p class="text-sm text-neutral-600 dark:text-neutral-300 uppercase tracking-widest">{{ __('lens-for-laravel::messages.history.empty') }}</p>
                         </div>
 
                         <!-- Scans List -->
@@ -611,13 +611,13 @@
                                 <li class="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div class="flex-1 min-w-0">
                                         <div class="flex flex-wrap items-center gap-3 mb-1">
-                                            <span class="text-xs font-mono text-neutral-500 uppercase tracking-widest" x-text="new Date(scan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })"></span>
+                                            <span class="text-xs font-mono text-neutral-500 uppercase tracking-widest" x-text="new Date(scan.created_at).toLocaleDateString(LENS_LOCALE, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })"></span>
                                             <span class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 bg-neutral-50 dark:bg-neutral-900 text-neutral-500 uppercase" x-text="scan.scan_mode"></span>
                                             <span class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 bg-neutral-50 dark:bg-neutral-900 text-neutral-500 uppercase" x-text="`WCAG ${scan.wcag_version || '2.0'}`"></span>
                                         </div>
                                         <p class="text-sm font-mono truncate text-black dark:text-white" x-text="scan.url"></p>
                                         <div class="flex gap-4 mt-1 text-xs font-mono text-neutral-500">
-                                            <span>Total: <span class="text-[#E11D48] font-bold" x-text="scan.total_issues"></span></span>
+                                            <span>{{ __('lens-for-laravel::messages.common.total') }}: <span class="text-[#E11D48] font-bold" x-text="scan.total_issues"></span></span>
                                             <span>A: <span x-text="scan.level_a_count"></span></span>
                                             <span>AA: <span x-text="scan.level_aa_count"></span></span>
                                             <span>AAA: <span x-text="scan.level_aaa_count"></span></span>
@@ -625,12 +625,12 @@
                                     </div>
                                     <div class="flex items-center gap-2 shrink-0">
                                         <button @click="viewHistoryScan(scan.id)"
-                                            class="px-3 py-1.5 border border-black dark:border-white text-xs font-mono font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">VIEW</button>
+                                            class="px-3 py-1.5 border border-black dark:border-white text-xs font-mono font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">{{ __('lens-for-laravel::messages.common.view') }}</button>
                                         <button @click="startCompare(scan)"
                                             class="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 text-xs font-mono uppercase tracking-widest hover:border-black dark:hover:border-white transition-colors"
-                                            :class="compareBaseScan?.id === scan.id ? 'bg-[#E11D48] text-white border-[#E11D48]' : ''">COMPARE</button>
+                                            :class="compareBaseScan?.id === scan.id ? 'bg-[#E11D48] text-white border-[#E11D48]' : ''">{{ __('lens-for-laravel::messages.common.compare') }}</button>
                                         <button @click="deleteHistoryScan(scan.id)"
-                                            class="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 text-xs font-mono uppercase tracking-widest text-neutral-500 hover:border-[#E11D48] hover:text-[#E11D48] transition-colors">DEL</button>
+                                            class="px-3 py-1.5 border border-neutral-300 dark:border-neutral-600 text-xs font-mono uppercase tracking-widest text-neutral-500 hover:border-[#E11D48] hover:text-[#E11D48] transition-colors">{{ __('lens-for-laravel::messages.common.delete') }}</button>
                                     </div>
                                 </li>
                             </template>
@@ -639,10 +639,10 @@
                         <!-- Pagination -->
                         <div x-show="historyPagination.lastPage > 1" class="border-t border-black dark:border-neutral-700 px-6 py-3 flex items-center justify-between">
                             <button @click="loadHistory(historyPagination.currentPage - 1)" :disabled="historyPagination.currentPage <= 1"
-                                class="text-xs font-mono uppercase tracking-widest disabled:opacity-30 hover:text-[#E11D48] transition-colors">[ PREV ]</button>
-                            <span class="text-xs font-mono text-neutral-500" x-text="`Page ${historyPagination.currentPage} of ${historyPagination.lastPage}`"></span>
+                                class="text-xs font-mono uppercase tracking-widest disabled:opacity-30 hover:text-[#E11D48] transition-colors">[ {{ __('lens-for-laravel::messages.common.previous') }} ]</button>
+                            <span class="text-xs font-mono text-neutral-500" x-text="historyPageLabel"></span>
                             <button @click="loadHistory(historyPagination.currentPage + 1)" :disabled="historyPagination.currentPage >= historyPagination.lastPage"
-                                class="text-xs font-mono uppercase tracking-widest disabled:opacity-30 hover:text-[#E11D48] transition-colors">[ NEXT ]</button>
+                                class="text-xs font-mono uppercase tracking-widest disabled:opacity-30 hover:text-[#E11D48] transition-colors">[ {{ __('lens-for-laravel::messages.common.next') }} ]</button>
                         </div>
                     </div>
 
@@ -650,11 +650,11 @@
                     <div x-show="selectedHistoryScan" x-cloak class="mt-8 bg-white dark:bg-black border-2 border-black dark:border-white">
                         <div class="border-b border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 px-6 py-4 flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-mono font-bold uppercase tracking-widest">[ SCAN_DETAIL ]</h3>
+                                <h3 class="text-sm font-mono font-bold uppercase tracking-widest">[ {{ __('lens-for-laravel::messages.history.scan_detail') }} ]</h3>
                                 <p class="text-xs font-mono text-neutral-500 mt-0.5" x-text="selectedHistoryScan?.url"></p>
                                 <p class="text-[10px] font-mono text-neutral-500 mt-0.5" x-text="`WCAG ${selectedHistoryScan?.wcag_version || '2.0'}`"></p>
                             </div>
-                            <button @click="selectedHistoryScan = null" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ CLOSE ]</button>
+                            <button @click="selectedHistoryScan = null" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ {{ __('lens-for-laravel::messages.common.close') }} ]</button>
                         </div>
                         <div class="divide-y divide-black dark:divide-neutral-700 max-h-[60vh] overflow-y-auto">
                             <template x-for="(issue, idx) in (selectedHistoryScan?.issues || [])" :key="idx">
@@ -683,25 +683,25 @@
                     <div x-show="compareData" x-cloak class="mt-8 bg-white dark:bg-black border-2 border-black dark:border-white">
                         <div class="border-b border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 px-6 py-4 flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-mono font-bold uppercase tracking-widest">[ COMPARE ]</h3>
+                                <h3 class="text-sm font-mono font-bold uppercase tracking-widest">[ {{ __('lens-for-laravel::messages.comparison.title') }} ]</h3>
                                 <p class="text-xs font-mono text-neutral-500 mt-0.5">
-                                    Base: #<span x-text="compareData?.base?.id"></span> vs Compare: #<span x-text="compareData?.compare?.id"></span>
+                                    <span x-text="comparisonTitle"></span>
                                 </p>
                             </div>
-                            <button @click="compareData = null; compareBaseScan = null" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ CLOSE ]</button>
+                            <button @click="compareData = null; compareBaseScan = null" class="text-xs font-mono uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] transition-colors">[ {{ __('lens-for-laravel::messages.common.close') }} ]</button>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-0 border-b border-black dark:border-neutral-700">
                             <div class="px-6 py-5 border-r border-black dark:border-neutral-700 text-center">
-                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-green-600 dark:text-green-400 mb-1">Fixed</dt>
+                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-green-600 dark:text-green-400 mb-1">{{ __('lens-for-laravel::messages.comparison.fixed') }}</dt>
                                 <dd class="text-3xl font-mono font-bold" x-text="compareData?.fixed?.length || 0"></dd>
                             </div>
                             <div class="px-6 py-5 border-r border-black dark:border-neutral-700 text-center">
-                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-[#E11D48] mb-1">New</dt>
+                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-[#E11D48] mb-1">{{ __('lens-for-laravel::messages.comparison.new') }}</dt>
                                 <dd class="text-3xl font-mono font-bold" x-text="compareData?.new?.length || 0"></dd>
                             </div>
                             <div class="px-6 py-5 text-center">
-                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">Remaining</dt>
+                                <dt class="text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-1">{{ __('lens-for-laravel::messages.comparison.remaining') }}</dt>
                                 <dd class="text-3xl font-mono font-bold" x-text="compareData?.remaining?.length || 0"></dd>
                             </div>
                         </div>
@@ -710,7 +710,7 @@
                             <!-- Fixed issues -->
                             <template x-for="(issue, idx) in (compareData?.fixed || [])" :key="'f'+idx">
                                 <div class="px-6 py-3 flex items-center gap-3 bg-green-50 dark:bg-green-900/10">
-                                    <span class="text-xs font-mono font-bold text-green-600 dark:text-green-400 shrink-0">FIXED</span>
+                                    <span class="text-xs font-mono font-bold uppercase text-green-600 dark:text-green-400 shrink-0">{{ __('lens-for-laravel::messages.comparison.fixed') }}</span>
                                     <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
                                     <span x-show="issue.state_label" x-cloak class="text-[10px] font-mono text-[#E11D48] uppercase tracking-widest" x-text="issue.state_label"></span>
                                     <span x-show="issue.url" x-cloak class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 text-neutral-500" x-text="comparisonIssueUrl(issue.url)"></span>
@@ -720,7 +720,7 @@
                             <!-- New issues -->
                             <template x-for="(issue, idx) in (compareData?.new || [])" :key="'n'+idx">
                                 <div class="px-6 py-3 flex items-center gap-3 bg-red-50 dark:bg-red-900/10">
-                                    <span class="text-xs font-mono font-bold text-[#E11D48] shrink-0">NEW</span>
+                                    <span class="text-xs font-mono font-bold uppercase text-[#E11D48] shrink-0">{{ __('lens-for-laravel::messages.comparison.new') }}</span>
                                     <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
                                     <span x-show="issue.state_label" x-cloak class="text-[10px] font-mono text-[#E11D48] uppercase tracking-widest" x-text="issue.state_label"></span>
                                     <span x-show="issue.url" x-cloak class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 text-neutral-500" x-text="comparisonIssueUrl(issue.url)"></span>
@@ -730,7 +730,7 @@
                             <!-- Remaining issues -->
                             <template x-for="(issue, idx) in (compareData?.remaining || [])" :key="'r'+idx">
                                 <div class="px-6 py-3 flex items-center gap-3">
-                                    <span class="text-xs font-mono font-bold text-neutral-400 shrink-0">SAME</span>
+                                    <span class="text-xs font-mono font-bold uppercase text-neutral-400 shrink-0">{{ __('lens-for-laravel::messages.comparison.same') }}</span>
                                     <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
                                     <span x-show="issue.state_label" x-cloak class="text-[10px] font-mono text-[#E11D48] uppercase tracking-widest" x-text="issue.state_label"></span>
                                     <span x-show="issue.url" x-cloak class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 text-neutral-500" x-text="comparisonIssueUrl(issue.url)"></span>
@@ -775,7 +775,7 @@
 ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚══════╝</pre>
             </div>
             <div class="flex flex-col items-center gap-2 text-center font-mono text-xs uppercase tracking-widest">
-                <span class="text-neutral-500">WCAG Accessibility Auditor &middot; Powered by axe-core &amp; AI</span>
+                <span class="text-neutral-500">{{ __('lens-for-laravel::messages.scanner.footer') }}</span>
                 <span class="text-neutral-400 dark:text-neutral-600">A / AA / AAA &nbsp;&bull;&nbsp; Laravel 10 / 11 /
                     12</span>
             </div>
@@ -792,11 +792,11 @@
             <div
                 class="border-b border-black dark:border-white px-6 py-4 flex items-center justify-between bg-neutral-100 dark:bg-neutral-900 shrink-0">
                 <div>
-                    <h3 class="text-lg font-mono font-bold uppercase tracking-widest">[ AI_FIX ]</h3>
+                    <h3 class="text-lg font-mono font-bold uppercase tracking-widest">[ {{ __('lens-for-laravel::messages.ai_fix.title') }} ]</h3>
                     <p class="text-xs font-mono text-neutral-500 uppercase tracking-widest mt-0.5"
                         x-text="fixIssue?.id ?? ''"></p>
                 </div>
-                <button @click="closeFixModal()"
+                <button @click="closeFixModal()" aria-label="{{ __('lens-for-laravel::messages.common.close') }}" title="{{ __('lens-for-laravel::messages.common.close') }}"
                     class="w-8 h-8 inline-flex items-center justify-center border border-transparent hover:border-black dark:hover:border-white hover:text-[#E11D48] font-mono font-bold text-xl leading-none transition-colors text-black dark:text-white">&times;</button>
             </div>
 
@@ -809,16 +809,14 @@
                         class="w-6 h-6 rounded-full border-2 border-black dark:border-white border-t-transparent animate-spin">
                     </div>
                     <div class="font-mono text-center">
-                        <p class="text-sm font-bold uppercase tracking-widest">Consulting AI...</p>
-                        <p class="text-xs text-neutral-500 mt-1 uppercase tracking-widest">AI is analyzing the
-                            accessibility issue</p>
+                        <p class="text-sm font-bold uppercase tracking-widest">{{ __('lens-for-laravel::messages.ai_fix.consulting') }}</p>
+                        <p class="text-xs text-neutral-500 mt-1 uppercase tracking-widest">{{ __('lens-for-laravel::messages.ai_fix.analyzing') }}</p>
                     </div>
                 </div>
 
                 <!-- Error -->
                 <div x-show="!isLoadingFix && fixError" x-cloak class="border-2 border-dashed border-[#E11D48] p-4">
-                    <p class="font-mono text-xs font-bold uppercase tracking-widest text-[#E11D48] mb-2">[ERR] Fix
-                        generation failed</p>
+                    <p class="font-mono text-xs font-bold uppercase tracking-widest text-[#E11D48] mb-2">[ERR] {{ __('lens-for-laravel::messages.ai_fix.error_title') }}</p>
                     <p class="font-mono text-sm" x-text="fixError"></p>
                 </div>
 
@@ -837,27 +835,27 @@
                         <!-- AI Explanation -->
                         <div class="bg-neutral-100 dark:bg-neutral-900 border-l-4 border-black dark:border-white p-4">
                             <p class="text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-2">>>
-                                AI Explanation</p>
+                                {{ __('lens-for-laravel::messages.ai_fix.explanation') }}</p>
                             <p class="font-mono text-sm leading-relaxed" x-text="fixData.explanation"></p>
                         </div>
 
                         <!-- File info -->
                         <div class="font-mono text-xs text-neutral-500 uppercase tracking-widest">
-                            <span class="font-bold text-black dark:text-white">File:</span>
-                            <span x-text="fixData.fileName + '  (context from line ' + fixData.startLine + ')'"></span>
+                            <span class="font-bold text-black dark:text-white">{{ __('lens-for-laravel::messages.common.file') }}:</span>
+                            <span x-text="fixFileContext"></span>
                         </div>
 
                         <!-- Diff view -->
                         <div>
                             <p class="text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-2">>>
-                                Diff</p>
+                                {{ __('lens-for-laravel::messages.ai_fix.diff') }}</p>
                             <div class="border border-black dark:border-neutral-700 overflow-hidden bg-[#0d1117]">
                                 <!-- Diff legend -->
                                 <div
                                     class="flex items-center gap-4 px-4 py-2 bg-neutral-800 border-b border-neutral-700 text-xs font-mono">
-                                    <span class="text-red-400">— original</span>
+                                    <span class="text-red-400">— {{ __('lens-for-laravel::messages.ai_fix.original') }}</span>
                                     <span class="text-neutral-600">|</span>
-                                    <span class="text-green-400">+ fixed</span>
+                                    <span class="text-green-400">+ {{ __('lens-for-laravel::messages.ai_fix.fixed') }}</span>
                                 </div>
                                 <!-- Diff lines -->
                                 <div class="overflow-x-auto">
@@ -895,11 +893,11 @@
             <div x-show="!isLoadingFix && fixData && !fixApplied" x-cloak
                 class="border-t border-black dark:border-white px-6 py-4 flex justify-end gap-3 bg-neutral-100 dark:bg-neutral-900 shrink-0">
                 <button @click="closeFixModal()"
-                    class="px-6 py-2 border-2 border-black dark:border-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">REJECT</button>
+                    class="px-6 py-2 border-2 border-black dark:border-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">{{ __('lens-for-laravel::messages.ai_fix.reject') }}</button>
                 <button @click="applyFix()" :disabled="isApplyingFix"
                     class="px-6 py-2 bg-[#E11D48] border-2 border-[#E11D48] text-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:border-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span x-show="!isApplyingFix">ACCEPT &amp; APPLY</span>
-                    <span x-show="isApplyingFix" x-cloak>APPLYING...</span>
+                    <span x-show="!isApplyingFix">{{ __('lens-for-laravel::messages.ai_fix.accept_apply') }}</span>
+                    <span x-show="isApplyingFix" x-cloak>{{ __('lens-for-laravel::messages.ai_fix.applying') }}</span>
                 </button>
             </div>
 
@@ -907,7 +905,7 @@
             <div x-show="fixApplied" x-cloak
                 class="border-t border-black dark:border-white px-6 py-4 flex justify-end bg-neutral-100 dark:bg-neutral-900 shrink-0">
                 <button @click="closeFixModal()"
-                    class="px-6 py-2 border-2 border-black dark:border-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">CLOSE</button>
+                    class="px-6 py-2 border-2 border-black dark:border-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">{{ __('lens-for-laravel::messages.ai_fix.close') }}</button>
             </div>
 
         </div>
@@ -920,8 +918,8 @@
             class="bg-white dark:bg-black border-2 border-black dark:border-white w-full max-w-5xl relative shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.2)]">
             <div
                 class="border-b border-black dark:border-white px-6 py-4 flex items-center justify-between bg-neutral-100 dark:bg-neutral-900">
-                <h3 class="text-lg font-mono font-bold uppercase tracking-widest">[ ELEMENT_PREVIEW ]</h3>
-                <button @click="closePreview()"
+                <h3 class="text-lg font-mono font-bold uppercase tracking-widest">[ {{ __('lens-for-laravel::messages.preview.title') }} ]</h3>
+                <button @click="closePreview()" aria-label="{{ __('lens-for-laravel::messages.common.close') }}" title="{{ __('lens-for-laravel::messages.common.close') }}"
                     class="w-8 h-8 inline-flex items-center justify-center border border-transparent hover:border-black dark:hover:border-white hover:text-[#E11D48] font-mono font-bold text-xl leading-none transition-colors text-black dark:text-white">&times;</button>
             </div>
             <div class="p-6">
@@ -930,21 +928,20 @@
                     <div
                         class="w-5 h-5 rounded-full border-2 border-black dark:border-white border-t-transparent animate-spin">
                     </div>
-                    <span class="font-mono text-xs uppercase tracking-widest text-neutral-500">Rendering
-                        screenshot...</span>
+                    <span class="font-mono text-xs uppercase tracking-widest text-neutral-500">{{ __('lens-for-laravel::messages.preview.rendering') }}</span>
                 </div>
                 <!-- Screenshot -->
                 <div x-show="!isLoadingPreview && previewScreenshot" x-cloak>
                     <img :src="previewScreenshot" class="w-full border border-black dark:border-neutral-700"
-                        alt="Element preview screenshot" />
+                        alt="{{ __('lens-for-laravel::messages.preview.alt') }}" />
                     <div class="mt-3 flex items-center justify-between gap-4">
                         <p
                             class="text-xs font-mono text-neutral-400 dark:text-neutral-500 uppercase tracking-widest truncate">
-                            Selector: <span class="text-black dark:text-white" x-text="previewIssue?.selector"></span>
+                            {{ __('lens-for-laravel::messages.common.selector') }}: <span class="text-black dark:text-white" x-text="previewIssue?.selector"></span>
                         </p>
                         <a :href="previewScreenshot" :download="'preview-' + (previewIssue?.id ?? 'element') + '.png'"
                             class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 border-2 border-black dark:border-white text-xs font-mono font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">⬇
-                            SAVE</a>
+                            {{ __('lens-for-laravel::messages.preview.save') }}</a>
                     </div>
                 </div>
             </div>
@@ -957,6 +954,7 @@
         const LENS_RESOURCES_PATH = @json(resource_path());
         const LENS_VIEWS_PATH = @json(resource_path('views'));
         const LENS_EDITOR = @json(config('lens-for-laravel.editor', 'vscode'));
+        const LENS_LOCALE = @json(app()->getLocale());
         const LENS_DEFAULT_WCAG_VERSION = @json(\LensForLaravel\LensForLaravel\Support\Wcag::configuredVersion());
         const LENS_I18N = {{ Illuminate\Support\Js::from([
             'initializing' => __('lens-for-laravel::messages.progress.initializing'),
@@ -966,7 +964,32 @@
             'noScript' => __('lens-for-laravel::messages.states.no_script'),
             'executingStates' => __('lens-for-laravel::messages.states.executing'),
             'stateScanComplete' => __('lens-for-laravel::messages.states.complete'),
-        ]) }};
+            'filteredLogs' => __('lens-for-laravel::messages.scanner.filtered_logs'),
+            'diagnosticLogs' => __('lens-for-laravel::messages.scanner.diagnostic_logs'),
+            'openInEditor' => __('lens-for-laravel::messages.scanner.open_in_editor'),
+            'levelADescription' => __('lens-for-laravel::messages.scanner.level_a_description'),
+            'levelAADescription' => __('lens-for-laravel::messages.scanner.level_aa_description'),
+            'levelAAADescription' => __('lens-for-laravel::messages.scanner.level_aaa_description'),
+            'otherDescription' => __('lens-for-laravel::messages.scanner.other_description'),
+            'scanningProgress' => __('lens-for-laravel::messages.scanner.scanning_progress'),
+            'pageOf' => __('lens-for-laravel::messages.common.page_of'),
+            'baseVsCompare' => __('lens-for-laravel::messages.comparison.base_vs_compare'),
+            'fixFileContext' => __('lens-for-laravel::messages.ai_fix.file_context'),
+            'screenshotFailed' => __('lens-for-laravel::messages.errors.screenshot_failed'),
+            'pdfFailed' => __('lens-for-laravel::messages.errors.pdf_failed'),
+            'crawlFailed' => __('lens-for-laravel::messages.errors.crawl_failed'),
+            'noLinks' => __('lens-for-laravel::messages.errors.no_links'),
+            'noUrls' => __('lens-for-laravel::messages.errors.no_urls'),
+            'stateScanFailed' => __('lens-for-laravel::messages.errors.state_scan_failed'),
+            'scanFailed' => __('lens-for-laravel::messages.errors.scan_failed'),
+            'aiGenerationFailed' => __('lens-for-laravel::messages.errors.ai_generation_failed'),
+            'applyFailed' => __('lens-for-laravel::messages.errors.apply_failed'),
+            'deleteConfirm' => __('lens-for-laravel::messages.history.delete_confirm'),
+            'chartTotal' => __('lens-for-laravel::messages.history.chart_total'),
+            'levelA' => __('lens-for-laravel::messages.common.level_a'),
+            'levelAA' => __('lens-for-laravel::messages.common.level_aa'),
+            'levelAAA' => __('lens-for-laravel::messages.common.level_aaa'),
+        ], JSON_UNESCAPED_UNICODE) }};
 
         document.addEventListener('alpine:init', () => {
             Alpine.data('scanner', () => ({
@@ -1069,16 +1092,42 @@
                 get levelDescription() {
                     switch (this.activeFilter) {
                         case 'a':
-                            return 'Level A is the minimum level of accessibility. These issues are critical blockers for users with disabilities.';
+                            return LENS_I18N.levelADescription;
                         case 'aa':
-                            return 'Level AA is the standard for accessibility. It removes most common barriers for people with a wide range of disabilities.';
+                            return LENS_I18N.levelAADescription;
                         case 'aaa':
-                            return 'Level AAA is the highest level of accessibility. It provides an enhanced experience, though it can be difficult to achieve for all content.';
+                            return LENS_I18N.levelAAADescription;
                         case 'other':
-                            return 'These are best practice recommendations and general improvements that don\'t strictly fall into a WCAG level but improve UX.';
+                            return LENS_I18N.otherDescription;
                         default:
                             return null;
                     }
+                },
+
+                get issueListTitle() {
+                    return this.activeFilter
+                        ? LENS_I18N.filteredLogs.replace(':level', this.activeFilter.toUpperCase())
+                        : LENS_I18N.diagnosticLogs;
+                },
+
+                get historyPageLabel() {
+                    return LENS_I18N.pageOf
+                        .replace(':current', this.historyPagination.currentPage)
+                        .replace(':last', this.historyPagination.lastPage);
+                },
+
+                get comparisonTitle() {
+                    return LENS_I18N.baseVsCompare
+                        .replace(':base', this.compareData?.base?.id ?? '')
+                        .replace(':compare', this.compareData?.compare?.id ?? '');
+                },
+
+                get fixFileContext() {
+                    if (!this.fixData) return '';
+
+                    return LENS_I18N.fixFileContext
+                        .replace(':file', this.fixData.fileName)
+                        .replace(':line', this.fixData.startLine);
                 },
 
                 get editorEnabled() {
@@ -1197,7 +1246,7 @@
                                 selector: issue.selector
                             })
                         });
-                        if (!response.ok) throw new Error('Screenshot failed.');
+                        if (!response.ok) throw new Error(LENS_I18N.screenshotFailed);
                         const blob = await response.blob();
                         this.previewScreenshot = URL.createObjectURL(blob);
                     } catch (err) {
@@ -1229,7 +1278,7 @@
 
                         if (!response.ok) {
                             const data = await response.json().catch(() => ({}));
-                            throw new Error(data.message || 'PDF generation failed.');
+                            throw new Error(data.message || LENS_I18N.pdfFailed);
                         }
 
                         const blob = await response.blob();
@@ -1283,17 +1332,19 @@
 
                             const crawlData = await crawlResponse.json();
                             if (!crawlResponse.ok) throw new Error(crawlData.message ||
-                                'Crawling failed.');
+                                LENS_I18N.crawlFailed);
 
                             const urls = crawlData.urls || [];
-                            if (urls.length === 0) throw new Error('No internal links discovered.');
+                            if (urls.length === 0) throw new Error(LENS_I18N.noLinks);
 
                             // 2. Scan each URL
                             for (let i = 0; i < urls.length; i++) {
                                 const currentUrl = urls[i];
                                 this.progressPercent = 10 + Math.round(((i) / urls.length) * 90);
-                                this.progressStatus =
-                                    `Scanning [${i + 1}/${urls.length}]: ${currentUrl}`;
+                                this.progressStatus = LENS_I18N.scanningProgress
+                                    .replace(':current', i + 1)
+                                    .replace(':total', urls.length)
+                                    .replace(':url', currentUrl);
 
                                 try {
                                     await this.scanSingleUrl(currentUrl, token, true);
@@ -1309,13 +1360,15 @@
                                 .map(u => u.trim())
                                 .filter(u => u.length > 0);
 
-                            if (urlList.length === 0) throw new Error('No URLs provided.');
+                            if (urlList.length === 0) throw new Error(LENS_I18N.noUrls);
 
                             for (let i = 0; i < urlList.length; i++) {
                                 const currentUrl = urlList[i];
                                 this.progressPercent = Math.round((i / urlList.length) * 100);
-                                this.progressStatus =
-                                    `Scanning [${i + 1}/${urlList.length}]: ${currentUrl}`;
+                                this.progressStatus = LENS_I18N.scanningProgress
+                                    .replace(':current', i + 1)
+                                    .replace(':total', urlList.length)
+                                    .replace(':url', currentUrl);
                                 try {
                                     await this.scanSingleUrl(currentUrl, token, i > 0);
                                 } catch (e) {
@@ -1361,7 +1414,7 @@
                     const data = await response.json();
 
                     if (!response.ok) {
-                        throw new Error(data.message || 'An error occurred during state scanning.');
+                        throw new Error(data.message || LENS_I18N.stateScanFailed);
                     }
 
                     this.issues = data.issues || [];
@@ -1384,7 +1437,7 @@
                     const data = await response.json();
 
                     if (!response.ok) {
-                        throw new Error(data.message || 'An error occurred during scanning.');
+                        throw new Error(data.message || LENS_I18N.scanFailed);
                     }
 
                     if (append) {
@@ -1422,7 +1475,7 @@
                             });
                         const data = await response.json();
                         if (!response.ok) throw new Error(data.message ||
-                            'AI fix generation failed.');
+                            LENS_I18N.aiGenerationFailed);
                         this.fixData = data;
                     } catch (err) {
                         this.fixError = err.message;
@@ -1452,7 +1505,7 @@
                             })
                         });
                         const data = await response.json();
-                        if (!response.ok) throw new Error(data.message || 'Failed to apply fix.');
+                        if (!response.ok) throw new Error(data.message || LENS_I18N.applyFailed);
                         this.fixIssue.aiFixStatus = 'pending_verification';
                         this.fixApplied = true;
                     } catch (err) {
@@ -1598,14 +1651,14 @@
                     const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
                     const textColor = isDark ? '#a3a3a3' : '#525252';
 
-                    const labels = this.trendData.map(t => new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    const labels = this.trendData.map(t => new Date(t.created_at).toLocaleDateString(LENS_LOCALE, { month: 'short', day: 'numeric' }));
                     this.trendChart = new Chart(canvas, {
                         type: 'line',
                         data: {
                             labels,
                             datasets: [
                                 {
-                                    label: 'Total Issues',
+                                    label: LENS_I18N.chartTotal,
                                     data: this.trendData.map(t => t.total_issues),
                                     borderColor: '#E11D48',
                                     backgroundColor: 'rgba(225,29,72,0.1)',
@@ -1615,7 +1668,7 @@
                                     pointHoverRadius: 6,
                                 },
                                 {
-                                    label: 'Level A',
+                                    label: LENS_I18N.levelA,
                                     data: this.trendData.map(t => t.level_a_count),
                                     borderColor: '#dc2626',
                                     borderDash: [5, 5],
@@ -1623,7 +1676,7 @@
                                     pointRadius: 2,
                                 },
                                 {
-                                    label: 'Level AA',
+                                    label: LENS_I18N.levelAA,
                                     data: this.trendData.map(t => t.level_aa_count),
                                     borderColor: isDark ? '#e5e5e5' : '#171717',
                                     borderDash: [3, 3],
@@ -1631,7 +1684,7 @@
                                     pointRadius: 2,
                                 },
                                 {
-                                    label: 'Level AAA',
+                                    label: LENS_I18N.levelAAA,
                                     data: this.trendData.map(t => t.level_aaa_count),
                                     borderColor: '#a3a3a3',
                                     borderDash: [2, 4],
@@ -1673,7 +1726,7 @@
                 },
 
                 async deleteHistoryScan(id) {
-                    if (!confirm('Delete this scan?')) return;
+                    if (!confirm(LENS_I18N.deleteConfirm)) return;
                     try {
                         const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                         await fetch(`{{ url(config('lens-for-laravel.route_prefix', 'lens-for-laravel')) }}/history/${id}`, {

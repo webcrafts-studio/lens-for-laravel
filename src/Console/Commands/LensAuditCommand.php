@@ -49,19 +49,19 @@ class LensAuditCommand extends Command
         }
 
         if ($this->input->hasParameterOption('--states') && $statesFile === null) {
-            $this->components->error('The --states option requires a script file path.');
+            $this->components->error(__('lens-for-laravel::messages.errors.states_path_required'));
 
             return self::FAILURE;
         }
 
         if ($statesMode && ($multipleMode || $this->option('crawl'))) {
-            $this->components->error('Interactive states require exactly one URL and cannot be combined with --crawl.');
+            $this->components->error(__('lens-for-laravel::messages.errors.states_single_url'));
 
             return self::FAILURE;
         }
 
         if ($this->option('baseline') && $this->option('fail-on-new')) {
-            $this->components->error('Use either --baseline or --fail-on-new, not both.');
+            $this->components->error(__('lens-for-laravel::messages.errors.baseline_options_exclusive'));
 
             return self::FAILURE;
         }
@@ -134,7 +134,10 @@ class LensAuditCommand extends Command
         if ($violationCount > $threshold) {
             $this->newLine();
             $this->components->error(
-                "Quality gate failed: {$violationCount} violation(s) found (threshold: {$threshold})"
+                __('lens-for-laravel::messages.errors.quality_gate_failed', [
+                    'count' => $violationCount,
+                    'threshold' => $threshold,
+                ])
             );
 
             return self::FAILURE;
@@ -158,20 +161,20 @@ class LensAuditCommand extends Command
             $path = $this->resolveFilePath($scriptFile);
 
             if (! is_file($path) || ! is_readable($path)) {
-                $this->components->error("Interaction script file not found or unreadable: {$path}");
+                $this->components->error(__('lens-for-laravel::messages.errors.interaction_file_unreadable', ['path' => $path]));
 
                 return null;
             }
 
             $script = file_get_contents($path);
             if ($script === false) {
-                $this->components->error("Unable to read interaction script file: {$path}");
+                $this->components->error(__('lens-for-laravel::messages.errors.interaction_file_read_failed', ['path' => $path]));
 
                 return null;
             }
 
             if (strlen($script) > 10000) {
-                $this->components->error('Interaction script may not exceed 10000 bytes.');
+                $this->components->error(__('lens-for-laravel::messages.errors.script_too_large'));
 
                 return null;
             }
@@ -192,12 +195,12 @@ class LensAuditCommand extends Command
 
             return $issues;
         } catch (InvalidArgumentException $e) {
-            $this->components->error('Invalid interaction script: '.$e->getMessage());
+            $this->components->error(__('lens-for-laravel::messages.errors.invalid_interaction_script', ['message' => $e->getMessage()]));
 
             return null;
         } catch (ScannerException $e) {
             $this->newLine();
-            $this->components->error('Interactive state scan failed: '.$e->getMessage());
+            $this->components->error(__('lens-for-laravel::messages.errors.interactive_scan_failed_detail', ['message' => $e->getMessage()]));
             $this->renderTroubleshooting();
 
             return null;
@@ -225,7 +228,7 @@ class LensAuditCommand extends Command
             return $issues;
         } catch (ScannerException $e) {
             $this->newLine();
-            $this->components->error('Scan failed: '.$e->getMessage());
+            $this->components->error(__('lens-for-laravel::messages.errors.scan_failed_detail', ['message' => $e->getMessage()]));
             $this->renderTroubleshooting();
 
             return null;
@@ -296,7 +299,7 @@ class LensAuditCommand extends Command
         }
 
         if (empty($scannedUrls)) {
-            $this->components->error('All pages failed to scan.');
+            $this->components->error(__('lens-for-laravel::messages.errors.all_pages_failed'));
             $this->renderTroubleshooting();
 
             return null;
@@ -331,7 +334,7 @@ class LensAuditCommand extends Command
 
         if (empty($urls)) {
             $this->newLine();
-            $this->components->error('No internal pages discovered. Check the URL and try again.');
+            $this->components->error(__('lens-for-laravel::messages.errors.no_internal_pages'));
 
             return null;
         }
@@ -398,7 +401,7 @@ class LensAuditCommand extends Command
         }
 
         if (empty($scannedUrls)) {
-            $this->components->error('All pages failed to scan. Check the Browsershot/Puppeteer setup.');
+            $this->components->error(__('lens-for-laravel::messages.errors.browser_pages_failed'));
             $this->renderTroubleshooting();
 
             return null;
@@ -459,7 +462,7 @@ class LensAuditCommand extends Command
 
         $newCount = $comparison['new']->count();
         if ($newCount > 0) {
-            $this->components->error("Baseline gate failed: {$newCount} new violation(s) found.");
+            $this->components->error(__('lens-for-laravel::messages.errors.baseline_gate_failed', ['count' => $newCount]));
 
             return self::FAILURE;
         }

@@ -37,7 +37,7 @@ class AiFixer
         $source = $this->resolveSourceFile($fileName);
         $content = file_get_contents($source['path']);
         if ($content === false) {
-            throw new RuntimeException('The selected source file could not be read.');
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.source_read_failed'));
         }
 
         $context = $this->contextExtractor->extract($content, $lineNumber, $htmlSnippet);
@@ -221,7 +221,7 @@ PROMPT;
     protected function resolveSourceFile(string $fileName): array
     {
         if (str_contains($fileName, '..') || str_starts_with($fileName, DIRECTORY_SEPARATOR)) {
-            throw new RuntimeException('Invalid file path.');
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.invalid_file_path'));
         }
 
         if (str_ends_with($fileName, '.blade.php')) {
@@ -229,7 +229,7 @@ PROMPT;
             $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$fileName);
 
             if (! $fullPath || ! str_starts_with($fullPath, $basePath.DIRECTORY_SEPARATOR)) {
-                throw new RuntimeException('File access denied: path is outside the views directory.');
+                throw new RuntimeException(__('lens-for-laravel::messages.errors.views_path_denied'));
             }
 
             return ['path' => $fullPath, 'label' => 'Laravel Blade'];
@@ -242,12 +242,12 @@ PROMPT;
             $fullPath = realpath($basePath.DIRECTORY_SEPARATOR.$relativePath);
 
             if (! $fullPath || ! str_starts_with($fullPath, $basePath.DIRECTORY_SEPARATOR)) {
-                throw new RuntimeException('File access denied: path is outside the frontend source directory.');
+                throw new RuntimeException(__('lens-for-laravel::messages.errors.frontend_path_denied'));
             }
 
             return ['path' => $fullPath, 'label' => $extension === 'vue' ? 'Vue' : 'React'];
         }
 
-        throw new RuntimeException('Only .blade.php files and React/Vue files under resources/js are supported.');
+        throw new RuntimeException(__('lens-for-laravel::messages.errors.supported_ai_sources'));
     }
 }

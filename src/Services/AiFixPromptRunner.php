@@ -20,7 +20,7 @@ class AiFixPromptRunner
         $explanation = $response['explanation'] ?? null;
 
         if (! is_string($replacement) || trim($replacement) === '' || ! is_string($explanation) || trim($explanation) === '') {
-            throw new RuntimeException('The structured AI response is missing a replacement or explanation.');
+            throw new RuntimeException(__('lens-for-laravel::messages.errors.ai_response_missing'));
         }
 
         $lastStep = $response->steps->last();

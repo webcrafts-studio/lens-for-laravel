@@ -97,3 +97,9 @@ test('rejects too many actions', function () {
 
     (new InteractionScriptParser)->parse($script);
 })->throws(InvalidArgumentException::class, 'up to 30 actions');
+
+test('translates interaction parser errors', function () {
+    app()->setLocale('pl');
+
+    (new InteractionScriptParser)->parse('click: button');
+})->throws(InvalidArgumentException::class, 'Wiersz 1: dodaj stan przed zdefiniowaniem akcji');

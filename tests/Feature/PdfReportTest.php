@@ -17,6 +17,38 @@ test('PDF report includes the selected WCAG version and classifies WCAG 2.2 tags
         ->and($html)->toContain('<div class="stat-value">1</div>');
 });
 
+test('PDF report renders all labels in the selected locale', function () {
+    app()->setLocale('pl');
+
+    $html = view('lens-for-laravel::report', [
+        'issues' => [[
+            'id' => 'image-alt',
+            'impact' => 'critical',
+            'description' => 'Image needs alternative text',
+            'htmlSnippet' => '<img src="logo.png">',
+            'selector' => 'img.logo',
+            'tags' => ['wcag2a'],
+            'stateLabel' => 'Otwarta nawigacja',
+            'fileName' => 'home.blade.php',
+            'lineNumber' => 12,
+            'helpUrl' => 'https://example.com/help',
+        ]],
+        'url' => 'https://example.com',
+        'wcagVersion' => '2.2',
+        'generatedAt' => now(),
+    ])->render();
+
+    expect($html)
+        ->toContain('Raport z audytu dostępności')
+        ->toContain('Wygenerowano:')
+        ->toContain('Naruszenia (1)')
+        ->toContain('Krytyczny')
+        ->toContain('Fragment HTML')
+        ->toContain('Lokalizacja w źródle')
+        ->not->toContain('ACCESSIBILITY AUDIT REPORT')
+        ->not->toContain('HTML Snippet');
+});
+
 test('POST /report/pdf requires issues array', function () {
     $this->postJson(route('lens-for-laravel.report.pdf'), ['url' => 'https://example.com'])
         ->assertStatus(422)
