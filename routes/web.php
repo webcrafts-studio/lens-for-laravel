@@ -10,6 +10,7 @@ use LensForLaravel\LensForLaravel\Services\AiFixer;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 use LensForLaravel\LensForLaravel\Services\InteractionScriptParser;
+use LensForLaravel\LensForLaravel\Services\ScanComparator;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
 use LensForLaravel\LensForLaravel\Support\Wcag;
 use Spatie\Browsershot\Browsershot;
@@ -491,25 +492,15 @@ Route::get('/history/{id}/compare/{compareId}', function (int $id, int $compareI
             return response()->json(['status' => 'error', 'message' => 'Scan not found.'], 404);
         }
 
-        $issueKey = fn ($i) => $i->rule_id.'|'.$i->selector.'|'.($i->state_label ?? '');
-
-        $baseKeys = $base->issues->map($issueKey)->toArray();
-        $compareKeys = $compare->issues->map($issueKey)->toArray();
-
-        $baseKeySet = array_flip($baseKeys);
-        $compareKeySet = array_flip($compareKeys);
-
-        $new = $compare->issues->filter(fn ($i) => ! isset($baseKeySet[$issueKey($i)]))->values();
-        $fixed = $base->issues->filter(fn ($i) => ! isset($compareKeySet[$issueKey($i)]))->values();
-        $remaining = $base->issues->filter(fn ($i) => isset($compareKeySet[$issueKey($i)]))->values();
+        $comparison = app(ScanComparator::class)->compare($base, $compare);
 
         return response()->json([
             'status' => 'success',
             'base' => $base->only('id', 'url', 'wcag_version', 'created_at', 'total_issues'),
             'compare' => $compare->only('id', 'url', 'wcag_version', 'created_at', 'total_issues'),
-            'new' => $new,
-            'fixed' => $fixed,
-            'remaining' => $remaining,
+            'new' => $comparison['new'],
+            'fixed' => $comparison['fixed'],
+            'remaining' => $comparison['remaining'],
         ]);
     } catch (Throwable $e) {
         return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);

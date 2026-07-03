@@ -4,6 +4,7 @@ namespace LensForLaravel\LensForLaravel\Services;
 
 use Illuminate\Support\Collection;
 use LensForLaravel\LensForLaravel\DTOs\Issue;
+use LensForLaravel\LensForLaravel\Support\UrlNormalizer;
 use RuntimeException;
 
 class BaselineManager
@@ -132,7 +133,7 @@ class BaselineManager
             'fingerprint' => $this->fingerprint($issue),
             'rule_id' => $issue->id,
             'impact' => $issue->impact,
-            'url' => $this->normalizeUrl($issue->url),
+            'url' => UrlNormalizer::pathAndQuery($issue->url),
             'state_label' => $issue->stateLabel,
             'selector' => trim($issue->selector),
             'file_name' => $issue->fileName,
@@ -145,30 +146,12 @@ class BaselineManager
     {
         return [
             'rule_id' => $issue->id,
-            'url' => $this->normalizeUrl($issue->url),
+            'url' => UrlNormalizer::pathAndQuery($issue->url),
             'state_label' => $issue->stateLabel,
             'selector' => trim($issue->selector),
             'file_name' => $issue->fileName,
             'source_type' => $issue->sourceType,
         ];
-    }
-
-    protected function normalizeUrl(?string $url): ?string
-    {
-        if ($url === null || trim($url) === '') {
-            return null;
-        }
-
-        $parts = parse_url($url);
-
-        if ($parts === false || ! isset($parts['host'])) {
-            return $url;
-        }
-
-        $path = $parts['path'] ?? '/';
-        $query = isset($parts['query']) ? '?'.$parts['query'] : '';
-
-        return $path.$query;
     }
 
     protected function isAbsolutePath(string $path): bool

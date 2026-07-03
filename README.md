@@ -26,7 +26,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Interactive state scans** - execute clicks, waits, typing, select changes, and checkbox states before scanning.
 - **Local HTTPS support** - optionally ignore self-signed certificate errors in local environments.
 - **Scan history** - stores scan runs, issue counts, affected URLs, source locations, and trend data.
-- **Scan comparison** - compare two historical scans to see new, fixed, and remaining issues.
+- **URL-aware scan comparison** - compare two historical scans by rule, normalized URL, interactive state, and selector to see new, fixed, and remaining issues without conflating the same selector across pages.
 - **Baseline quality gate** - fail CI only when new accessibility regressions appear.
 - **Element preview** - screenshot the page with the failing element highlighted.
 - **PDF reports** - export audit results as a PDF.
@@ -576,6 +576,7 @@ Version 3 is the current development line. Completed v3 changes include:
 - selectable WCAG 2.0, 2.1, and 2.2 standards in the dashboard and CLI
 - WCAG 2.0 as the backward-compatible default
 - persisted WCAG version metadata in scan history, comparisons, baselines, and PDF reports
+- URL-aware history comparisons that distinguish identical rules and selectors on different pages
 - core support for PHP 8.2+ and Laravel 10–13
 - AI Fix isolated as an optional feature requiring PHP 8.3+, Laravel 12+, and `laravel/ai`
 

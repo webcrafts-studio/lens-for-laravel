@@ -702,6 +702,7 @@
                                     <span class="text-xs font-mono font-bold text-green-600 dark:text-green-400 shrink-0">FIXED</span>
                                     <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
                                     <span x-show="issue.state_label" x-cloak class="text-[10px] font-mono text-[#E11D48] uppercase tracking-widest" x-text="issue.state_label"></span>
+                                    <span x-show="issue.url" x-cloak class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 text-neutral-500" x-text="comparisonIssueUrl(issue.url)"></span>
                                     <span class="text-xs font-mono text-neutral-500 truncate" x-text="issue.selector"></span>
                                 </div>
                             </template>
@@ -711,6 +712,7 @@
                                     <span class="text-xs font-mono font-bold text-[#E11D48] shrink-0">NEW</span>
                                     <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
                                     <span x-show="issue.state_label" x-cloak class="text-[10px] font-mono text-[#E11D48] uppercase tracking-widest" x-text="issue.state_label"></span>
+                                    <span x-show="issue.url" x-cloak class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 text-neutral-500" x-text="comparisonIssueUrl(issue.url)"></span>
                                     <span class="text-xs font-mono text-neutral-500 truncate" x-text="issue.selector"></span>
                                 </div>
                             </template>
@@ -720,6 +722,7 @@
                                     <span class="text-xs font-mono font-bold text-neutral-400 shrink-0">SAME</span>
                                     <span class="text-sm font-mono text-black dark:text-white" x-text="issue.rule_id"></span>
                                     <span x-show="issue.state_label" x-cloak class="text-[10px] font-mono text-[#E11D48] uppercase tracking-widest" x-text="issue.state_label"></span>
+                                    <span x-show="issue.url" x-cloak class="text-[10px] font-mono border border-black/10 dark:border-white/10 px-1.5 py-0.5 text-neutral-500" x-text="comparisonIssueUrl(issue.url)"></span>
                                     <span class="text-xs font-mono text-neutral-500 truncate" x-text="issue.selector"></span>
                                 </div>
                             </template>
@@ -1701,6 +1704,15 @@
                         console.error('Failed to compare scans:', e);
                     } finally {
                         this.compareBaseScan = null;
+                    }
+                },
+
+                comparisonIssueUrl(url) {
+                    try {
+                        const parsed = new URL(url, window.location.origin);
+                        return parsed.pathname + parsed.search;
+                    } catch (e) {
+                        return url;
                     }
                 },
 

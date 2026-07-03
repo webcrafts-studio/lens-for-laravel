@@ -51,6 +51,13 @@ test('dashboard renders the WCAG standard selector with a 2.0 default', function
         ->assertSee('const LENS_DEFAULT_WCAG_VERSION = "2.0"', false);
 });
 
+test('dashboard displays issue URLs in history comparisons', function () {
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('comparisonIssueUrl', false)
+        ->assertSee('issue.url', false);
+});
+
 test('state recorder renders for same origin target urls', function () {
     $response = $this->get(route('lens-for-laravel.states.recorder', [
         'target' => url('/states'),

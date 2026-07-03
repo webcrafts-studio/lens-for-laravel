@@ -23,6 +23,7 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 - `src/Services/FileLocator.php` — heuristic Blade/React/Vue source mapping
 - `src/Services/InteractionScriptParser.php` — state script validation and parsing
 - `src/Services/BaselineManager.php` — stable CI baseline fingerprints
+- `src/Services/ScanComparator.php` — URL- and state-aware history comparison
 - `src/Services/AiFixAvailability.php` — runtime and optional-SDK capability checks
 - `src/Services/AiFixer.php` — optional AI-generated fix suggestions
 - `src/Support/Wcag.php` — supported WCAG versions, cumulative axe-core tags, and result-level classification

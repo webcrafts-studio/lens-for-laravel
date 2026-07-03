@@ -302,6 +302,64 @@ test('compare treats the same selector in different interactive states as separa
         ->and($data['remaining'])->toHaveCount(0);
 });
 
+test('compare treats the same rule and selector on different URLs as separate issues', function () {
+    $issue = [
+        'id' => 'button-name',
+        'impact' => 'critical',
+        'description' => 'Buttons must have discernible text',
+        'selector' => '.btn',
+        'tags' => ['wcag2a'],
+    ];
+
+    $this->postJson(route('lens-for-laravel.history.store'), createScanPayload([
+        'issues' => [[...$issue, 'url' => 'https://example.test/account']],
+    ]));
+    $baseScan = Scan::first();
+
+    $this->postJson(route('lens-for-laravel.history.store'), createScanPayload([
+        'issues' => [[...$issue, 'url' => 'https://example.test/checkout']],
+    ]));
+    $compareScan = Scan::orderBy('id', 'desc')->first();
+
+    $data = $this->getJson(route('lens-for-laravel.history.compare', [$baseScan->id, $compareScan->id]))
+        ->assertOk()
+        ->json();
+
+    expect($data['new'])->toHaveCount(1)
+        ->and($data['new'][0]['url'])->toBe('https://example.test/checkout')
+        ->and($data['fixed'])->toHaveCount(1)
+        ->and($data['fixed'][0]['url'])->toBe('https://example.test/account')
+        ->and($data['remaining'])->toHaveCount(0);
+});
+
+test('compare ignores scheme and host when URL path and query match', function () {
+    $issue = [
+        'id' => 'button-name',
+        'impact' => 'critical',
+        'description' => 'Buttons must have discernible text',
+        'selector' => '.btn',
+        'tags' => ['wcag2a'],
+    ];
+
+    $this->postJson(route('lens-for-laravel.history.store'), createScanPayload([
+        'issues' => [[...$issue, 'url' => 'https://local.test/account?tab=billing']],
+    ]));
+    $baseScan = Scan::first();
+
+    $this->postJson(route('lens-for-laravel.history.store'), createScanPayload([
+        'issues' => [[...$issue, 'url' => 'http://127.0.0.1:8000/account?tab=billing']],
+    ]));
+    $compareScan = Scan::orderBy('id', 'desc')->first();
+
+    $data = $this->getJson(route('lens-for-laravel.history.compare', [$baseScan->id, $compareScan->id]))
+        ->assertOk()
+        ->json();
+
+    expect($data['new'])->toHaveCount(0)
+        ->and($data['fixed'])->toHaveCount(0)
+        ->and($data['remaining'])->toHaveCount(1);
+});
+
 test('compare returns 404 for missing scan', function () {
     $this->postJson(route('lens-for-laravel.history.store'), createScanPayload());
     $scan = Scan::first();
