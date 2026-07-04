@@ -25,6 +25,8 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 - `src/Services/InteractionScriptParser.php` — state script validation and parsing
 - `src/Services/BaselineManager.php` — stable CI baseline fingerprints
 - `src/Services/ScanComparator.php` — URL- and state-aware history comparison
+- `src/Support/UrlNormalizer.php` — host-independent URL path/query identity
+- `src/Http/Middleware/SetLensLocale.php` — configured and session-selected package locale
 - `src/Services/AiFixAvailability.php` — runtime and optional-SDK capability checks
 - `src/Ai/AccessibilityFixAgent.php` — structured v3 AI agent options and provider-specific controls
 - `src/Services/AiFixContextExtractor.php` — bounded semantic element/component extraction
@@ -45,7 +47,18 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 - Never let a missing AI SDK break scanning, crawling, history, PDF reports, previews, interactive states, or the CLI.
 - Keep WCAG 2.0 as the default unless a breaking release explicitly changes it. WCAG 2.1 and 2.2 scans must include the earlier cumulative rule tags.
 - Treat the WCAG version and conformance level as separate controls: `--wcag` selects 2.0/2.1/2.2, while `--a`, `--aa`, and `--all` filter result levels.
+- Preserve URL path and query in history/baseline identity while ignoring scheme and host, and preserve interactive state labels as a separate identity dimension.
+- Keep the default CLI `--threshold` at `0` and the default crawler limit at `50` unless a breaking release explicitly changes them.
+- Keep every compatibility surface, including the dashboard footer, aligned with core Laravel 10, 11, 12, and 13 support.
 - When compatibility changes, update `composer.json`, `README.md`, `CONTEXT.md`, tests, and the separate `lens-for-laravel-website` documentation together.
+
+## Composer Metadata
+
+- The package root is a Composer `library` named `webcrafts-studio/lens-for-laravel`; never describe it as a Laravel skeleton application.
+- Do not add a hard-coded package version to `composer.json`; releases are determined from Git tags.
+- Keep `laravel/ai` optional under `suggest`, never under production `require`.
+- Keep the package description, keywords, homepage, support URLs, PHP/Laravel constraints, README, and public website consistent.
+- The separate website is a Laravel `project` named `webcrafts-studio/laravel-lens-website`; its Composer metadata must describe the documentation website rather than the Laravel skeleton.
 
 ## Development Workflow
 
@@ -102,5 +115,7 @@ The package README is the concise installation and feature reference. The websit
 - all non-AI features remain available when AI Fix is unsupported or disabled
 - dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default
 - v3 includes complete English, Polish, Spanish, French, and German catalogs for package-owned dashboard, history, comparison, modal, PDF, recorder, and error text; axe-core and framework-supplied messages remain upstream content
+- default CLI threshold is `0`, default crawl limit is `50`, and the dashboard compatibility footer lists Laravel 10/11/12/13
+- axe-core provides automated checks but neither axe-core nor Lens proves full WCAG conformance; documentation must require complementary manual testing and must not claim a fixed detection percentage
 
 Avoid describing optional or partial functionality as universally available.

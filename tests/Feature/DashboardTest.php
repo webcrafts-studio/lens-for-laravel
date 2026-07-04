@@ -20,6 +20,13 @@ test('dashboard renders the main blade view', function () {
         ->assertSee('Lens For Laravel');
 });
 
+test('dashboard footer lists every supported Laravel version', function () {
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('Laravel 10 / 11 /')
+        ->assertSee('12 / 13');
+});
+
 test('dashboard explains when AI Fix is disabled and hides its actions', function () {
     $this->app['config']->set('lens-for-laravel.ai_enabled', false);
 

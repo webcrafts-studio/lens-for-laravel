@@ -1,8 +1,21 @@
 {
+  "$schema": "https://getcomposer.org/schema.json",
   "name": "webcrafts-studio/lens-for-laravel",
-  "description": "A plug-and-play accessibility auditor for Laravel.",
+  "description": "A local-first WCAG accessibility auditor for Laravel with axe-core, source mapping, CI workflows, and optional AI fixes.",
+  "keywords": [
+    "accessibility",
+    "axe-core",
+    "laravel",
+    "wcag"
+  ],
+  "homepage": "https://lens.webcrafts.pl",
   "type": "library",
   "license": "MIT",
+  "support": {
+    "docs": "https://lens.webcrafts.pl/docs",
+    "issues": "https://github.com/webcrafts-studio/lens-for-laravel/issues",
+    "source": "https://github.com/webcrafts-studio/lens-for-laravel"
+  },
   "require": {
     "php": "^8.2",
     "illuminate/support": "^10.0|^11.0|^12.0|^13.0",

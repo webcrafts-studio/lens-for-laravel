@@ -777,7 +777,7 @@
             <div class="flex flex-col items-center gap-2 text-center font-mono text-xs uppercase tracking-widest">
                 <span class="text-neutral-500">{{ __('lens-for-laravel::messages.scanner.footer') }}</span>
                 <span class="text-neutral-400 dark:text-neutral-600">A / AA / AAA &nbsp;&bull;&nbsp; Laravel 10 / 11 /
-                    12</span>
+                    12 / 13</span>
             </div>
         </div>
     </footer>

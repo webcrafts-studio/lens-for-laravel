@@ -4,7 +4,7 @@
 
 Lens for Laravel scans your application with [axe-core](https://github.com/dequelabs/axe-core), renders JavaScript through [Spatie Browsershot](https://github.com/spatie/browsershot), maps violations back to source files, and can generate AI-assisted fixes for Blade, React, and Vue code.
 
-**v3.0.0 development line:** selectable WCAG standards, safer optional AI integration, and more reliable auditing workflows for Blade, Livewire, Inertia, React, Vue, and mixed frontends.
+**v3.0.0 development line:** selectable WCAG standards, URL-aware history, reusable state scripts, consistent local HTTPS behavior, complete five-language UI catalogs, and a safer optional AI integration for Blade, Livewire, Inertia, React, Vue, and mixed frontends.
 
 **[Documentation & full feature overview -> lens.webcrafts.pl](https://lens.webcrafts.pl/)**
 
@@ -20,6 +20,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Inertia-aware file discovery** - React/Vue pages under `resources/js/Pages/**` are included automatically.
 - **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through the optional `laravel/ai` SDK.
 - **Diff preview before apply** - inspect AI changes before writing to disk.
+- **Honest AI verification state** - applied suggestions remain counted and are marked as pending until a fresh axe-core scan verifies the result.
 - **Whole-site crawler** - discovers pages from sitemaps and internal links.
 - **SPA crawler mode** - optionally renders JavaScript while crawling React/Vue/Inertia apps.
 - **Multi-URL scans** - scan selected URLs in a single dashboard or CLI run.
@@ -30,9 +31,10 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Baseline quality gate** - fail CI only when new accessibility regressions appear.
 - **Element preview** - screenshot the page with the failing element highlighted.
 - **PDF reports** - export audit results as a PDF.
-- **CLI audits** - run `php artisan lens:audit` with WCAG filters, crawl mode, and CI thresholds.
+- **CLI audits** - run `php artisan lens:audit` with WCAG selection, reusable state scripts, crawl mode, thresholds, and baseline gates.
 - **IDE links** - open source locations in VS Code, Cursor, PhpStorm, or Sublime Text.
 - **Developer dashboard** - zero build step dashboard using Alpine.js and Tailwind CSS via CDN.
+- **Five interface languages** - package-owned dashboard, history, comparison, modal, recorder, PDF, and error text in English, Polish, Spanish, French, and German.
 
 ---
 
@@ -568,7 +570,7 @@ If you enable Lens on staging, protect the route with authentication middleware:
 
 ## Known Limitations
 
-Automated accessibility testing cannot prove full compliance. Axe-core usually detects only a portion of WCAG issues.
+axe-core automates many high-confidence accessibility checks, but neither axe-core nor Lens can determine full WCAG conformance. A clean scan is evidence from automated checks, not proof that the application is fully accessible.
 
 Source location is heuristic. Lens can locate many common Blade, React, Vue, and Inertia patterns, but it may miss or misidentify:
 
