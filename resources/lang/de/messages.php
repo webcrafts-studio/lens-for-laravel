@@ -40,6 +40,7 @@ return [
         'css_selector' => 'CSS-Selektor', 'click_to_copy' => 'zum Kopieren klicken', 'copy_selector' => 'Selektor kopieren',
         'preview_element' => 'Element auf der Seite anzeigen', 'fix_with_ai' => 'Mit KI korrigieren',
         'footer' => 'WCAG-Barrierefreiheitsprüfung · Unterstützt von axe-core und KI',
+        'support' => 'Spendiere dem Entwickler einen Kaffee',
         'level_a_description' => 'Stufe A ist die Mindeststufe der Barrierefreiheit. Diese Probleme sind kritische Hindernisse für Menschen mit Behinderungen.',
         'level_aa_description' => 'Stufe AA ist der Standard für Barrierefreiheit. Sie beseitigt die meisten typischen Barrieren für Menschen mit unterschiedlichen Behinderungen.',
         'level_aaa_description' => 'Stufe AAA ist die höchste Stufe der Barrierefreiheit. Sie bietet eine erweiterte Erfahrung, ist aber nicht für alle Inhalte leicht erreichbar.',

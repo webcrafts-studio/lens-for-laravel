@@ -55,6 +55,7 @@ return [
         'preview_element' => 'Podejrzyj element na stronie',
         'fix_with_ai' => 'Napraw z AI',
         'footer' => 'Audytor dostępności WCAG · Oparty na axe-core i AI',
+        'support' => 'Postaw autorowi kawę',
         'level_a_description' => 'Poziom A to minimalny poziom dostępności. Te problemy stanowią krytyczne bariery dla osób z niepełnosprawnościami.',
         'level_aa_description' => 'Poziom AA jest standardem dostępności. Usuwa większość typowych barier dla osób z różnymi niepełnosprawnościami.',
         'level_aaa_description' => 'Poziom AAA jest najwyższym poziomem dostępności. Zapewnia rozszerzone wsparcie, choć może być trudny do osiągnięcia dla wszystkich treści.',

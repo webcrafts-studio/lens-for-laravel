@@ -40,6 +40,7 @@ return [
         'css_selector' => 'Sélecteur CSS', 'click_to_copy' => 'cliquez pour copier', 'copy_selector' => 'Copier le sélecteur',
         'preview_element' => 'Prévisualiser l’élément sur la page', 'fix_with_ai' => 'Corriger avec l’IA',
         'footer' => 'Auditeur d’accessibilité WCAG · Propulsé par axe-core et l’IA',
+        'support' => 'Offrez un café au créateur',
         'level_a_description' => 'Le niveau A est le niveau minimal d’accessibilité. Ces problèmes constituent des obstacles critiques pour les personnes en situation de handicap.',
         'level_aa_description' => 'Le niveau AA est la norme d’accessibilité. Il supprime la plupart des obstacles courants pour les personnes ayant différents handicaps.',
         'level_aaa_description' => 'Le niveau AAA est le niveau d’accessibilité le plus élevé. Il offre une expérience améliorée, mais peut être difficile à atteindre pour tous les contenus.',

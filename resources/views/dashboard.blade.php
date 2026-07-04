@@ -778,6 +778,12 @@
                 <span class="text-neutral-500">{{ __('lens-for-laravel::messages.scanner.footer') }}</span>
                 <span class="text-neutral-400 dark:text-neutral-600">A / AA / AAA &nbsp;&bull;&nbsp; Laravel 10 / 11 /
                     12 / 13</span>
+                <a href="https://buycoffee.to/jakub-lipinski" target="_blank" rel="noopener noreferrer"
+                    class="mt-2 inline-flex items-center gap-2 border border-[#E11D48]/30 px-3 py-1.5 text-[10px] text-neutral-500 dark:text-neutral-400 hover:border-[#E11D48] hover:text-[#E11D48] transition-colors">
+                    <span aria-hidden="true">☕</span>
+                    <span>{{ __('lens-for-laravel::messages.scanner.support') }}</span>
+                    <span aria-hidden="true">↗</span>
+                </a>
             </div>
         </div>
     </footer>

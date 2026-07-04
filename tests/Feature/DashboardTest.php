@@ -24,7 +24,13 @@ test('dashboard footer lists every supported Laravel version', function () {
     $this->get(route('lens-for-laravel.dashboard'))
         ->assertOk()
         ->assertSee('Laravel 10 / 11 /')
-        ->assertSee('12 / 13');
+        ->assertSee('12 / 13')
+        ->assertSee('Support the creator')
+        ->assertSee('https://buycoffee.to/jakub-lipinski', false);
+
+    $this->get(route('lens-for-laravel.dashboard', ['lens_locale' => 'pl']))
+        ->assertOk()
+        ->assertSee('Postaw autorowi kawę');
 });
 
 test('dashboard explains when AI Fix is disabled and hides its actions', function () {

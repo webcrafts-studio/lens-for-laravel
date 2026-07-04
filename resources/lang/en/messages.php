@@ -68,6 +68,7 @@ return [
         'preview_element' => 'Preview element on page',
         'fix_with_ai' => 'Fix with AI',
         'footer' => 'WCAG Accessibility Auditor · Powered by axe-core & AI',
+        'support' => 'Support the creator',
         'level_a_description' => 'Level A is the minimum level of accessibility. These issues are critical blockers for users with disabilities.',
         'level_aa_description' => 'Level AA is the standard for accessibility. It removes most common barriers for people with a wide range of disabilities.',
         'level_aaa_description' => 'Level AAA is the highest level of accessibility. It provides an enhanced experience, though it can be difficult to achieve for all content.',
