@@ -1,5 +1,48 @@
 <?php
 
+function lensDashboardThemeVariables(string $html, string $selector): array
+{
+    $pattern = '/'.preg_quote($selector, '/').'\s*\{(?<declarations>.*?)\n\s*\}/s';
+
+    preg_match($pattern, $html, $matches);
+    preg_match_all(
+        '/(?<name>--lens-[a-z-]+):\s*(?<value>#[0-9a-f]{6});/i',
+        $matches['declarations'] ?? '',
+        $variables,
+    );
+
+    return array_combine($variables['name'], $variables['value']);
+}
+
+function lensDashboardContrastRatio(string $foreground, string $background): float
+{
+    $luminance = function (string $color): float {
+        $channels = array_map(
+            fn (string $channel): int => hexdec($channel),
+            str_split(ltrim($color, '#'), 2),
+        );
+
+        $linear = array_map(
+            function (int $channel): float {
+                $value = $channel / 255;
+
+                return $value <= 0.04045
+                    ? $value / 12.92
+                    : (($value + 0.055) / 1.055) ** 2.4;
+            },
+            $channels,
+        );
+
+        return (0.2126 * $linear[0]) + (0.7152 * $linear[1]) + (0.0722 * $linear[2]);
+    };
+
+    $foregroundLuminance = $luminance($foreground);
+    $backgroundLuminance = $luminance($background);
+
+    return (max($foregroundLuminance, $backgroundLuminance) + 0.05)
+        / (min($foregroundLuminance, $backgroundLuminance) + 0.05);
+}
+
 test('dashboard returns 200 in testing environment', function () {
     $this->get(route('lens-for-laravel.dashboard'))
         ->assertStatus(200);
@@ -18,6 +61,57 @@ test('dashboard renders the main blade view', function () {
 
     $response->assertStatus(200)
         ->assertSee('Lens For Laravel');
+});
+
+test('dashboard uses the accessible website theme in light and dark modes', function (string $selector) {
+    $html = $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('href="#scanner-content"', false)
+        ->assertSee('tabindex="-1"', false)
+        ->assertSee(':aria-pressed="theme === \'dark\'"', false)
+        ->assertSee('role="dialog"', false)
+        ->assertSee('aria-modal="true"', false)
+        ->assertSee("localStorage.getItem('lens-theme')", false)
+        ->assertSee('JetBrains+Mono', false)
+        ->getContent();
+
+    $colors = lensDashboardThemeVariables($html, $selector);
+
+    foreach (['--lens-content', '--lens-body', '--lens-muted'] as $token) {
+        expect(lensDashboardContrastRatio($colors[$token], $colors['--lens-page']))
+            ->toBeGreaterThanOrEqual(7.0, "{$selector} {$token} should meet an AAA reading-text target.");
+    }
+
+    foreach (['--lens-subtle', '--lens-accent'] as $token) {
+        expect(lensDashboardContrastRatio($colors[$token], $colors['--lens-page']))
+            ->toBeGreaterThanOrEqual(4.5, "{$selector} {$token} should meet the AA normal-text target.");
+    }
+
+    foreach (['--lens-control', '--lens-focus'] as $token) {
+        expect(lensDashboardContrastRatio($colors[$token], $colors['--lens-page']))
+            ->toBeGreaterThanOrEqual(3.0, "{$selector} {$token} should meet the non-text contrast target.");
+    }
+
+    expect(lensDashboardContrastRatio($colors['--lens-on-accent'], $colors['--lens-accent-solid']))
+        ->toBeGreaterThanOrEqual(4.5, "{$selector} solid accent content should meet the AA normal-text target.");
+})->with([
+    'light mode' => ':root',
+    'dark mode' => '.dark',
+]);
+
+test('state recorder inherits the dashboard theme and accessible controls', function () {
+    $this->get(route('lens-for-laravel.states.recorder', [
+        'target' => url('/states'),
+    ]))
+        ->assertOk()
+        ->assertSee('href="#recorder-preview"', false)
+        ->assertSee('tabindex="-1"', false)
+        ->assertSee("localStorage.getItem('lens-theme')", false)
+        ->assertSee('JetBrains+Mono', false)
+        ->assertSee('role="status"', false)
+        ->assertSee('aria-live="polite"', false)
+        ->assertSee('--lens-accent: #991b1b', false)
+        ->assertSee('--lens-accent: #ff8a8a', false);
 });
 
 test('dashboard footer lists every supported Laravel version', function () {

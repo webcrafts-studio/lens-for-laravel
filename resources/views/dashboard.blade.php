@@ -9,8 +9,18 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
+    <script>
+        (function() {
+            var saved = localStorage.getItem('lens-theme') || localStorage.getItem('theme');
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -20,6 +30,7 @@
                 extend: {
                     fontFamily: {
                         sans: ['Instrument Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     },
                 },
             },
@@ -30,8 +41,188 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+        :root {
+            color-scheme: light;
+            --lens-page: #ffffff;
+            --lens-panel: #f4f4f5;
+            --lens-panel-strong: #e4e4e7;
+            --lens-content: #09090b;
+            --lens-body: #27272a;
+            --lens-muted: #52525b;
+            --lens-subtle: #71717a;
+            --lens-divider: #a1a1aa;
+            --lens-control: #71717a;
+            --lens-accent: #991b1b;
+            --lens-accent-soft: #fee2e2;
+            --lens-accent-solid: #b91c1c;
+            --lens-on-accent: #ffffff;
+            --lens-focus: #1d4ed8;
+            --lens-grid: rgb(9 9 11 / 0.05);
+        }
+
+        .dark {
+            color-scheme: dark;
+            --lens-page: #09090b;
+            --lens-panel: #18181b;
+            --lens-panel-strong: #27272a;
+            --lens-content: #fafafa;
+            --lens-body: #e4e4e7;
+            --lens-muted: #c4c4cc;
+            --lens-subtle: #a1a1aa;
+            --lens-divider: #52525b;
+            --lens-control: #a1a1aa;
+            --lens-accent: #ff8a8a;
+            --lens-accent-soft: #3f1118;
+            --lens-accent-solid: #b91c1c;
+            --lens-on-accent: #ffffff;
+            --lens-focus: #fde047;
+            --lens-grid: rgb(250 250 250 / 0.04);
+        }
+
         [x-cloak] {
             display: none !important;
+        }
+
+        body {
+            background-color: var(--lens-page) !important;
+            background-image:
+                linear-gradient(var(--lens-grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--lens-grid) 1px, transparent 1px);
+            background-size: 48px 48px;
+            color: var(--lens-body) !important;
+        }
+
+        body::selection,
+        body ::selection {
+            background: var(--lens-accent-solid) !important;
+            color: var(--lens-on-accent) !important;
+        }
+
+        body a:focus-visible,
+        body button:focus-visible,
+        body input:focus-visible,
+        body textarea:focus-visible,
+        body select:focus-visible,
+        body [tabindex]:not([tabindex="-1"]):focus-visible {
+            outline: 3px solid var(--lens-focus) !important;
+            outline-offset: 3px !important;
+        }
+
+        .skip-link {
+            position: fixed;
+            top: 0.75rem;
+            left: 0.75rem;
+            z-index: 100;
+            transform: translateY(-200%);
+            border: 2px solid var(--lens-content);
+            background: var(--lens-page);
+            color: var(--lens-content);
+            padding: 0.75rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .skip-link:focus {
+            transform: translateY(0);
+        }
+
+        [class~="text-[#E11D48]"],
+        [class~="text-[#FF2D20]"],
+        [class~="text-[#D01D10]"],
+        .dark [class~="dark:text-[#FF4D40]"] {
+            color: var(--lens-accent) !important;
+        }
+
+        [class~="bg-[#E11D48]"],
+        [class~="bg-[#FF2D20]"] {
+            background-color: var(--lens-accent-solid) !important;
+        }
+
+        [class~="bg-[#E11D48]/10"],
+        [class~="bg-[#FF2D20]/10"] {
+            background-color: var(--lens-accent-soft) !important;
+        }
+
+        [class~="border-[#E11D48]"],
+        [class~="border-[#FF2D20]"],
+        [class~="border-t-[#E11D48]"] {
+            border-color: var(--lens-accent-solid) !important;
+        }
+
+        [class~="border-[#E11D48]/30"],
+        [class~="border-[#E11D48]/40"] {
+            border-color: var(--lens-accent) !important;
+        }
+
+        [class~="hover:text-[#E11D48]"]:hover,
+        .dark [class~="dark:hover:text-[#E11D48]"]:hover {
+            color: var(--lens-accent) !important;
+        }
+
+        [class~="hover:bg-[#E11D48]"]:hover {
+            background-color: var(--lens-accent-solid) !important;
+        }
+
+        [class~="text-neutral-300"],
+        [class~="text-neutral-400"],
+        [class~="text-neutral-500"],
+        [class~="text-neutral-600"] {
+            color: var(--lens-muted) !important;
+        }
+
+        [class~="text-neutral-700"],
+        [class~="text-neutral-800"] {
+            color: var(--lens-body) !important;
+        }
+
+        .dark [class~="dark:text-neutral-200"] {
+            color: var(--lens-content) !important;
+        }
+
+        .dark [class~="dark:text-neutral-300"],
+        .dark [class~="dark:text-neutral-400"] {
+            color: var(--lens-muted) !important;
+        }
+
+        [class~="border-neutral-300"],
+        [class~="border-neutral-400"],
+        [class~="border-neutral-500"],
+        [class~="border-neutral-600"],
+        [class~="border-neutral-700"],
+        .dark [class~="dark:border-neutral-400"],
+        .dark [class~="dark:border-neutral-500"],
+        .dark [class~="dark:border-neutral-600"],
+        .dark [class~="dark:border-neutral-700"] {
+            border-color: var(--lens-control) !important;
+        }
+
+        [class~="border-black/10"],
+        [class~="border-white/10"] {
+            border-color: var(--lens-divider) !important;
+        }
+
+        [class~="border-black/20"],
+        [class~="border-black/30"],
+        [class~="border-white/20"],
+        [class~="border-white/30"] {
+            border-color: var(--lens-control) !important;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--lens-subtle) !important;
+            opacity: 1;
+        }
+
+        header [class~="text-[10px]"],
+        main [class~="text-[10px]"],
+        .lens-modal [class~="text-[10px]"],
+        footer [class~="text-[10px]"] {
+            font-size: 0.75rem !important;
+            line-height: 1rem !important;
         }
 
         /* Custom Scrollbar for Brutalist look */
@@ -41,25 +232,35 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: var(--lens-panel);
         }
 
         .dark ::-webkit-scrollbar-track {
-            background: #111;
+            background: var(--lens-panel);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #333;
-            border: 2px solid #f1f1f1;
+            background: var(--lens-content);
+            border: 2px solid var(--lens-panel);
         }
 
         .dark ::-webkit-scrollbar-thumb {
-            background: #eee;
-            border: 2px solid #111;
+            background: var(--lens-content);
+            border: 2px solid var(--lens-panel);
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #E11D48;
+            background: var(--lens-accent);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
@@ -67,6 +268,8 @@
 <body
     class="bg-white text-black dark:bg-black dark:text-neutral-200 font-sans antialiased min-h-screen flex flex-col border-t-[4px] border-t-[#E11D48] overflow-x-hidden"
     x-data="scanner()">
+
+    <a href="#scanner-content" class="skip-link">{{ __('lens-for-laravel::messages.nav.scanner') }}</a>
 
     <div
         class="flex-1 flex flex-col selection:bg-[#E11D48] selection:text-white dark:selection:bg-[#E11D48] dark:selection:text-white relative min-w-0">
@@ -76,7 +279,7 @@
                 <div class="flex items-center gap-3">
                     <!-- Lens For Laravel logomark -->
 
-                    <h1 class="font-sans font-bold text-base sm:text-xl tracking-tight whitespace-nowrap">
+                    <h1 class="font-mono font-black text-sm sm:text-base tracking-[0.12em] uppercase whitespace-nowrap">
                         <span class="text-black dark:text-white">Lens for</span><span class="text-[#E11D48]">
                             Laravel</span>
                     </h1>
@@ -100,6 +303,7 @@
                     </div>
                     <!-- Theme Toggle -->
                     <button @click="toggleTheme" aria-label="{{ __('lens-for-laravel::messages.nav.theme_toggle') }}"
+                        :aria-pressed="theme === 'dark'"
                         class="p-1.5 border border-black dark:border-neutral-500 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors flex items-center justify-center">
                         <svg x-show="theme === 'dark'" x-cloak xmlns="http://www.w3.org/2000/svg" fill="none"
                             viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
@@ -117,7 +321,7 @@
         </header>
 
         <!-- Main Content -->
-        <main class="flex-1 py-12 px-4 sm:px-6 lg:px-8">
+        <main id="scanner-content" tabindex="-1" class="flex-1 py-12 px-4 sm:px-6 lg:px-8">
             <div class="w-full max-w-5xl mx-auto space-y-12 min-w-0">
 
                 <!-- ═══ SCANNER TAB ═══ -->
@@ -789,8 +993,9 @@
     </footer>
 
     <!-- AI Fix Modal -->
-    <div x-show="showFixModal" @keydown.escape.window="closeFixModal()"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" x-cloak>
+    <div x-show="showFixModal" @keydown.escape.window="closeFixModal()" role="dialog" aria-modal="true"
+        aria-labelledby="ai-fix-modal-title"
+        class="lens-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" x-cloak>
         <div
             class="bg-white dark:bg-black border-2 border-black dark:border-white w-full max-w-4xl relative shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.2)] flex flex-col max-h-[90vh]">
 
@@ -798,7 +1003,8 @@
             <div
                 class="border-b border-black dark:border-white px-6 py-4 flex items-center justify-between bg-neutral-100 dark:bg-neutral-900 shrink-0">
                 <div>
-                    <h3 class="text-lg font-mono font-bold uppercase tracking-widest">[ {{ __('lens-for-laravel::messages.ai_fix.title') }} ]</h3>
+                    <h3 id="ai-fix-modal-title" class="text-lg font-mono font-bold uppercase tracking-widest">[
+                        {{ __('lens-for-laravel::messages.ai_fix.title') }} ]</h3>
                     <p class="text-xs font-mono text-neutral-500 uppercase tracking-widest mt-0.5"
                         x-text="fixIssue?.id ?? ''"></p>
                 </div>
@@ -918,13 +1124,15 @@
     </div>
 
     <!-- Preview Modal -->
-    <div x-show="showPreviewModal" @keydown.escape.window="closePreview()"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" x-cloak>
+    <div x-show="showPreviewModal" @keydown.escape.window="closePreview()" role="dialog" aria-modal="true"
+        aria-labelledby="preview-modal-title"
+        class="lens-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" x-cloak>
         <div
             class="bg-white dark:bg-black border-2 border-black dark:border-white w-full max-w-5xl relative shadow-[8px_8px_0px_rgba(0,0,0,1)] dark:shadow-[8px_8px_0px_rgba(255,255,255,0.2)]">
             <div
                 class="border-b border-black dark:border-white px-6 py-4 flex items-center justify-between bg-neutral-100 dark:bg-neutral-900">
-                <h3 class="text-lg font-mono font-bold uppercase tracking-widest">[ {{ __('lens-for-laravel::messages.preview.title') }} ]</h3>
+                <h3 id="preview-modal-title" class="text-lg font-mono font-bold uppercase tracking-widest">[
+                    {{ __('lens-for-laravel::messages.preview.title') }} ]</h3>
                 <button @click="closePreview()" aria-label="{{ __('lens-for-laravel::messages.common.close') }}" title="{{ __('lens-for-laravel::messages.common.close') }}"
                     class="w-8 h-8 inline-flex items-center justify-center border border-transparent hover:border-black dark:hover:border-white hover:text-[#E11D48] font-mono font-bold text-xl leading-none transition-colors text-black dark:text-white">&times;</button>
             </div>
@@ -1004,7 +1212,9 @@
                 hasResults: false,
                 error: null,
                 issues: [],
-                theme: localStorage.getItem('theme') || 'light',
+                theme: localStorage.getItem('lens-theme') ||
+                    localStorage.getItem('theme') ||
+                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
                 activeFilter: null,
 
                 // Scan Mode & Progress
@@ -1052,7 +1262,9 @@
                     document.documentElement.classList.toggle('dark', this.theme === 'dark');
                     this.$watch('theme', val => {
                         document.documentElement.classList.toggle('dark', val === 'dark');
+                        localStorage.setItem('lens-theme', val);
                         localStorage.setItem('theme', val);
+                        this.renderTrendChart();
                     });
                     this.initStateRecorderListener();
                 },
@@ -1654,8 +1866,9 @@
                     if (this.trendChart) { this.trendChart.destroy(); }
 
                     const isDark = document.documentElement.classList.contains('dark');
-                    const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
-                    const textColor = isDark ? '#a3a3a3' : '#525252';
+                    const gridColor = isDark ? 'rgba(161,161,170,0.45)' : 'rgba(82,82,91,0.35)';
+                    const textColor = isDark ? '#c4c4cc' : '#52525b';
+                    const accentColor = isDark ? '#ff8a8a' : '#991b1b';
 
                     const labels = this.trendData.map(t => new Date(t.created_at).toLocaleDateString(LENS_LOCALE, { month: 'short', day: 'numeric' }));
                     this.trendChart = new Chart(canvas, {
@@ -1666,8 +1879,8 @@
                                 {
                                     label: LENS_I18N.chartTotal,
                                     data: this.trendData.map(t => t.total_issues),
-                                    borderColor: '#E11D48',
-                                    backgroundColor: 'rgba(225,29,72,0.1)',
+                                    borderColor: accentColor,
+                                    backgroundColor: isDark ? 'rgba(255,138,138,0.12)' : 'rgba(153,27,27,0.10)',
                                     fill: true,
                                     tension: 0.3,
                                     pointRadius: 4,
@@ -1676,7 +1889,7 @@
                                 {
                                     label: LENS_I18N.levelA,
                                     data: this.trendData.map(t => t.level_a_count),
-                                    borderColor: '#dc2626',
+                                    borderColor: isDark ? '#fca5a5' : '#b91c1c',
                                     borderDash: [5, 5],
                                     tension: 0.3,
                                     pointRadius: 2,
@@ -1692,7 +1905,7 @@
                                 {
                                     label: LENS_I18N.levelAAA,
                                     data: this.trendData.map(t => t.level_aaa_count),
-                                    borderColor: '#a3a3a3',
+                                    borderColor: isDark ? '#a1a1aa' : '#52525b',
                                     borderDash: [2, 4],
                                     tension: 0.3,
                                     pointRadius: 2,

@@ -5,80 +5,244 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ __('lens-for-laravel::messages.recorder.title') }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        (function() {
+            var saved = localStorage.getItem('lens-theme') || localStorage.getItem('theme');
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                },
+            },
+        }
+    </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
+        :root {
+            color-scheme: light;
+            --lens-page: #ffffff;
+            --lens-panel: #f4f4f5;
+            --lens-content: #09090b;
+            --lens-body: #27272a;
+            --lens-muted: #52525b;
+            --lens-subtle: #71717a;
+            --lens-divider: #a1a1aa;
+            --lens-control: #71717a;
+            --lens-accent: #991b1b;
+            --lens-accent-solid: #b91c1c;
+            --lens-focus: #1d4ed8;
+        }
+
+        .dark {
+            color-scheme: dark;
+            --lens-page: #09090b;
+            --lens-panel: #18181b;
+            --lens-content: #fafafa;
+            --lens-body: #e4e4e7;
+            --lens-muted: #c4c4cc;
+            --lens-subtle: #a1a1aa;
+            --lens-divider: #52525b;
+            --lens-control: #a1a1aa;
+            --lens-accent: #ff8a8a;
+            --lens-accent-solid: #b91c1c;
+            --lens-focus: #fde047;
+        }
+
         [x-cloak] {
             display: none !important;
+        }
+
+        body {
+            background: var(--lens-page) !important;
+            color: var(--lens-body) !important;
+        }
+
+        body::selection,
+        body ::selection {
+            background: var(--lens-accent-solid) !important;
+            color: #ffffff !important;
+        }
+
+        body a:focus-visible,
+        body button:focus-visible,
+        body input:focus-visible,
+        body textarea:focus-visible,
+        body select:focus-visible,
+        body [tabindex]:not([tabindex="-1"]):focus-visible {
+            outline: 3px solid var(--lens-focus) !important;
+            outline-offset: 3px !important;
+        }
+
+        .skip-link {
+            position: fixed;
+            top: 0.75rem;
+            left: 0.75rem;
+            z-index: 100;
+            transform: translateY(-200%);
+            border: 2px solid var(--lens-content);
+            background: var(--lens-page);
+            color: var(--lens-content);
+            padding: 0.75rem 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .skip-link:focus {
+            transform: translateY(0);
+        }
+
+        [class~="text-neutral-400"],
+        [class~="text-neutral-500"] {
+            color: var(--lens-muted) !important;
+        }
+
+        [class~="text-neutral-200"] {
+            color: var(--lens-body) !important;
+        }
+
+        [class~="border-white/10"] {
+            border-color: var(--lens-divider) !important;
+        }
+
+        [class~="border-black/10"] {
+            border-color: var(--lens-divider) !important;
+        }
+
+        [class~="border-black/20"],
+        [class~="border-black/30"],
+        [class~="border-white/15"],
+        [class~="border-white/20"],
+        [class~="border-white/30"] {
+            border-color: var(--lens-control) !important;
+        }
+
+        [class~="bg-[#E11D48]"] {
+            background-color: var(--lens-accent-solid) !important;
+        }
+
+        [class~="border-[#E11D48]"] {
+            border-color: var(--lens-accent-solid) !important;
+        }
+
+        [class~="text-[#E11D48]"],
+        [class~="hover:text-[#E11D48]"]:hover {
+            color: var(--lens-accent) !important;
+        }
+
+        [class~="hover:bg-[#E11D48]"]:hover {
+            background-color: var(--lens-accent-solid) !important;
+        }
+
+        input::placeholder {
+            color: var(--lens-subtle) !important;
+            opacity: 1;
+        }
+
+        header [class~="text-[10px]"],
+        header [class~="text-[11px]"] {
+            font-size: 0.75rem !important;
+            line-height: 1rem !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 
-<body class="h-screen overflow-hidden bg-black text-white" x-data="stateRecorder()" x-init="init()">
+<body class="h-screen overflow-hidden bg-white text-black dark:bg-black dark:text-white" x-data="stateRecorder()" x-init="init()">
+    <a href="#recorder-preview" class="skip-link">{{ __('lens-for-laravel::messages.preview.frame_title') }}</a>
+
     <div class="grid h-screen grid-rows-[auto_1fr]">
-        <header class="border-b border-white/15 bg-black">
+        <header class="border-b border-black/20 bg-white dark:border-white/20 dark:bg-black">
             <div class="flex flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0">
                     <div class="flex items-center gap-3">
                         <span class="h-2.5 w-2.5 rounded-full" :class="recording ? 'bg-[#E11D48]' : 'bg-neutral-500'"></span>
                         <h1 class="font-mono text-sm font-bold uppercase tracking-widest">{{ __('lens-for-laravel::messages.recorder.title') }}</h1>
                     </div>
-                    <p class="mt-1 truncate font-mono text-xs text-neutral-400" x-text="targetUrl"></p>
+                    <p class="mt-1 truncate font-mono text-xs text-neutral-500 dark:text-neutral-400" x-text="targetUrl"></p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest">
                     <button type="button" @click="recording = !recording"
                         class="border px-3 py-2"
-                        :class="recording ? 'border-[#E11D48] bg-[#E11D48] text-white' : 'border-white text-white hover:bg-white hover:text-black'">
+                        :class="recording ? 'border-[#E11D48] bg-[#E11D48] text-white' : 'border-black text-black hover:bg-black hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black'">
                         <span x-text="recording ? t.recording : t.record"></span>
                     </button>
                     <button type="button" @click="reloadPreview()"
-                        class="border border-white/30 px-3 py-2 text-white hover:border-white">{{ __('lens-for-laravel::messages.recorder.reload') }}</button>
+                        class="border border-black/30 px-3 py-2 text-black hover:border-black dark:border-white/30 dark:text-white dark:hover:border-white">{{ __('lens-for-laravel::messages.recorder.reload') }}</button>
                     <button type="button" @click="addState()"
-                        class="border border-white/30 px-3 py-2 text-white hover:border-white">{{ __('lens-for-laravel::messages.recorder.new_state') }}</button>
+                        class="border border-black/30 px-3 py-2 text-black hover:border-black dark:border-white/30 dark:text-white dark:hover:border-white">{{ __('lens-for-laravel::messages.recorder.new_state') }}</button>
                     <button type="button" @click="sendToDashboard()"
                         class="border border-[#E11D48] px-3 py-2 text-[#E11D48] hover:bg-[#E11D48] hover:text-white">{{ __('lens-for-laravel::messages.recorder.send_script') }}</button>
                 </div>
             </div>
 
-            <div class="grid gap-3 border-t border-white/10 px-4 py-3 lg:grid-cols-[0.8fr_1.2fr]">
+            <div class="grid gap-3 border-t border-black/10 px-4 py-3 dark:border-white/10 lg:grid-cols-[0.8fr_1.2fr]">
                 <div class="min-w-0">
-                    <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                    <label class="block font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                         {{ __('lens-for-laravel::messages.recorder.current_state') }}
                     </label>
                     <div class="mt-2 flex gap-2">
                         <select x-model.number="activeStateIndex"
-                            class="min-w-0 flex-1 rounded-none border border-white/20 bg-black px-3 py-2 font-mono text-xs text-white outline-none focus:border-[#E11D48]">
+                            class="min-w-0 flex-1 rounded-none border border-black/30 bg-white px-3 py-2 font-mono text-xs text-black outline-none focus:border-[#E11D48] dark:border-white/20 dark:bg-black dark:text-white">
                             <template x-for="(state, index) in states" :key="state.id">
                                 <option :value="index" x-text="`${index + 1}. ${state.label || t.unnamedState} (${state.actions.length})`"></option>
                             </template>
                         </select>
                         <input type="text" x-model="activeState.label" maxlength="80"
-                            class="min-w-0 flex-1 rounded-none border border-white/20 bg-black px-3 py-2 font-mono text-xs text-white outline-none focus:border-[#E11D48]"
+                            class="min-w-0 flex-1 rounded-none border border-black/30 bg-white px-3 py-2 font-mono text-xs text-black outline-none focus:border-[#E11D48] dark:border-white/20 dark:bg-black dark:text-white"
                             placeholder="{{ __('lens-for-laravel::messages.recorder.state_label') }}">
                     </div>
-                    <p class="mt-2 font-mono text-[11px] text-neutral-500">
+                    <p class="mt-2 font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
                         {{ __('lens-for-laravel::messages.recorder.hint') }}
                     </p>
                 </div>
 
                 <div class="min-w-0">
                     <div class="flex items-center justify-between gap-3">
-                        <span class="font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-400">{{ __('lens-for-laravel::messages.recorder.recorded_script') }}</span>
+                        <span class="font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">{{ __('lens-for-laravel::messages.recorder.recorded_script') }}</span>
                         <button type="button" @click="clearActions()"
-                            class="font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-[#E11D48]">{{ __('lens-for-laravel::messages.recorder.clear') }}</button>
+                            class="font-mono text-[10px] font-bold uppercase tracking-widest text-neutral-500 hover:text-[#E11D48] dark:text-neutral-400">{{ __('lens-for-laravel::messages.recorder.clear') }}</button>
                     </div>
                     <textarea readonly x-text="script"
-                        class="mt-2 h-24 w-full resize-none rounded-none border border-white/20 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-200 outline-none"></textarea>
+                        class="mt-2 h-24 w-full resize-none rounded-none border border-black/30 bg-neutral-100 px-3 py-2 font-mono text-xs text-neutral-800 outline-none dark:border-white/20 dark:bg-neutral-950 dark:text-neutral-200"></textarea>
                 </div>
             </div>
 
-            <div x-show="message" x-cloak class="border-t border-white/10 px-4 py-2 font-mono text-xs"
+            <div x-show="message" x-cloak role="status" aria-live="polite"
+                class="border-t border-black/10 px-4 py-2 font-mono text-xs dark:border-white/10"
                 :class="messageType === 'error' ? 'bg-[#E11D48] text-white' : 'bg-white text-black'"
                 x-text="message"></div>
         </header>
 
-        <main class="relative min-h-0">
+        <main id="recorder-preview" tabindex="-1" class="relative min-h-0">
             <iframe x-ref="preview" :src="previewUrl" @load="attachFrameListeners()"
                 class="h-full w-full bg-white" title="{{ __('lens-for-laravel::messages.preview.frame_title') }}"></iframe>
         </main>
