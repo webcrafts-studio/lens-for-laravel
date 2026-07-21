@@ -52,9 +52,9 @@
             --lens-subtle: #71717a;
             --lens-divider: #a1a1aa;
             --lens-control: #71717a;
-            --lens-accent: #991b1b;
-            --lens-accent-soft: #fee2e2;
-            --lens-accent-solid: #b91c1c;
+            --lens-accent: #c52b21;
+            --lens-accent-soft: #ffebe8;
+            --lens-accent-solid: #c52b21;
             --lens-on-accent: #ffffff;
             --lens-focus: #1d4ed8;
             --lens-grid: rgb(9 9 11 / 0.05);
@@ -221,8 +221,8 @@
         main [class~="text-[10px]"],
         .lens-modal [class~="text-[10px]"],
         footer [class~="text-[10px]"] {
-            font-size: 0.75rem !important;
-            line-height: 1rem !important;
+            font-size: 0.6875rem !important;
+            line-height: 0.9375rem !important;
         }
 
         /* Custom Scrollbar for Brutalist look */

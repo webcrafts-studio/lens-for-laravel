@@ -110,7 +110,7 @@ test('state recorder inherits the dashboard theme and accessible controls', func
         ->assertSee('JetBrains+Mono', false)
         ->assertSee('role="status"', false)
         ->assertSee('aria-live="polite"', false)
-        ->assertSee('--lens-accent: #991b1b', false)
+        ->assertSee('--lens-accent: #c52b21', false)
         ->assertSee('--lens-accent: #ff8a8a', false);
 });
 

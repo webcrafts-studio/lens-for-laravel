@@ -44,8 +44,8 @@
             --lens-subtle: #71717a;
             --lens-divider: #a1a1aa;
             --lens-control: #71717a;
-            --lens-accent: #991b1b;
-            --lens-accent-solid: #b91c1c;
+            --lens-accent: #c52b21;
+            --lens-accent-solid: #c52b21;
             --lens-focus: #1d4ed8;
         }
 
@@ -159,8 +159,8 @@
 
         header [class~="text-[10px]"],
         header [class~="text-[11px]"] {
-            font-size: 0.75rem !important;
-            line-height: 1rem !important;
+            font-size: 0.6875rem !important;
+            line-height: 0.9375rem !important;
         }
 
         @media (prefers-reduced-motion: reduce) {
