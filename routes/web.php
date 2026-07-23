@@ -317,7 +317,7 @@ Route::post('/fix/suggest', function (Request $request) {
             'message' => __('lens-for-laravel::messages.ai_fix.generation_failed'),
         ], 500);
     }
-})->name('lens-for-laravel.fix.suggest')->middleware('throttle:20,1');
+})->name('lens-for-laravel.fix.suggest')->middleware('throttle:60,1');
 
 Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourceFile) {
     try {
@@ -333,7 +333,7 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
         $validated = $request->validate([
             'fileName' => ['required', 'string', 'max:500'],
             'originalCode' => ['required', 'string'],
-            'fixedCode' => ['required', 'string'],
+            'fixedCode' => ['required', 'string', 'max:12000'],
         ]);
 
         $fileName = $validated['fileName'];

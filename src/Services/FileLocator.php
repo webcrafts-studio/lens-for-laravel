@@ -24,7 +24,7 @@ class FileLocator
             return null;
         }
 
-        $bladeLocation = $this->locateInBlade($tagName, $id, $name, $selector, allowTagOnlyMatch: false);
+        $bladeLocation = $this->locateInBlade($tagName, $id, $name, $selector, $htmlSnippet, allowTagOnlyMatch: false);
         if ($bladeLocation) {
             return $bladeLocation;
         }
@@ -34,10 +34,10 @@ class FileLocator
             return $frontendLocation;
         }
 
-        return $this->locateInBlade($tagName, $id, $name, $selector);
+        return $this->locateInBlade($tagName, $id, $name, $selector, $htmlSnippet);
     }
 
-    protected function locateInBlade(string $tagName, ?string $id, ?string $name, string $selector, bool $allowTagOnlyMatch = true): ?array
+    protected function locateInBlade(string $tagName, ?string $id, ?string $name, string $selector, string $htmlSnippet, bool $allowTagOnlyMatch = true): ?array
     {
         $viewsPath = resource_path('views');
 
@@ -47,23 +47,49 @@ class FileLocator
 
         $finder = new Finder;
         $finder->files()->in($viewsPath)->name('*.blade.php');
+        $attributes = [
+            'src' => $this->extractAttribute($htmlSnippet, 'src'),
+            'href' => $this->extractAttribute($htmlSnippet, 'href'),
+            'aria-label' => $this->extractAttribute($htmlSnippet, 'aria-label'),
+            'title' => $this->extractAttribute($htmlSnippet, 'title'),
+        ];
+        $targetClasses = $this->extractClassList($htmlSnippet);
+        $candidates = [];
 
         foreach ($finder as $file) {
             $contents = file_get_contents($file->getRealPath());
             $lines = preg_split('/\r?\n/', $contents);
 
             foreach ($lines as $index => $line) {
-                if ($this->isMatch($line, $tagName, $id, $name, $selector, $allowTagOnlyMatch)) {
-                    return [
-                        'file' => $file->getRelativePathname(),
-                        'line' => $index + 1,
-                        'type' => 'blade',
-                    ];
+                $score = $this->bladeMatchScore(
+                    $line,
+                    $tagName,
+                    $id,
+                    $name,
+                    $attributes,
+                    $targetClasses,
+                    $selector,
+                    $allowTagOnlyMatch
+                );
+
+                if ($score <= 0) {
+                    continue;
                 }
+
+                $candidates[] = [
+                    'file' => $file->getRelativePathname(),
+                    'line' => $index + 1,
+                    'type' => 'blade',
+                    'score' => $score,
+                ];
             }
         }
 
-        return null;
+        if ($candidates === []) {
+            return null;
+        }
+
+        return $this->bestCandidate($candidates, $selector);
     }
 
     protected function locateInFrontend(string $tagName, ?string $id, ?string $name, string $selector, string $htmlSnippet): ?array
@@ -86,7 +112,7 @@ class FileLocator
             'title' => $this->extractAttribute($htmlSnippet, 'title'),
         ];
         $targetClasses = $this->extractClassList($htmlSnippet);
-        $bestMatch = null;
+        $candidates = [];
 
         foreach ($finder as $file) {
             $contents = file_get_contents($file->getRealPath());
@@ -105,19 +131,44 @@ class FileLocator
                     continue;
                 }
 
-                if (! $bestMatch || $score > $bestMatch['score']) {
-                    $bestMatch = [
-                        'file' => 'js/'.$file->getRelativePathname(),
-                        'line' => $index + 1,
-                        'type' => $this->sourceTypeForExtension($file->getExtension()),
-                        'score' => $score,
-                    ];
-                }
+                $candidates[] = [
+                    'file' => 'js/'.$file->getRelativePathname(),
+                    'line' => $index + 1,
+                    'type' => $this->sourceTypeForExtension($file->getExtension()),
+                    'score' => $score,
+                ];
             }
         }
 
-        if (! $bestMatch) {
+        if ($candidates === []) {
             return null;
+        }
+
+        return $this->bestCandidate($candidates, $selector);
+    }
+
+    protected function bestCandidate(array $candidates, string $selector): array
+    {
+        $highestScore = max(array_column($candidates, 'score'));
+        $bestMatches = array_values(array_filter(
+            $candidates,
+            fn (array $candidate): bool => $candidate['score'] === $highestScore
+        ));
+        $position = $this->selectorPosition($selector);
+        $bestMatch = $bestMatches[0];
+
+        if ($position !== null) {
+            foreach (array_values(array_unique(array_column($bestMatches, 'file'))) as $file) {
+                $fileMatches = array_values(array_filter(
+                    $bestMatches,
+                    fn (array $candidate): bool => $candidate['file'] === $file
+                ));
+
+                if (isset($fileMatches[$position - 1])) {
+                    $bestMatch = $fileMatches[$position - 1];
+                    break;
+                }
+            }
         }
 
         unset($bestMatch['score']);
@@ -154,42 +205,93 @@ class FileLocator
         return strtolower($extension) === 'vue' ? 'vue' : 'react';
     }
 
-    /**
-     * Determine if a given line of Blade code matches our target criteria.
-     */
-    protected function isMatch(string $line, string $tagName, ?string $id, ?string $name, string $selector, bool $allowTagOnlyMatch = true): bool
-    {
-        // 1. Check if the line contains the tag name (or a Blade component tag <x-)
+    protected function bladeMatchScore(
+        string $line,
+        string $tagName,
+        ?string $id,
+        ?string $name,
+        array $attributes,
+        array $targetClasses,
+        string $selector,
+        bool $allowTagOnlyMatch
+    ): int {
         if (stripos($line, '<'.$tagName) === false && stripos($line, '<x-') === false) {
-            return false;
+            return 0;
         }
 
-        // 2. Check for exact ID match
         if ($id && (stripos($line, 'id="'.$id.'"') !== false || stripos($line, "id='".$id."'") !== false)) {
-            return true;
+            return 200;
         }
 
-        // 3. Check for exact Name match
         if ($name && (stripos($line, 'name="'.$name.'"') !== false || stripos($line, "name='".$name."'") !== false)) {
-            return true;
+            return 200;
         }
 
-        // 4. Fallback: check if the line contains parts of the CSS selector (like class names or IDs)
-        $selectorParts = $this->selectorParts($selector);
+        $score = 0;
 
-        foreach ($selectorParts as $part) {
-            if (stripos($line, $part) !== false) {
-                return true;
+        foreach ($attributes as $attribute => $value) {
+            if (! $value) {
+                continue;
+            }
+
+            if ($this->lineContainsAttributeValue($line, $attribute, $value)) {
+                $score += 100;
+
+                continue;
+            }
+
+            $path = parse_url($value, PHP_URL_PATH);
+            $basename = basename(rawurldecode(is_string($path) ? $path : $value));
+
+            if ($basename !== '' && $basename !== '/' && stripos($line, $basename) !== false) {
+                $score += 80;
             }
         }
 
-        // If there's no ID, no Name, and no specific classes/IDs in the selector,
-        // we assume just matching the tag is the best we can do.
-        if ($allowTagOnlyMatch && empty($id) && empty($name) && empty($selectorParts)) {
-            return true;
+        $classScore = 0;
+
+        foreach ($targetClasses as $class) {
+            if ($this->lineContainsBladeClassToken($line, $class)) {
+                $classScore += 20;
+            }
         }
 
-        return false;
+        if ($score > 0) {
+            return $score + $classScore;
+        }
+
+        if ($classScore > 0) {
+            return $allowTagOnlyMatch ? $classScore : 0;
+        }
+
+        if ($targetClasses !== []) {
+            return 0;
+        }
+
+        $selectorParts = $this->selectorParts($selector);
+
+        foreach ($selectorParts as $part) {
+            foreach ($this->selectorPartVariants($part) as $variant) {
+                if (stripos($line, $variant) !== false) {
+                    $score++;
+                    break;
+                }
+            }
+        }
+
+        if ($score > 0) {
+            return $score;
+        }
+
+        return $allowTagOnlyMatch && empty($id) && empty($name) && empty($selectorParts) ? 1 : 0;
+    }
+
+    protected function lineContainsBladeClassToken(string $line, string $class): bool
+    {
+        return (bool) preg_match(
+            '/(?<![a-zA-Z0-9:_-])'.preg_quote($class, '/').'(?![a-zA-Z0-9:_-])/i',
+            $line
+        );
     }
 
     /**
@@ -267,6 +369,25 @@ class FileLocator
             fn ($part) => str_replace('\\:', ':', $part),
             $matches[1] ?? []
         )));
+    }
+
+    /**
+     * Use a numeric :nth-child() hint to disambiguate repeated source
+     * elements. Axe selectors commonly put the position on the nearest
+     * ancestor, so the value is treated as the matching occurrence within
+     * one source file rather than as a literal source-line child index.
+     */
+    protected function selectorPosition(string $selector): ?int
+    {
+        preg_match_all('/:nth-child\(\s*(\d+)\s*\)/i', $selector, $matches);
+
+        if (empty($matches[1])) {
+            return null;
+        }
+
+        $position = (int) end($matches[1]);
+
+        return $position > 0 ? $position : null;
     }
 
     protected function extractClassList(string $html): array

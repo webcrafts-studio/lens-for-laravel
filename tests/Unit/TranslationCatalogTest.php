@@ -31,7 +31,7 @@ test('all supported locales implement the complete translation contract', functi
     }
 
     $referenceKeys = array_keys($catalogs['en']);
-    expect($referenceKeys)->toHaveCount(227);
+    expect($referenceKeys)->toHaveCount(255);
 
     foreach ($catalogs as $locale => $catalog) {
         expect(array_keys($catalog))->toBe($referenceKeys, "Translation keys differ for {$locale}");

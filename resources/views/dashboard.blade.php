@@ -607,7 +607,23 @@
                             class="border-b border-black dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-900 px-6 py-4 flex items-center justify-between relative z-10">
                             <h3 class="text-sm font-mono font-bold uppercase tracking-widest"
                                 x-text="issueListTitle"></h3>
-                            <div class="flex items-center gap-4">
+                            <div class="flex flex-wrap items-center justify-end gap-3">
+                                @if ($aiFixStatus['available'])
+                                    <button x-show="eligibleFixCount('a') > 0" x-cloak
+                                        @click="requestAllAiFixes('a')"
+                                        class="inline-flex items-center gap-2 border-2 border-[#E11D48] bg-[#E11D48] px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest text-white transition-colors hover:border-black hover:bg-black dark:hover:border-white dark:hover:bg-white dark:hover:text-black">
+                                        <span>{{ __('lens-for-laravel::messages.ai_fix.fix_all_a') }}</span>
+                                        <span class="border-l border-white/40 pl-2"
+                                            x-text="eligibleFixCount('a')"></span>
+                                    </button>
+                                    <button x-show="eligibleFixCount('aa') > 0" x-cloak
+                                        @click="requestAllAiFixes('aa')"
+                                        class="inline-flex items-center gap-2 border-2 border-black bg-white px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-black hover:text-white dark:border-white dark:bg-black dark:text-white dark:hover:bg-white dark:hover:text-black">
+                                        <span>{{ __('lens-for-laravel::messages.ai_fix.fix_all_aa') }}</span>
+                                        <span class="border-l border-black/30 pl-2 dark:border-white/40"
+                                            x-text="eligibleFixCount('aa')"></span>
+                                    </button>
+                                @endif
                                 <template x-if="activeFilter">
                                     <button @click="activeFilter = null"
                                         class="text-xs font-mono uppercase tracking-widest text-neutral-500 dark:text-neutral-400 hover:text-[#E11D48] dark:hover:text-[#E11D48] transition-colors">[
@@ -641,7 +657,7 @@
 
                         <ul x-show="hasResults && filteredIssues.length > 0" role="list"
                             class="divide-y divide-black dark:divide-neutral-700 relative z-10">
-                            <template x-for="(issue, index) in filteredIssues" :key="index">
+                            <template x-for="issue in filteredIssues" :key="issue._lensDomKey">
                                 <li class="p-6 sm:p-8 transition-colors"
                                     :class="issue.aiFixStatus === 'pending_verification' ?
                                         'border-l-4 border-l-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/20' : ''">
@@ -993,7 +1009,7 @@
     </footer>
 
     <!-- AI Fix Modal -->
-    <div x-show="showFixModal" @keydown.escape.window="closeFixModal()" role="dialog" aria-modal="true"
+    <div x-show="showFixModal" @keydown.escape.window="handleFixEscape()" role="dialog" aria-modal="true"
         aria-labelledby="ai-fix-modal-title"
         class="lens-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" x-cloak>
         <div
@@ -1002,14 +1018,53 @@
             <!-- Header -->
             <div
                 class="border-b border-black dark:border-white px-6 py-4 flex items-center justify-between bg-neutral-100 dark:bg-neutral-900 shrink-0">
-                <div>
-                    <h3 id="ai-fix-modal-title" class="text-lg font-mono font-bold uppercase tracking-widest">[
-                        {{ __('lens-for-laravel::messages.ai_fix.title') }} ]</h3>
-                    <p class="text-xs font-mono text-neutral-500 uppercase tracking-widest mt-0.5"
-                        x-text="fixIssue?.id ?? ''"></p>
+                <div class="min-w-0">
+                    <h3 id="ai-fix-modal-title" class="text-lg font-mono font-bold uppercase tracking-widest"
+                        x-text="`[ ${fixModalTitle} ]`"></h3>
+                    <div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono text-neutral-500 uppercase tracking-widest">
+                        <span x-text="fixIssue?.id ?? ''"></span>
+                        <span x-show="isBulkFix" x-cloak x-text="fixQueuePosition"></span>
+                    </div>
                 </div>
                 <button @click="closeFixModal()" aria-label="{{ __('lens-for-laravel::messages.common.close') }}" title="{{ __('lens-for-laravel::messages.common.close') }}"
                     class="w-8 h-8 inline-flex items-center justify-center border border-transparent hover:border-black dark:hover:border-white hover:text-[#E11D48] font-mono font-bold text-xl leading-none transition-colors text-black dark:text-white">&times;</button>
+            </div>
+
+            <!-- Queue navigation -->
+            <div x-show="isBulkFix" x-cloak
+                class="border-b border-black dark:border-white bg-white px-6 py-3 dark:bg-black shrink-0">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p class="font-mono text-xs uppercase tracking-widest text-neutral-600 dark:text-neutral-300"
+                        x-text="fixQueueProgress"></p>
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="previousFix()" :disabled="!hasPreviousFix || isApplyingFix"
+                            class="border border-black px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-30 dark:border-white dark:hover:bg-white dark:hover:text-black">
+                            ← {{ __('lens-for-laravel::messages.ai_fix.previous') }}
+                        </button>
+                        <button type="button" @click="nextFix()" :disabled="!hasNextFix || isApplyingFix"
+                            class="border border-black px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-30 dark:border-white dark:hover:bg-white dark:hover:text-black">
+                            {{ __('lens-for-laravel::messages.ai_fix.next') }} →
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-3 flex gap-2 overflow-x-auto pb-1" role="tablist"
+                    aria-label="{{ __('lens-for-laravel::messages.ai_fix.queue_navigation') }}">
+                    <template x-for="(item, index) in fixQueue" :key="item.key">
+                        <button type="button" role="tab" @click="goToFix(index)"
+                            :aria-selected="index === activeFixIndex"
+                            :aria-label="fixQueueItemAriaLabel(item, index)"
+                            class="relative flex h-9 min-w-9 shrink-0 items-center justify-center border-2 px-2 font-mono text-xs font-bold transition-colors"
+                            :class="fixQueueStatusClass(item, index)">
+                            <span x-text="index + 1"></span>
+                            <span x-show="item.status === 'loading' || item.status === 'queued'"
+                                class="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black border-t-transparent bg-white animate-spin dark:border-white dark:border-t-transparent dark:bg-black"></span>
+                            <span x-show="item.status === 'ready'"
+                                class="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-[8px] text-white">✓</span>
+                            <span x-show="item.status === 'error'"
+                                class="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#E11D48] text-[8px] text-white">!</span>
+                        </button>
+                    </template>
+                </div>
             </div>
 
             <!-- Body -->
@@ -1021,8 +1076,9 @@
                         class="w-6 h-6 rounded-full border-2 border-black dark:border-white border-t-transparent animate-spin">
                     </div>
                     <div class="font-mono text-center">
-                        <p class="text-sm font-bold uppercase tracking-widest">{{ __('lens-for-laravel::messages.ai_fix.consulting') }}</p>
-                        <p class="text-xs text-neutral-500 mt-1 uppercase tracking-widest">{{ __('lens-for-laravel::messages.ai_fix.analyzing') }}</p>
+                        <p class="text-sm font-bold uppercase tracking-widest">{{ __('lens-for-laravel::messages.ai_fix.waiting_title') }}</p>
+                        <p class="text-xs text-neutral-500 mt-1 uppercase tracking-widest"
+                            x-text="isBulkFix ? LENS_I18N.queueWaiting : LENS_I18N.analyzing"></p>
                     </div>
                 </div>
 
@@ -1030,6 +1086,10 @@
                 <div x-show="!isLoadingFix && fixError" x-cloak class="border-2 border-dashed border-[#E11D48] p-4">
                     <p class="font-mono text-xs font-bold uppercase tracking-widest text-[#E11D48] mb-2">[ERR] {{ __('lens-for-laravel::messages.ai_fix.error_title') }}</p>
                     <p class="font-mono text-sm" x-text="fixError"></p>
+                    <button type="button" @click="retryCurrentFix()"
+                        class="mt-4 border border-[#E11D48] px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest text-[#E11D48] transition-colors hover:bg-[#E11D48] hover:text-white">
+                        {{ __('lens-for-laravel::messages.ai_fix.retry') }}
+                    </button>
                 </div>
 
                 <!-- Applied success -->
@@ -1040,8 +1100,16 @@
                         {{ __('lens-for-laravel::messages.ai_fix.applied_description') }}</p>
                 </div>
 
+                <!-- Rejected -->
+                <div x-show="fixRejected" x-cloak class="border-2 border-neutral-400 p-6 text-center space-y-2">
+                    <p class="font-mono text-sm font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
+                        {{ __('lens-for-laravel::messages.ai_fix.rejected_title') }}</p>
+                    <p class="font-mono text-xs text-neutral-500 uppercase tracking-widest">
+                        {{ __('lens-for-laravel::messages.ai_fix.rejected_description') }}</p>
+                </div>
+
                 <!-- Fix Data -->
-                <template x-if="!isLoadingFix && fixData && !fixApplied">
+                <template x-if="!isLoadingFix && fixData && !fixApplied && !fixRejected">
                     <div class="space-y-6">
 
                         <!-- AI Explanation -->
@@ -1059,6 +1127,52 @@
 
                         <!-- Diff view -->
                         <div>
+                            <div x-show="isEditingFix" x-cloak class="mb-6">
+                                <div class="mb-2 flex flex-wrap items-end justify-between gap-3">
+                                    <div>
+                                        <p class="text-xs font-mono font-bold uppercase tracking-widest text-neutral-500">>>
+                                            {{ __('lens-for-laravel::messages.ai_fix.edit_title') }}</p>
+                                        <p id="ai-fix-editor-help"
+                                            class="mt-1 text-[10px] font-mono text-neutral-500">
+                                            {{ __('lens-for-laravel::messages.ai_fix.edit_help') }}</p>
+                                    </div>
+                                    <button type="button" @click="resetEditedFix()"
+                                        :disabled="!hasEditedFix"
+                                        class="border border-black dark:border-white px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors disabled:cursor-not-allowed disabled:opacity-40">
+                                        {{ __('lens-for-laravel::messages.ai_fix.reset') }}
+                                    </button>
+                                </div>
+
+                                <div
+                                    class="border-2 border-black dark:border-white bg-[#0d1117] focus-within:ring-2 focus-within:ring-[#E11D48] focus-within:ring-offset-2 dark:focus-within:ring-offset-black">
+                                    <div class="flex min-h-[18rem] max-h-[50vh] overflow-hidden">
+                                        <div x-ref="fixEditorGutter" aria-hidden="true"
+                                            class="w-12 shrink-0 overflow-hidden border-r border-neutral-700 bg-neutral-900 py-3 text-right font-mono text-xs leading-6 text-neutral-500 select-none">
+                                            <template x-for="line in fixEditorLineCount" :key="line">
+                                                <div class="h-6 pr-3" x-text="line"></div>
+                                            </template>
+                                        </div>
+                                        <textarea x-ref="fixEditor" x-model="editedFixCode"
+                                            @input="persistActiveFixEdits()"
+                                            @scroll="syncFixEditorScroll($event)"
+                                            @keydown.tab.prevent="handleFixEditorTab($event)"
+                                            @keydown.ctrl.enter.prevent="applyFix()"
+                                            @keydown.meta.enter.prevent="applyFix()"
+                                            maxlength="12000" spellcheck="false" wrap="off"
+                                            aria-describedby="ai-fix-editor-help ai-fix-editor-status"
+                                            class="min-h-[18rem] max-h-[50vh] flex-1 resize-y overflow-auto border-0 bg-[#0d1117] px-4 py-3 font-mono text-xs leading-6 text-neutral-100 outline-none"
+                                            aria-label="{{ __('lens-for-laravel::messages.ai_fix.edit_title') }}"></textarea>
+                                    </div>
+                                    <div id="ai-fix-editor-status"
+                                        class="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-700 bg-neutral-900 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-neutral-400"
+                                        aria-live="polite">
+                                        <span x-text="fixEditorStatus"></span>
+                                        <span x-show="hasEditedFix" x-cloak
+                                            class="font-bold text-amber-300">{{ __('lens-for-laravel::messages.ai_fix.edited_badge') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <p class="text-xs font-mono font-bold uppercase tracking-widest text-neutral-500 mb-2">>>
                                 {{ __('lens-for-laravel::messages.ai_fix.diff') }}</p>
                             <div class="border border-black dark:border-neutral-700 overflow-hidden bg-[#0d1117]">
@@ -1102,10 +1216,16 @@
             </div>
 
             <!-- Footer — actions -->
-            <div x-show="!isLoadingFix && fixData && !fixApplied" x-cloak
-                class="border-t border-black dark:border-white px-6 py-4 flex justify-end gap-3 bg-neutral-100 dark:bg-neutral-900 shrink-0">
-                <button @click="closeFixModal()"
+            <div x-show="!isLoadingFix && fixData && !fixApplied && !fixRejected" x-cloak
+                class="border-t border-black dark:border-white px-6 py-4 flex flex-wrap justify-end gap-3 bg-neutral-100 dark:bg-neutral-900 shrink-0">
+                <button @click="rejectFix()"
                     class="px-6 py-2 border-2 border-black dark:border-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">{{ __('lens-for-laravel::messages.ai_fix.reject') }}</button>
+                <button type="button" @click="isEditingFix ? finishEditingFix() : startEditingFix()"
+                    :aria-pressed="isEditingFix"
+                    class="px-6 py-2 border-2 border-black dark:border-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">
+                    <span x-show="!isEditingFix">{{ __('lens-for-laravel::messages.ai_fix.edit') }}</span>
+                    <span x-show="isEditingFix" x-cloak>{{ __('lens-for-laravel::messages.ai_fix.preview_changes') }}</span>
+                </button>
                 <button @click="applyFix()" :disabled="isApplyingFix"
                     class="px-6 py-2 bg-[#E11D48] border-2 border-[#E11D48] text-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:border-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     <span x-show="!isApplyingFix">{{ __('lens-for-laravel::messages.ai_fix.accept_apply') }}</span>
@@ -1114,8 +1234,12 @@
             </div>
 
             <!-- Footer — after applied -->
-            <div x-show="fixApplied" x-cloak
-                class="border-t border-black dark:border-white px-6 py-4 flex justify-end bg-neutral-100 dark:bg-neutral-900 shrink-0">
+            <div x-show="fixApplied || fixRejected" x-cloak
+                class="border-t border-black dark:border-white px-6 py-4 flex flex-wrap justify-end gap-3 bg-neutral-100 dark:bg-neutral-900 shrink-0">
+                <button x-show="isBulkFix && hasNextFix" type="button" @click="nextFix()"
+                    class="px-6 py-2 bg-black border-2 border-black text-white dark:bg-white dark:border-white dark:text-black font-mono text-sm font-bold uppercase tracking-widest transition-colors">
+                    {{ __('lens-for-laravel::messages.ai_fix.next') }} →
+                </button>
                 <button @click="closeFixModal()"
                     class="px-6 py-2 border-2 border-black dark:border-white font-mono text-sm font-bold uppercase tracking-widest hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors">{{ __('lens-for-laravel::messages.ai_fix.close') }}</button>
             </div>
@@ -1198,6 +1322,21 @@
             'scanFailed' => __('lens-for-laravel::messages.errors.scan_failed'),
             'aiGenerationFailed' => __('lens-for-laravel::messages.errors.ai_generation_failed'),
             'applyFailed' => __('lens-for-laravel::messages.errors.apply_failed'),
+            'emptyFixCode' => __('lens-for-laravel::messages.ai_fix.empty_code'),
+            'fixEditorStatus' => __('lens-for-laravel::messages.ai_fix.editor_status'),
+            'aiFixTitle' => __('lens-for-laravel::messages.ai_fix.title'),
+            'fixAllTitle' => __('lens-for-laravel::messages.ai_fix.fix_all_title'),
+            'fixQueuePosition' => __('lens-for-laravel::messages.ai_fix.queue_position'),
+            'fixQueueProgress' => __('lens-for-laravel::messages.ai_fix.queue_progress'),
+            'queueWaiting' => __('lens-for-laravel::messages.ai_fix.queue_waiting'),
+            'analyzing' => __('lens-for-laravel::messages.ai_fix.analyzing'),
+            'queueItemLabel' => __('lens-for-laravel::messages.ai_fix.queue_item_label'),
+            'statusQueued' => __('lens-for-laravel::messages.ai_fix.status_queued'),
+            'statusLoading' => __('lens-for-laravel::messages.ai_fix.status_loading'),
+            'statusReady' => __('lens-for-laravel::messages.ai_fix.status_ready'),
+            'statusApplied' => __('lens-for-laravel::messages.ai_fix.status_applied'),
+            'statusRejected' => __('lens-for-laravel::messages.ai_fix.status_rejected'),
+            'statusError' => __('lens-for-laravel::messages.ai_fix.status_error'),
             'deleteConfirm' => __('lens-for-laravel::messages.history.delete_confirm'),
             'chartTotal' => __('lens-for-laravel::messages.history.chart_total'),
             'levelA' => __('lens-for-laravel::messages.common.level_a'),
@@ -1255,7 +1394,15 @@
                 fixData: null,
                 isApplyingFix: false,
                 fixApplied: false,
+                fixRejected: false,
                 fixError: null,
+                isEditingFix: false,
+                editedFixCode: '',
+                isBulkFix: false,
+                fixQueue: [],
+                activeFixIndex: 0,
+                issueDomSequence: 0,
+                fixRequestSequence: 0,
 
 
                 init() {
@@ -1348,6 +1495,40 @@
                         .replace(':line', this.fixData.startLine);
                 },
 
+                get fixModalTitle() {
+                    if (!this.isBulkFix) return LENS_I18N.aiFixTitle;
+
+                    const level = this.getIssueLevel(this.fixIssue?.tags ?? []).toUpperCase();
+
+                    return LENS_I18N.fixAllTitle.replace(':level', level);
+                },
+
+                get fixQueuePosition() {
+                    return LENS_I18N.fixQueuePosition
+                        .replace(':current', this.fixQueue.length ? this.activeFixIndex + 1 : 0)
+                        .replace(':total', this.fixQueue.length);
+                },
+
+                get fixQueueProgress() {
+                    const completed = this.fixQueue.filter(item =>
+                        ['ready', 'applied', 'rejected', 'error'].includes(item.status)
+                    ).length;
+                    const ready = this.fixQueue.filter(item => item.status === 'ready').length;
+
+                    return LENS_I18N.fixQueueProgress
+                        .replace(':completed', completed)
+                        .replace(':total', this.fixQueue.length)
+                        .replace(':ready', ready);
+                },
+
+                get hasPreviousFix() {
+                    return this.activeFixIndex > 0;
+                },
+
+                get hasNextFix() {
+                    return this.activeFixIndex < this.fixQueue.length - 1;
+                },
+
                 get editorEnabled() {
                     return LENS_EDITOR && LENS_EDITOR !== 'none';
                 },
@@ -1434,6 +1615,18 @@
                         };
                         return getWeight(a) - getWeight(b);
                     });
+                },
+
+                eligibleFixIssues(level) {
+                    return this.issues.filter(issue =>
+                        this.getIssueLevel(issue.tags) === level &&
+                        issue.fileName &&
+                        issue.aiFixStatus !== 'pending_verification'
+                    );
+                },
+
+                eligibleFixCount(level) {
+                    return this.eligibleFixIssues(level).length;
                 },
 
                 closePreview() {
@@ -1635,7 +1828,7 @@
                         throw new Error(data.message || LENS_I18N.stateScanFailed);
                     }
 
-                    this.issues = data.issues || [];
+                    this.issues = this.prepareIssues(data.issues || []);
                 },
 
                 async scanSingleUrl(targetUrl, token, append = false) {
@@ -1658,20 +1851,76 @@
                         throw new Error(data.message || LENS_I18N.scanFailed);
                     }
 
+                    const scannedIssues = this.prepareIssues(data.issues || []);
+
                     if (append) {
-                        this.issues = [...this.issues, ...(data.issues || [])];
+                        this.issues = [...this.issues, ...scannedIssues];
                     } else {
-                        this.issues = data.issues || [];
+                        this.issues = scannedIssues;
                     }
                 },
 
                 async requestAiFix(issue) {
-                    this.fixIssue = issue;
-                    this.fixData = null;
-                    this.fixError = null;
-                    this.fixApplied = false;
-                    this.isLoadingFix = true;
+                    this.openFixQueue([issue], false);
+                },
+
+                requestAllAiFixes(level) {
+                    const issues = this.eligibleFixIssues(level);
+                    if (!issues.length) return;
+
+                    this.openFixQueue(issues, true);
+                },
+
+                openFixQueue(issues, isBulk) {
+                    this.cancelAiFixRequest();
+                    const requestId = this.fixRequestSequence;
+
+                    this.isBulkFix = isBulk;
+                    this.fixQueue = issues.map((issue, index) => ({
+                        key: `${issue._lensDomKey}-fix-${requestId}-${index}`,
+                        issue,
+                        status: 'queued',
+                        data: null,
+                        error: null,
+                        editedCode: '',
+                        isEditing: false,
+                        controller: null,
+                    }));
+                    this.activeFixIndex = 0;
                     this.showFixModal = true;
+                    this.loadActiveFix();
+                    this.runFixQueue(requestId);
+                },
+
+                runFixQueue(requestId) {
+                    let nextIndex = 0;
+                    const workerCount = Math.min(3, this.fixQueue.length);
+                    const worker = async (workerIndex) => {
+                        if (workerIndex > 0) {
+                            await new Promise(resolve => window.setTimeout(resolve, workerIndex * 250));
+                        }
+
+                        while (requestId === this.fixRequestSequence) {
+                            const index = nextIndex++;
+                            if (index >= this.fixQueue.length) return;
+
+                            await this.generateFixForQueueItem(index, requestId);
+                        }
+                    };
+
+                    Promise.all(Array.from({ length: workerCount }, (_, index) => worker(index)));
+                },
+
+                async generateFixForQueueItem(index, requestId) {
+                    const item = this.fixQueue[index];
+                    if (!item || requestId !== this.fixRequestSequence) return;
+
+                    const controller = new AbortController();
+                    item.status = 'loading';
+                    item.error = null;
+                    item.controller = controller;
+                    if (index === this.activeFixIndex) this.loadActiveFix();
+
                     try {
                         const token = document.querySelector('meta[name="csrf-token"]')
                             .getAttribute('content');
@@ -1683,27 +1932,43 @@
                                     'Accept': 'application/json',
                                     'X-CSRF-TOKEN': token
                                 },
+                                signal: controller.signal,
                                 body: JSON.stringify({
-                                    htmlSnippet: issue.htmlSnippet,
-                                    description: issue.description,
-                                    fileName: issue.fileName,
-                                    lineNumber: issue.lineNumber,
-                                    tags: issue.tags ?? [],
+                                    htmlSnippet: item.issue.htmlSnippet,
+                                    description: item.issue.description,
+                                    fileName: item.issue.fileName,
+                                    lineNumber: item.issue.lineNumber,
+                                    tags: item.issue.tags ?? [],
                                 })
                             });
                         const data = await response.json();
+                        if (requestId !== this.fixRequestSequence) return;
                         if (!response.ok) throw new Error(data.message ||
                             LENS_I18N.aiGenerationFailed);
-                        this.fixData = data;
+
+                        item.data = data;
+                        item.editedCode = data.fixedCode;
+                        item.status = 'ready';
                     } catch (err) {
-                        this.fixError = err.message;
+                        if (err.name === 'AbortError' || requestId !== this.fixRequestSequence) return;
+
+                        item.error = err.message;
+                        item.status = 'error';
                     } finally {
-                        this.isLoadingFix = false;
+                        item.controller = null;
+                        if (requestId === this.fixRequestSequence && index === this.activeFixIndex) {
+                            this.loadActiveFix();
+                        }
                     }
                 },
 
                 async applyFix() {
                     if (!this.fixData) return;
+                    if (!this.editedFixCode.trim()) {
+                        this.fixError = LENS_I18N.emptyFixCode;
+                        this.startEditingFix();
+                        return;
+                    }
                     this.isApplyingFix = true;
                     this.fixError = null;
                     try {
@@ -1719,13 +1984,19 @@
                             body: JSON.stringify({
                                 fileName: this.fixData.fileName,
                                 originalCode: this.fixData.originalCode,
-                                fixedCode: this.fixData.fixedCode,
+                                fixedCode: this.editedFixCode,
                             })
                         });
                         const data = await response.json();
                         if (!response.ok) throw new Error(data.message || LENS_I18N.applyFailed);
                         this.fixIssue.aiFixStatus = 'pending_verification';
                         this.fixApplied = true;
+                        const item = this.fixQueue[this.activeFixIndex];
+                        if (item) {
+                            item.status = 'applied';
+                            item.editedCode = this.editedFixCode;
+                            item.isEditing = false;
+                        }
                     } catch (err) {
                         this.fixError = err.message;
                     } finally {
@@ -1734,11 +2005,223 @@
                 },
 
                 closeFixModal() {
+                    this.cancelAiFixRequest();
                     this.showFixModal = false;
+                    this.isLoadingFix = false;
                     this.fixIssue = null;
                     this.fixData = null;
                     this.fixError = null;
                     this.fixApplied = false;
+                    this.fixRejected = false;
+                    this.isEditingFix = false;
+                    this.editedFixCode = '';
+                    this.isBulkFix = false;
+                    this.fixQueue = [];
+                    this.activeFixIndex = 0;
+                },
+
+                cancelAiFixRequest() {
+                    this.fixQueue.forEach(item => item.controller?.abort());
+                    this.fixRequestSequence++;
+                },
+
+                loadActiveFix() {
+                    const item = this.fixQueue[this.activeFixIndex];
+                    if (!item) return;
+
+                    this.fixIssue = item.issue;
+                    this.fixData = item.data;
+                    this.fixError = item.error;
+                    this.fixApplied = item.status === 'applied';
+                    this.fixRejected = item.status === 'rejected';
+                    this.isLoadingFix = ['queued', 'loading'].includes(item.status);
+                    this.editedFixCode = item.editedCode || item.data?.fixedCode || '';
+                    this.isEditingFix = item.isEditing && item.status === 'ready';
+                },
+
+                persistActiveFixEdits() {
+                    const item = this.fixQueue[this.activeFixIndex];
+                    if (!item) return;
+
+                    item.editedCode = this.editedFixCode;
+                    item.isEditing = this.isEditingFix;
+                },
+
+                goToFix(index) {
+                    if (index < 0 || index >= this.fixQueue.length || this.isApplyingFix) return;
+
+                    this.persistActiveFixEdits();
+                    this.activeFixIndex = index;
+                    this.loadActiveFix();
+                },
+
+                previousFix() {
+                    if (this.hasPreviousFix) this.goToFix(this.activeFixIndex - 1);
+                },
+
+                nextFix() {
+                    if (this.hasNextFix) this.goToFix(this.activeFixIndex + 1);
+                },
+
+                rejectFix() {
+                    const item = this.fixQueue[this.activeFixIndex];
+                    if (!item) {
+                        this.closeFixModal();
+                        return;
+                    }
+
+                    item.status = 'rejected';
+                    item.isEditing = false;
+                    this.fixRejected = true;
+                    this.isEditingFix = false;
+
+                    if (this.isBulkFix && this.hasNextFix) this.nextFix();
+                    else if (!this.isBulkFix) this.closeFixModal();
+                },
+
+                retryCurrentFix() {
+                    const item = this.fixQueue[this.activeFixIndex];
+                    if (!item || item.status !== 'error') return;
+
+                    item.status = 'queued';
+                    item.data = null;
+                    item.error = null;
+                    item.editedCode = '';
+                    item.isEditing = false;
+                    this.loadActiveFix();
+                    this.generateFixForQueueItem(this.activeFixIndex, this.fixRequestSequence);
+                },
+
+                fixQueueStatusClass(item, index) {
+                    if (index === this.activeFixIndex) {
+                        return 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black';
+                    }
+
+                    return {
+                        ready: 'border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
+                        applied: 'border-emerald-600 bg-emerald-600 text-white',
+                        rejected: 'border-neutral-400 bg-neutral-100 text-neutral-500 dark:bg-neutral-900',
+                        error: 'border-[#E11D48] bg-red-50 text-[#E11D48] dark:bg-red-950',
+                        loading: 'border-neutral-400 bg-white text-neutral-500 dark:bg-black',
+                        queued: 'border-neutral-300 bg-white text-neutral-400 dark:bg-black',
+                    }[item.status];
+                },
+
+                fixQueueItemAriaLabel(item, index) {
+                    const status = {
+                        queued: LENS_I18N.statusQueued,
+                        loading: LENS_I18N.statusLoading,
+                        ready: LENS_I18N.statusReady,
+                        applied: LENS_I18N.statusApplied,
+                        rejected: LENS_I18N.statusRejected,
+                        error: LENS_I18N.statusError,
+                    }[item.status];
+
+                    return LENS_I18N.queueItemLabel
+                        .replace(':current', index + 1)
+                        .replace(':total', this.fixQueue.length)
+                        .replace(':rule', item.issue.id)
+                        .replace(':status', status);
+                },
+
+                prepareIssues(issues) {
+                    return issues.map(issue => ({
+                        ...issue,
+                        _lensDomKey: `lens-issue-${++this.issueDomSequence}`,
+                    }));
+                },
+
+                handleFixEscape() {
+                    if (this.isEditingFix) {
+                        this.finishEditingFix();
+                        return;
+                    }
+
+                    this.closeFixModal();
+                },
+
+                startEditingFix() {
+                    if (!this.fixData) return;
+
+                    this.isEditingFix = true;
+                    this.fixError = null;
+                    this.persistActiveFixEdits();
+                    this.$nextTick(() => {
+                        this.$refs.fixEditor?.focus();
+                    });
+                },
+
+                finishEditingFix() {
+                    if (!this.editedFixCode.trim()) {
+                        this.fixError = LENS_I18N.emptyFixCode;
+                        this.$nextTick(() => this.$refs.fixEditor?.focus());
+                        return;
+                    }
+
+                    this.isEditingFix = false;
+                    this.fixError = null;
+                    this.persistActiveFixEdits();
+                },
+
+                resetEditedFix() {
+                    if (!this.fixData) return;
+
+                    this.editedFixCode = this.fixData.fixedCode;
+                    this.fixError = null;
+                    this.persistActiveFixEdits();
+                    this.$nextTick(() => {
+                        this.$refs.fixEditor?.focus();
+                        this.syncFixEditorScroll({ target: this.$refs.fixEditor });
+                    });
+                },
+
+                syncFixEditorScroll(event) {
+                    if (this.$refs.fixEditorGutter) {
+                        this.$refs.fixEditorGutter.scrollTop = event.target.scrollTop;
+                    }
+                },
+
+                handleFixEditorTab(event) {
+                    const editor = event.target;
+                    const start = editor.selectionStart;
+                    const end = editor.selectionEnd;
+                    const indent = '    ';
+
+                    if (start === end && !event.shiftKey) {
+                        editor.setRangeText(indent, start, end, 'end');
+                        this.editedFixCode = editor.value;
+                        this.persistActiveFixEdits();
+
+                        return;
+                    }
+
+                    const blockStart = editor.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+
+                    if (start === end && event.shiftKey) {
+                        const line = editor.value.slice(blockStart);
+                        const match = line.match(/^(\t| {1,4})/);
+                        if (!match) return;
+
+                        editor.setRangeText('', blockStart, blockStart + match[0].length, 'preserve');
+                        this.editedFixCode = editor.value;
+                        this.persistActiveFixEdits();
+                        this.$nextTick(() => {
+                            const caret = Math.max(blockStart, start - match[0].length);
+                            editor.setSelectionRange(caret, caret);
+                        });
+
+                        return;
+                    }
+
+                    const selectedBlock = editor.value.slice(blockStart, end);
+                    const replacement = selectedBlock
+                        .split('\n')
+                        .map(line => event.shiftKey ? line.replace(/^(\t| {1,4})/, '') : indent + line)
+                        .join('\n');
+
+                    editor.setRangeText(replacement, blockStart, end, 'select');
+                    this.editedFixCode = editor.value;
+                    this.persistActiveFixEdits();
                 },
 
                 // LCS-based line diff (Myers-style, simplified)
@@ -1784,8 +2267,22 @@
                     if (!this.fixData) return [];
                     return this._lcs(
                         this.fixData.originalCode.split('\n'),
-                        this.fixData.fixedCode.split('\n')
+                        this.editedFixCode.split('\n')
                     );
+                },
+
+                get hasEditedFix() {
+                    return Boolean(this.fixData) && this.editedFixCode !== this.fixData.fixedCode;
+                },
+
+                get fixEditorLineCount() {
+                    return Math.max(1, this.editedFixCode.split('\n').length);
+                },
+
+                get fixEditorStatus() {
+                    return LENS_I18N.fixEditorStatus
+                        .replace(':lines', this.fixEditorLineCount)
+                        .replace(':characters', this.editedFixCode.length);
                 },
 
                 // ─── History Methods ─────────────────────────────────

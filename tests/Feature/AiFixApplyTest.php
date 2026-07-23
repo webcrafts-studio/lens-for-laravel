@@ -37,6 +37,15 @@ test('POST /fix/apply requires all fields', function () {
         ->assertJsonValidationErrors(['fileName', 'originalCode', 'fixedCode']);
 });
 
+test('POST /fix/apply rejects edited replacement code longer than the editor limit', function () {
+    $this->postJson(route('lens-for-laravel.fix.apply'), [
+        'fileName' => 'lens-fix-test.blade.php',
+        'originalCode' => '<img src="x.png">',
+        'fixedCode' => str_repeat('x', 12001),
+    ])->assertStatus(422)
+        ->assertJsonValidationErrors(['fixedCode']);
+});
+
 test('POST /fix/apply returns 403 when environment not allowed', function () {
     $this->app['config']->set('lens-for-laravel.enabled_environments', ['local']);
 

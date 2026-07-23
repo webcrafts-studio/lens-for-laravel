@@ -4,7 +4,7 @@
 
 Lens for Laravel scans your application with [axe-core](https://github.com/dequelabs/axe-core), renders JavaScript through [Spatie Browsershot](https://github.com/spatie/browsershot), maps violations back to source files, and can generate AI-assisted fixes for Blade, React, and Vue code.
 
-**v3.0.0 development line:** selectable WCAG standards, URL-aware history, reusable state scripts, consistent local HTTPS behavior, complete five-language UI catalogs, and a safer optional AI integration for Blade, Livewire, Inertia, React, Vue, and mixed frontends.
+**v3.1 development line:** builds on the v3.0 WCAG, compatibility, localization, and AI reliability foundation with editable AI Fix proposals, progressive Fix All A/AA queues, fresh re-scans, and more precise repeated-element source mapping.
 
 **[Documentation & full feature overview -> lens.webcrafts.pl](https://lens.webcrafts.pl/)**
 
@@ -15,12 +15,14 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Axe-core scanning** - WCAG 2.x and best-practice checks through the industry-standard axe engine.
 - **Selectable WCAG standard** - run cumulative WCAG 2.0, 2.1, or 2.2 rule sets in the dashboard and CLI; 2.0 remains the default for backward compatibility.
 - **JavaScript rendering** - scans the hydrated browser DOM through Browsershot/Chromium.
-- **Blade, React, and Vue source locator** - maps DOM violations back to `resources/views/**/*.blade.php` and frontend files under `resources/js`.
+- **Blade, React, and Vue source locator** - maps DOM violations back to `resources/views/**/*.blade.php` and frontend files under `resources/js`, using rendered filenames and positional selector hints to disambiguate repeated elements.
 - **Source type labels** - results include `sourceType` values: `blade`, `react`, or `vue`.
 - **Inertia-aware file discovery** - React/Vue pages under `resources/js/Pages/**` are included automatically.
 - **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through the optional `laravel/ai` SDK.
-- **Diff preview before apply** - inspect AI changes before writing to disk.
+- **Editable AI Fix review** - inspect the live diff, edit the replacement with line numbers and indentation shortcuts, or restore the original AI proposal before applying.
+- **Progressive Fix All A/AA queues** - generate up to three suggestions concurrently and review ready fixes while later items continue loading.
 - **Honest AI verification state** - applied suggestions remain counted and are marked as pending until a fresh axe-core scan verifies the result.
+- **Fresh re-scans** - cache-busted browser navigation and current-result action identities prevent stale markup or late AI responses from remaining attached to an older issue.
 - **Whole-site crawler** - discovers pages from sitemaps and internal links.
 - **SPA crawler mode** - optionally renders JavaScript while crawling React/Vue/Inertia apps.
 - **Multi-URL scans** - scan selected URLs in a single dashboard or CLI run.
@@ -382,11 +384,11 @@ LENS_FOR_LARAVEL_AI_ENABLED=true
 LENS_FOR_LARAVEL_AI_PROVIDER=gemini
 ```
 
-Set `LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=true` only for trusted local environments with self-signed certificates. In v3.0 the setting consistently covers axe scans, sitemap and page requests made by the crawler, optional JavaScript-rendered crawling, and element preview screenshots. Its default remains `false`.
+Set `LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=true` only for trusted local environments with self-signed certificates. Since v3.0 the setting consistently covers axe scans, sitemap and page requests made by the crawler, optional JavaScript-rendered crawling, and element preview screenshots. Its default remains `false`.
 
 ### Interface languages
 
-Version 3 ships complete package-owned interface catalogs for English, Polish, Spanish, French, and German. The selected language covers the scanner, history and URL-aware comparisons, AI Fix and preview modals, interactive-state recorder, PDF reports, chart labels, and package-generated browser, route, interaction-script, baseline, and CLI error messages. The dashboard language switcher stores its choice in the session; exported PDF reports use that same language. Console errors use the Laravel application locale active for the command.
+Version 3 ships complete package-owned interface catalogs for English, Polish, Spanish, French, and German. The selected language covers the scanner, history and URL-aware comparisons, AI Fix editor and Fix All queue, preview modals, interactive-state recorder, PDF reports, chart labels, and package-generated browser, route, interaction-script, baseline, and CLI error messages. The dashboard language switcher stores its choice in the session; exported PDF reports use that same language. Console errors use the Laravel application locale active for the command.
 
 `locale` defines the initial language, `fallback_locale` is used when a translation is unavailable, and `supported_locales` controls the choices displayed in the dashboard. Accessibility-rule descriptions returned by axe-core and framework validation messages can still follow the language supplied by those upstream libraries rather than Lens's catalog.
 
@@ -457,10 +459,13 @@ The AI Fix workflow:
 3. It sends the issue, failing DOM snippet, WCAG tags, and selected source fragment to the configured AI provider.
 4. A dedicated accessibility agent returns a minimal replacement and explanation.
 5. The dashboard shows a diff preview.
-6. You can accept and apply the change.
-7. The issue is immediately marked **AI Fix applied — pending re-scan** while remaining in the violation counts until a new axe-core scan verifies the result.
+6. You can accept the proposal as generated or edit it directly in the modal. The built-in editor includes line numbers, indentation shortcuts, a live diff, and an option to restore the AI version.
+7. **Fix All A** and **Fix All AA** create review queues for every located issue at the selected level. Lens generates up to three suggestions concurrently, opens the queue immediately, and lets you move between ready suggestions while later items continue loading.
+8. Each queued fix keeps its own generated, edited, rejected, failed, or applied state. A failed suggestion can be retried without restarting the rest of the queue.
+9. Lens applies each reviewed replacement after running the same path and dangerous-code checks for both generated and edited proposals.
+10. The issue is immediately marked **AI Fix applied — pending re-scan** while remaining in the violation counts until a new axe-core scan verifies the result.
 
-The v3.0 agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Lens does not select or expose a model: `laravel/ai` uses the default model configured for the chosen provider. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
+Since v3.0, the agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Lens does not select or expose a model: `laravel/ai` uses the default model configured for the chosen provider. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
 
 > **Privacy:** AI Fix sends the failing DOM snippet, accessibility issue details, WCAG tags, and a bounded element/component source fragment to the configured Gemini, OpenAI, or Anthropic provider. It does not send the entire repository. Review the selected source context for secrets or sensitive information before requesting a fix, and follow the chosen provider's data-handling policy.
 
@@ -593,9 +598,18 @@ Always complement Lens with:
 
 ---
 
-## Upgrade Notes for v3.0.0
+## Upgrade Notes for v3.0 and v3.1
 
-Version 3 is the current development line. Completed v3 changes include:
+v3.1 is the current development line and requires no new migration or configuration key beyond the v3.0 foundation.
+
+New in v3.1:
+
+- reviewable AI Fix proposals with in-modal editing, indentation shortcuts, live diff updates, keyboard apply, and restore-to-AI controls
+- progressive Fix All queues for WCAG A and AA, with three concurrent generations, per-item loading and error states, navigation, editing, rejection, retry, and apply controls
+- fresh cache-busted browser navigation on every re-scan, with result actions rebound to the current issue list and superseded AI requests cancelled
+- more precise repeated-element source mapping using rendered filenames and numeric `:nth-child(...)` positions
+
+The v3.0 foundation includes:
 
 - selectable WCAG 2.0, 2.1, and 2.2 standards in the dashboard and CLI
 - WCAG 2.0 as the backward-compatible default
@@ -609,7 +623,7 @@ Version 3 is the current development line. Completed v3 changes include:
 - immediate pending-verification status on issues changed by AI Fix, without claiming success before a new axe-core scan
 - complete English, Polish, Spanish, French, and German catalogs for package-owned dashboard, history, comparison, modal, PDF, and error text
 
-After upgrading to v3:
+After upgrading from v2 to v3.0:
 
 ```bash
 php artisan migrate

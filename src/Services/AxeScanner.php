@@ -26,7 +26,9 @@ class AxeScanner
 
             // Configure Browsershot. Note that in some environments you may need
             // to configure the Node/NPM/Puppeteer path explicitly.
-            $browsershot = $this->configureBrowsershot($this->browsershotForUrl($url));
+            $browsershot = $this->configureBrowsershot(
+                $this->browsershotForUrl($this->freshScanUrl($url))
+            );
 
             // We need to inject the axe-core library and run it.
             // Spatie Browsershot allows evaluating JavaScript on the page.
@@ -74,7 +76,9 @@ JS;
     {
         try {
             $wcagVersion ??= Wcag::configuredVersion();
-            $browsershot = $this->configureBrowsershot($this->browsershotForUrl($url));
+            $browsershot = $this->configureBrowsershot(
+                $this->browsershotForUrl($this->freshScanUrl($url))
+            );
 
             $statesJson = json_encode($states, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
             $tagsJson = json_encode(Wcag::tags($wcagVersion), JSON_THROW_ON_ERROR);
@@ -106,6 +110,28 @@ JS;
         return Browsershot::url($url);
     }
 
+    /**
+     * Give every browser navigation a unique URL so page caches, reverse
+     * proxies, and service workers cannot return HTML from an earlier scan.
+     * The original URL is still used for issue and history identity.
+     */
+    protected function freshScanUrl(string $url): string
+    {
+        $fragment = '';
+        $fragmentPosition = strpos($url, '#');
+
+        if ($fragmentPosition !== false) {
+            $fragment = substr($url, $fragmentPosition);
+            $url = substr($url, 0, $fragmentPosition);
+        }
+
+        $separator = str_contains($url, '?')
+            ? (str_ends_with($url, '?') || str_ends_with($url, '&') ? '' : '&')
+            : '?';
+
+        return $url.$separator.'__lens_scan='.bin2hex(random_bytes(8)).$fragment;
+    }
+
     protected function configureBrowsershot(Browsershot $browsershot): Browsershot
     {
         $browsershot
@@ -114,6 +140,7 @@ JS;
             ->setExtraHttpHeaders([
                 'Cache-Control' => 'no-cache, no-store, must-revalidate',
                 'Pragma' => 'no-cache',
+                'Expires' => '0',
             ]);
 
         $scanWaitMs = (int) config('lens-for-laravel.scan_wait_ms', 0);

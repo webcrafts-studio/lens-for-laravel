@@ -147,6 +147,61 @@ test('dashboard marks an applied AI fix as pending verification until the next s
         ->assertSee("issue.aiFixStatus !== 'pending_verification'", false);
 });
 
+test('dashboard lets users edit and review an AI fix before applying it', function () {
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('Edit proposed fix')
+        ->assertSee('Reset AI version')
+        ->assertSee('Preview changes')
+        ->assertSee('x-model="editedFixCode"', false)
+        ->assertSee('@keydown.tab.prevent="handleFixEditorTab($event)"', false)
+        ->assertSee('@keydown.ctrl.enter.prevent="applyFix()"', false)
+        ->assertSee('fixedCode: this.editedFixCode', false)
+        ->assertSee('this.editedFixCode.split', false);
+
+    $this->get(route('lens-for-laravel.dashboard', ['lens_locale' => 'pl']))
+        ->assertOk()
+        ->assertSee('Edytuj proponowaną poprawkę')
+        ->assertSee('Przywróć wersję AI')
+        ->assertSee('Podejrzyj zmiany');
+});
+
+test('dashboard streams fix all queues for WCAG A and AA issues', function () {
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('Fix All A')
+        ->assertSee('Fix All AA')
+        ->assertSee('@click="requestAllAiFixes(\'a\')"', false)
+        ->assertSee('@click="requestAllAiFixes(\'aa\')"', false)
+        ->assertSee('const workerCount = Math.min(3, this.fixQueue.length)', false)
+        ->assertSee('workerIndex * 250', false)
+        ->assertSee("['ready', 'applied', 'rejected', 'error'].includes(item.status)", false)
+        ->assertSee("['queued', 'loading'].includes(item.status)", false)
+        ->assertSee('x-for="(item, index) in fixQueue"', false)
+        ->assertSee('@click="goToFix(index)"', false)
+        ->assertSee('retryCurrentFix()', false)
+        ->assertSee('item.editedCode = this.editedFixCode', false);
+
+    $this->get(route('lens-for-laravel.dashboard', ['lens_locale' => 'pl']))
+        ->assertOk()
+        ->assertSee('Napraw wszystkie A')
+        ->assertSee('Napraw wszystkie AA')
+        ->assertSee('Ta poprawka jest jeszcze generowana');
+});
+
+test('dashboard keeps issue actions bound to the current scan results', function () {
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee(':key="issue._lensDomKey"', false)
+        ->assertDontSee('<template x-for="(issue, index) in filteredIssues" :key="index">', false)
+        ->assertSee('this.prepareIssues(data.issues || [])', false)
+        ->assertSee('_lensDomKey: `lens-issue-${++this.issueDomSequence}`', false)
+        ->assertSee('this.cancelAiFixRequest()', false)
+        ->assertSee('signal: controller.signal', false)
+        ->assertSee('requestId !== this.fixRequestSequence', false)
+        ->assertSee('this.fixQueue.forEach(item => item.controller?.abort())', false);
+});
+
 test('dashboard translates the pending AI verification status', function () {
     $this->get(route('lens-for-laravel.dashboard', ['lens_locale' => 'pl']))
         ->assertOk()

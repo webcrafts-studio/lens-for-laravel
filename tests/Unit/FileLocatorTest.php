@@ -61,6 +61,47 @@ test('locates element by css class from selector', function () {
     expect($result)->not->toBeNull();
 });
 
+test('uses nth-child selector position to locate the correct repeated blade element', function () {
+    file_put_contents(
+        $this->bladeFile,
+        "<div class=\"grid\">\n".
+        "    <div class=\"col-span-1\"><img src=\"{{ asset('img/clients/igum.png') }}\" class=\"hero-logo\" alt=\"Igum company logo\"></div>\n".
+        "    <div class=\"col-span-1\"><img src=\"{{ asset('img/clients/igum.png') }}\" class=\"hero-logo\"></div>\n".
+        "    <div class=\"col-span-1\"><img src=\"{{ asset('img/clients/k2.png') }}\" class=\"hero-logo\"></div>\n".
+        '</div>'
+    );
+
+    $result = (new FileLocator)->locate(
+        '<img src="https://example.test/img/clients/igum.png" class="hero-logo">',
+        '.col-span-1:nth-child(2) > .hero-logo'
+    );
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toEndWith('lens-locator-test.blade.php')
+        ->and($result['line'])->toBe(3)
+        ->and($result['type'])->toBe('blade');
+});
+
+test('prefers a rendered source filename over a shared blade class', function () {
+    file_put_contents(
+        $this->bladeFile,
+        "<div>\n".
+        "    <img src=\"{{ asset('img/clients/first.png') }}\" class=\"hero-logo\">\n".
+        "    <img src=\"{{ asset('img/clients/second.png') }}\" class=\"hero-logo\">\n".
+        '</div>'
+    );
+
+    $result = (new FileLocator)->locate(
+        '<img src="https://example.test/img/clients/second.png" class="hero-logo">',
+        '.client-grid > .hero-logo'
+    );
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toEndWith('lens-locator-test.blade.php')
+        ->and($result['line'])->toBe(3)
+        ->and($result['type'])->toBe('blade');
+});
+
 test('returns null when no match found in any file', function () {
     file_put_contents($this->bladeFile, '<p>No matching element here</p>');
 
@@ -151,6 +192,26 @@ test('locates vue element by class from selector', function () {
     expect($result)->not->toBeNull()
         ->and($result['file'])->toBe('js/Components/LensLocatorTest.vue')
         ->and($result['line'])->toBe(2)
+        ->and($result['type'])->toBe('vue');
+});
+
+test('uses nth-child selector position to locate the correct repeated frontend element', function () {
+    file_put_contents(
+        $this->vueFile,
+        "<template>\n".
+        "    <img class=\"client-logo\" :src=\"clients[0].logo\">\n".
+        "    <img class=\"client-logo\" :src=\"clients[1].logo\">\n".
+        "</template>\n"
+    );
+
+    $result = (new FileLocator)->locate(
+        '<img class="client-logo" src="/clients/second.png">',
+        '.clients:nth-child(2) > .client-logo'
+    );
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toBe('js/Components/LensLocatorTest.vue')
+        ->and($result['line'])->toBe(3)
         ->and($result['type'])->toBe('vue');
 });
 

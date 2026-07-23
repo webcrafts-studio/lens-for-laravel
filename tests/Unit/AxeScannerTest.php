@@ -171,7 +171,50 @@ test('scanner sends no-cache headers when loading pages', function () {
 
     expect($fakeBrowsershot->extraHttpHeaders)
         ->toHaveKey('Cache-Control', 'no-cache, no-store, must-revalidate')
-        ->toHaveKey('Pragma', 'no-cache');
+        ->toHaveKey('Pragma', 'no-cache')
+        ->toHaveKey('Expires', '0');
+});
+
+test('scanner cache busts browser navigation while preserving the original issue URL', function () {
+    $originalUrl = 'https://example.com/products?sort=asc#results';
+    $fakeBrowsershot = new FakeBrowsershotForAxeScannerTest;
+    $fakeBrowsershot->evaluateResponse = json_encode([
+        [
+            'id' => 'image-alt',
+            'impact' => 'critical',
+            'description' => 'Images must have alternate text',
+            'nodes' => [
+                [
+                    'html' => '<img src="logo.png">',
+                    'target' => ['img'],
+                ],
+            ],
+        ],
+    ]);
+
+    $scanner = new class($fakeBrowsershot) extends AxeScanner
+    {
+        public ?string $browserUrl = null;
+
+        public function __construct(private readonly Browsershot $fakeBrowsershot) {}
+
+        protected function browsershotForUrl(string $url): Browsershot
+        {
+            $this->browserUrl = $url;
+
+            return $this->fakeBrowsershot;
+        }
+    };
+
+    $issues = $scanner->scan($originalUrl);
+    parse_str((string) parse_url($scanner->browserUrl, PHP_URL_QUERY), $query);
+
+    expect($query)
+        ->toHaveKey('sort', 'asc')
+        ->toHaveKey('__lens_scan')
+        ->and($query['__lens_scan'])->toMatch('/^[a-f0-9]{16}$/')
+        ->and(parse_url($scanner->browserUrl, PHP_URL_FRAGMENT))->toBe('results')
+        ->and($issues->first()->url)->toBe($originalUrl);
 });
 
 test('interactive scanner sends no-cache headers when loading pages', function () {
@@ -193,7 +236,8 @@ test('interactive scanner sends no-cache headers when loading pages', function (
 
     expect($fakeBrowsershot->extraHttpHeaders)
         ->toHaveKey('Cache-Control', 'no-cache, no-store, must-revalidate')
-        ->toHaveKey('Pragma', 'no-cache');
+        ->toHaveKey('Pragma', 'no-cache')
+        ->toHaveKey('Expires', '0');
 });
 
 test('interactive scanner maps state labels onto violations', function () {

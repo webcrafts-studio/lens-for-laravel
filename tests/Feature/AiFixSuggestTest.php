@@ -10,6 +10,13 @@ test('POST /fix/suggest requires all fields', function () {
         ->assertJsonValidationErrors(['htmlSnippet', 'description', 'fileName', 'lineNumber']);
 });
 
+test('POST /fix/suggest allows progressive fix all queues within the local rate limit', function () {
+    $route = app('router')->getRoutes()->getByName('lens-for-laravel.fix.suggest');
+
+    expect($route)->not->toBeNull()
+        ->and($route->gatherMiddleware())->toContain('throttle:60,1');
+});
+
 test('POST /fix/suggest rejects htmlSnippet longer than 2000 characters', function () {
     $this->postJson(route('lens-for-laravel.fix.suggest'), [
         'htmlSnippet' => str_repeat('a', 2001),
