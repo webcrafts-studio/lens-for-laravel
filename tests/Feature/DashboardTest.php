@@ -179,6 +179,9 @@ test('dashboard streams fix all queues for WCAG A and AA issues', function () {
         ->assertSee("['queued', 'loading'].includes(item.status)", false)
         ->assertSee('x-for="(item, index) in fixQueue"', false)
         ->assertSee('@click="goToFix(index)"', false)
+        ->assertSee('flex-col items-center justify-center gap-0.5', false)
+        ->assertSee("item.status === 'ready' || item.status === 'applied'", false)
+        ->assertDontSee('absolute -right-1 -top-1', false)
         ->assertSee('retryCurrentFix()', false)
         ->assertSee('item.editedCode = this.editedFixCode', false);
 

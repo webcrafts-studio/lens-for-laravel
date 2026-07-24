@@ -611,7 +611,7 @@
                                 @if ($aiFixStatus['available'])
                                     <button x-show="eligibleFixCount('a') > 0" x-cloak
                                         @click="requestAllAiFixes('a')"
-                                        class="inline-flex items-center gap-2 border-2 border-[#E11D48] bg-[#E11D48] px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest text-white transition-colors hover:border-black hover:bg-black dark:hover:border-white dark:hover:bg-white dark:hover:text-black">
+                                        class="inline-flex items-center gap-2 border-2 border-[#E11D48] bg-[#E11D48] px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest text-white opacity-90 transition-opacity hover:opacity-100">
                                         <span>{{ __('lens-for-laravel::messages.ai_fix.fix_all_a') }}</span>
                                         <span class="border-l border-white/40 pl-2"
                                             x-text="eligibleFixCount('a')"></span>
@@ -1053,15 +1053,19 @@
                         <button type="button" role="tab" @click="goToFix(index)"
                             :aria-selected="index === activeFixIndex"
                             :aria-label="fixQueueItemAriaLabel(item, index)"
-                            class="relative flex h-9 min-w-9 shrink-0 items-center justify-center border-2 px-2 font-mono text-xs font-bold transition-colors"
+                            class="flex h-11 min-w-11 shrink-0 flex-col items-center justify-center gap-0.5 border-2 px-2 font-mono text-xs font-bold transition-colors"
                             :class="fixQueueStatusClass(item, index)">
-                            <span x-text="index + 1"></span>
+                            <span class="leading-none" x-text="index + 1"></span>
                             <span x-show="item.status === 'loading' || item.status === 'queued'"
-                                class="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-black border-t-transparent bg-white animate-spin dark:border-white dark:border-t-transparent dark:bg-black"></span>
-                            <span x-show="item.status === 'ready'"
-                                class="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-emerald-500 text-[8px] text-white">✓</span>
+                                class="h-3.5 w-3.5 rounded-full border-2 animate-spin"
+                                :class="index === activeFixIndex ? 'border-white border-t-transparent dark:border-black dark:border-t-transparent' : 'border-black border-t-transparent dark:border-white dark:border-t-transparent'"
+                                aria-hidden="true" x-cloak></span>
+                            <span x-show="item.status === 'ready' || item.status === 'applied'"
+                                class="h-3.5 text-[10px] leading-none"
+                                :class="item.status === 'applied' ? 'text-white dark:text-black' : 'text-emerald-600 dark:text-emerald-400'"
+                                aria-hidden="true" x-cloak>✓</span>
                             <span x-show="item.status === 'error'"
-                                class="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#E11D48] text-[8px] text-white">!</span>
+                                class="h-3.5 text-[10px] leading-none text-[#E11D48]" aria-hidden="true" x-cloak>!</span>
                         </button>
                     </template>
                 </div>
