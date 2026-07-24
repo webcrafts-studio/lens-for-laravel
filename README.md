@@ -4,7 +4,7 @@
 
 Lens for Laravel scans your application with [axe-core](https://github.com/dequelabs/axe-core), renders JavaScript through [Spatie Browsershot](https://github.com/spatie/browsershot), maps violations back to source files, and can generate AI-assisted fixes for Blade, React, and Vue code.
 
-**v3.1 development line:** builds on the v3.0 WCAG, compatibility, localization, and AI reliability foundation with editable AI Fix proposals, progressive Fix All A/AA queues, fresh re-scans, and more precise repeated-element source mapping.
+**v3.2 development line:** improves source mapping for dynamic Blade/Livewire routes and nested Blade, React, and Vue markup while retaining the v3.0 compatibility foundation and v3.1 AI Fix review workflows.
 
 **[Documentation & full feature overview -> lens.webcrafts.pl](https://lens.webcrafts.pl/)**
 
@@ -15,7 +15,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Axe-core scanning** - WCAG 2.x and best-practice checks through the industry-standard axe engine.
 - **Selectable WCAG standard** - run cumulative WCAG 2.0, 2.1, or 2.2 rule sets in the dashboard and CLI; 2.0 remains the default for backward compatibility.
 - **JavaScript rendering** - scans the hydrated browser DOM through Browsershot/Chromium.
-- **Blade, React, and Vue source locator** - maps DOM violations back to `resources/views/**/*.blade.php` and frontend files under `resources/js`, using rendered filenames and positional selector hints to disambiguate repeated elements.
+- **Blade, Livewire, React, and Vue source locator** - maps DOM violations back to `resources/views/**/*.blade.php` and frontend files under `resources/js`, using named Blade routes, nested element signatures, nearby selector context, rendered filenames, and positional hints to disambiguate dynamic or repeated elements.
 - **Source type labels** - results include `sourceType` values: `blade`, `react`, or `vue`.
 - **Inertia-aware file discovery** - React/Vue pages under `resources/js/Pages/**` are included automatically.
 - **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through the optional `laravel/ai` SDK.
@@ -134,13 +134,20 @@ Choose **WCAG 2.0**, **2.1**, or **2.2** before starting the scan. Later version
 
 ### Blade
 
-Blade support is the most direct path. Lens scans the rendered DOM and searches `resources/views/**/*.blade.php` for matching elements, IDs, names, classes, and selectors.
+Blade support is the most direct path. Lens scans the rendered DOM and searches `resources/views/**/*.blade.php` for matching elements, IDs, names, classes, attributes, and selectors.
+
+Since v3.2, the Blade locator also:
+
+- resolves a rendered local URL back to its named Laravel route and matches helpers such as `route('home')`
+- keeps attributes from nested DOM children separate from the failing element
+- compares bounded multiline element content, including recognizable descendant filenames and classes
+- uses nearby ancestor classes and IDs from the axe selector to distinguish similar elements
 
 AI Fix can modify located `.blade.php` files under `resources/views`.
 
 ### Livewire
 
-Livewire works through the rendered DOM and Blade source locator. For delayed hydration or UI updates, use:
+Livewire works through the rendered DOM and the same structural Blade source locator, including named route helpers, nested markup, and nearby selector context. For delayed hydration or UI updates, use:
 
 ```env
 LENS_FOR_LARAVEL_SCAN_WAIT_MS=500
@@ -165,6 +172,7 @@ It supports common JSX/TSX patterns such as:
 - JSX expressions: `href={'/pricing'}`
 - `className`
 - selector variants like `primary-button`, `primaryButton`, and `PrimaryButton`
+- dynamic props when nested source markup and nearby selector context provide a stable match
 - Inertia pages under `resources/js/Pages/**`
 
 AI Fix can modify supported React files under `resources/js`.
@@ -182,6 +190,7 @@ It supports common Vue template patterns such as:
 - static attributes: `class="logo"`, `href="/pricing"`
 - bindings: `:href="'/pricing'"`, `v-bind:href="'/pricing'"`
 - class object keys: `:class="{ active: isActive }"`
+- dynamic bindings when nested source markup and nearby selector context provide a stable match
 
 AI Fix can modify `.vue` files under `resources/js`.
 
@@ -577,13 +586,13 @@ If you enable Lens on staging, protect the route with authentication middleware:
 
 axe-core automates many high-confidence accessibility checks, but neither axe-core nor Lens can determine full WCAG conformance. A clean scan is evidence from automated checks, not proof that the application is fully accessible.
 
-Source location is heuristic. Lens can locate many common Blade, React, Vue, and Inertia patterns, but it may miss or misidentify:
+Source location is heuristic. Lens can locate many common Blade, Livewire, React, Vue, and Inertia patterns, but it may miss or misidentify:
 
 - deeply abstracted components
 - custom components that render HTML internally, such as `<LogoImage />`
 - dynamic class builders with no literal class or recognizable variant
 - CSS module keys that do not resemble the final generated class
-- runtime-generated attributes
+- runtime-generated attributes without a named Blade route, recognizable nested markup, or stable selector context
 - elements rendered only after user interaction
 
 For interactive states, run targeted scans after exposing the state, add dedicated URLs, or combine Lens with manual QA.
@@ -598,11 +607,18 @@ Always complement Lens with:
 
 ---
 
-## Upgrade Notes for v3.0 and v3.1
+## Upgrade Notes for v3.0, v3.1, and v3.2
 
-v3.1 is the current development line and requires no new migration or configuration key beyond the v3.0 foundation.
+v3.2 is the current development line and requires no new migration or configuration key beyond the v3.0 foundation.
 
-New in v3.1:
+New in v3.2:
+
+- local rendered URLs can map back to named Laravel routes such as `route('home')` in Blade and Livewire views
+- failing DOM attributes are read from the target opening tag without treating nested child attributes or classes as target attributes
+- bounded multiline element and descendant signatures map nested Blade, React, and Vue markup
+- nearby ancestor selector context distinguishes repeated dynamic elements while preserving React/Vue precedence in mixed applications
+
+Added in v3.1:
 
 - reviewable AI Fix proposals with in-modal editing, indentation shortcuts, live diff updates, keyboard apply, and restore-to-AI controls
 - progressive Fix All queues for WCAG A and AA, with three concurrent generations, per-item loading and error states, navigation, editing, rejection, retry, and apply controls

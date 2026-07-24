@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Contracts\View\Factory;
+
 test('PDF report includes the selected WCAG version and classifies WCAG 2.2 tags', function () {
     $html = view('lens-for-laravel::report', [
         'issues' => [[
@@ -86,8 +88,13 @@ test('POST /report/pdf validates interactive state labels', function () {
         ->assertJsonValidationErrors(['issues.0.stateLabel']);
 });
 
-test('POST /report/pdf returns error json when browsershot fails', function () {
-    // Without headless Chrome, Browsershot throws — the route catches Throwable
+test('POST /report/pdf returns error json when report rendering fails', function () {
+    $views = Mockery::mock(app(Factory::class))->makePartial();
+    $views->shouldReceive('make')
+        ->once()
+        ->andThrow(new RuntimeException('Report rendering failed'));
+    app()->instance(Factory::class, $views);
+
     $this->postJson(route('lens-for-laravel.report.pdf'), [
         'issues' => [
             [

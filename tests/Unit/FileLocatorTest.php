@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 
 beforeEach(function () {
@@ -15,8 +16,11 @@ beforeEach(function () {
     }
 
     $this->bladeFile = $this->viewsPath.'/lens-locator-test.blade.php';
+    $this->livewireFile = $this->viewsPath.'/livewire/lens-locator-navigation.blade.php';
     $this->reactFile = $this->jsPath.'/Components/LensLocatorTest.jsx';
     $this->vueFile = $this->jsPath.'/Components/LensLocatorTest.vue';
+
+    Route::get('/lens-locator-home', fn () => 'Home')->name('lens-locator.home');
 });
 
 afterEach(function () {
@@ -30,6 +34,10 @@ afterEach(function () {
 
     if (file_exists($this->vueFile)) {
         unlink($this->vueFile);
+    }
+
+    if (file_exists($this->livewireFile)) {
+        unlink($this->livewireFile);
     }
 });
 
@@ -99,6 +107,69 @@ test('prefers a rendered source filename over a shared blade class', function ()
     expect($result)->not->toBeNull()
         ->and($result['file'])->toEndWith('lens-locator-test.blade.php')
         ->and($result['line'])->toBe(3)
+        ->and($result['type'])->toBe('blade');
+});
+
+test('locates dynamic blade links by route helper nested content and ancestor selector context', function () {
+    file_put_contents(
+        $this->bladeFile,
+        "<div class=\"desktop-shell lg:px-4\">\n".
+        "    <a href=\"{{ route('lens-locator.home') }}\">\n".
+        "        <img src=\"{{ asset('img/logo-color.png') }}\" class=\"w-full max-w-46\" alt=\"\">\n".
+        "    </a>\n".
+        "</div>\n".
+        "<div class=\"mobile-shell menu-container\">\n".
+        "    <a href=\"{{ route('lens-locator.home') }}\">\n".
+        "        <img src=\"{{ asset('img/logo-color.png') }}\" class=\"w-full max-w-46\" alt=\"\">\n".
+        "    </a>\n".
+        '</div>'
+    );
+
+    $html = '<a href="http://localhost/lens-locator-home">'.
+        '<img src="http://localhost/img/logo-color.png" class="w-full max-w-46" alt="">'.
+        '</a>';
+
+    $desktop = (new FileLocator)->locate(
+        $html,
+        '.lg\:px-4 > a[href$="lens-locator-home"]'
+    );
+    $mobile = (new FileLocator)->locate(
+        $html,
+        '.menu-container > a[href$="lens-locator-home"]'
+    );
+
+    expect($desktop)->not->toBeNull()
+        ->and($desktop['file'])->toEndWith('lens-locator-test.blade.php')
+        ->and($desktop['line'])->toBe(2)
+        ->and($desktop['type'])->toBe('blade')
+        ->and($mobile)->not->toBeNull()
+        ->and($mobile['file'])->toEndWith('lens-locator-test.blade.php')
+        ->and($mobile['line'])->toBe(7)
+        ->and($mobile['type'])->toBe('blade');
+});
+
+test('locates livewire blade links with dynamic routes and nested markup', function () {
+    if (! is_dir(dirname($this->livewireFile))) {
+        mkdir(dirname($this->livewireFile), 0755, true);
+    }
+
+    file_put_contents(
+        $this->livewireFile,
+        "<nav class=\"livewire-navigation\">\n".
+        "    <a href=\"{{ route('lens-locator.home') }}\">\n".
+        "        <img src=\"{{ asset('img/logo-color.png') }}\" class=\"brand-logo\" alt=\"\">\n".
+        "    </a>\n".
+        '</nav>'
+    );
+
+    $result = (new FileLocator)->locate(
+        '<a href="http://localhost/lens-locator-home"><img src="http://localhost/img/logo-color.png" class="brand-logo" alt=""></a>',
+        '.livewire-navigation > a[href$="lens-locator-home"]'
+    );
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toBe('livewire/lens-locator-navigation.blade.php')
+        ->and($result['line'])->toBe(2)
         ->and($result['type'])->toBe('blade');
 });
 
@@ -179,6 +250,40 @@ test('prefers react attribute match over weak blade tag fallback', function () {
         ->and($result['line'])->toBe(2);
 });
 
+test('locates nested react links with dynamic props and ancestor selector context', function () {
+    file_put_contents(
+        $this->bladeFile,
+        "<a href=\"{{ route('lens-locator.home') }}\">Blade navigation</a>"
+    );
+    file_put_contents(
+        $this->reactFile,
+        "export function Navigation({ homeUrl }) {\n".
+        "    return <>\n".
+        "        <nav className=\"desktop-shell\">\n".
+        "            <a href={homeUrl}>\n".
+        "                <img src=\"/img/logo-color.png\" className=\"brand-logo\" alt=\"\" />\n".
+        "            </a>\n".
+        "        </nav>\n".
+        "        <nav className=\"mobile-shell\">\n".
+        "            <a href={homeUrl}>\n".
+        "                <img src=\"/img/logo-color.png\" className=\"brand-logo\" alt=\"\" />\n".
+        "            </a>\n".
+        "        </nav>\n".
+        "    </>;\n".
+        "}\n"
+    );
+
+    $result = (new FileLocator)->locate(
+        '<a href="http://localhost/lens-locator-home"><img src="http://localhost/img/logo-color.png" class="brand-logo" alt=""></a>',
+        '.mobile-shell > a[href$="lens-locator-home"]'
+    );
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toBe('js/Components/LensLocatorTest.jsx')
+        ->and($result['line'])->toBe(9)
+        ->and($result['type'])->toBe('react');
+});
+
 test('locates vue element by class from selector', function () {
     file_put_contents(
         $this->vueFile,
@@ -244,6 +349,38 @@ test('prefers vue attribute match over weak blade tag fallback', function () {
     expect($result)->not->toBeNull()
         ->and($result['file'])->toBe('js/Components/LensLocatorTest.vue')
         ->and($result['line'])->toBe(2);
+});
+
+test('locates nested vue links with dynamic bindings and ancestor selector context', function () {
+    file_put_contents(
+        $this->bladeFile,
+        "<a href=\"{{ route('lens-locator.home') }}\">Blade navigation</a>"
+    );
+    file_put_contents(
+        $this->vueFile,
+        "<template>\n".
+        "    <nav class=\"desktop-shell\">\n".
+        "        <a :href=\"homeUrl\">\n".
+        "            <img src=\"/img/logo-color.png\" class=\"brand-logo\" alt=\"\">\n".
+        "        </a>\n".
+        "    </nav>\n".
+        "    <nav class=\"mobile-shell\">\n".
+        "        <a :href=\"homeUrl\">\n".
+        "            <img src=\"/img/logo-color.png\" class=\"brand-logo\" alt=\"\">\n".
+        "        </a>\n".
+        "    </nav>\n".
+        "</template>\n"
+    );
+
+    $result = (new FileLocator)->locate(
+        '<a href="http://localhost/lens-locator-home"><img src="http://localhost/img/logo-color.png" class="brand-logo" alt=""></a>',
+        '.mobile-shell > a[href$="lens-locator-home"]'
+    );
+
+    expect($result)->not->toBeNull()
+        ->and($result['file'])->toBe('js/Components/LensLocatorTest.vue')
+        ->and($result['line'])->toBe(8)
+        ->and($result['type'])->toBe('vue');
 });
 
 test('locates inertia react pages under resources js pages', function () {

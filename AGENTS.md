@@ -4,7 +4,7 @@
 
 Lens for Laravel is a local-first accessibility auditing package for Laravel applications. It renders application pages in Chromium, runs axe-core, maps violations back to Blade/React/Vue source files, and exposes the results through a dashboard and the `lens:audit` Artisan command.
 
-The current development line is v3.0.0. New compatibility, WCAG selection, reliability, localization, and documentation work in this branch must be described as v3 functionality. Keep v2.0/v2.1 upgrade notes as historical documentation.
+The current development line is v3.2.0. New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1 upgrade notes as historical documentation.
 
 The package supports PHP 8.2+ and Laravel 10–13 for its core, non-AI features.
 

@@ -61,7 +61,12 @@ test('POST /preview returns 403 when environment not allowed', function () {
 });
 
 test('POST /preview returns error json when browsershot fails', function () {
-    // Without mocking Browsershot, it will throw — the route catches Throwable and returns JSON
+    $configuration = Mockery::mock(HttpsClientConfiguration::class);
+    $configuration->shouldReceive('configureBrowser')
+        ->once()
+        ->andThrow(new RuntimeException('Browsershot failed'));
+    app()->instance(HttpsClientConfiguration::class, $configuration);
+
     $this->postJson(route('lens-for-laravel.preview'), [
         'url' => 'http://localhost',
         'selector' => 'img.logo',
