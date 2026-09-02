@@ -152,11 +152,17 @@ return [
     | laravel/ai Composer package. Core scanning remains available when this is
     | disabled or unsupported by the host application's runtime.
     |
-    | Supported values: 'gemini', 'openai', 'anthropic'
+    | Supported values: 'gemini', 'openai', 'anthropic', 'ollama'
+    | Cloud providers use their configured default model. For Ollama, set the
+    | exact locally installed model tag or leave it null to use the SDK default.
     |
     */
     'ai_enabled' => env('LENS_FOR_LARAVEL_AI_ENABLED', true),
 
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),
+
+    'ai_ollama_model' => env('LENS_FOR_LARAVEL_AI_OLLAMA_MODEL'),
+
+    'ai_ollama_timeout' => env('LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT', 120),
 
 ];

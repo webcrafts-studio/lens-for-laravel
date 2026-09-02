@@ -4,7 +4,7 @@
 
 Lens for Laravel is a local-first accessibility auditing package for Laravel applications. It renders application pages in Chromium, runs axe-core, maps violations back to Blade/React/Vue source files, and exposes the results through a dashboard and the `lens:audit` Artisan command.
 
-The current development line is v3.2.0. New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1 upgrade notes as historical documentation.
+The current development line is v3.3.0. Its only new feature is local AI Fix model support through Ollama. New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must otherwise be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1/v3.2 upgrade notes as historical documentation.
 
 The package supports PHP 8.2+ and Laravel 10–13 for its core, non-AI features.
 
@@ -83,7 +83,7 @@ composer validate --no-check-publish
 The optional AI SDK is not part of the default development dependency graph. Install it temporarily when testing real provider integration on PHP 8.3+ and Laravel 12+:
 
 ```bash
-composer require laravel/ai:^0.3.2 --dev
+composer require laravel/ai --dev
 ```
 
 Do not commit that temporary dependency as a mandatory production requirement.
@@ -95,7 +95,7 @@ Do not commit that temporary dependency as a mandatory production requirement.
 - Route tests must verify that unavailable AI Fix endpoints return a clear `503` without exposing provider internals.
 - AI Fix tests must cover semantic context boundaries, malformed structured output, token-limit finish reasons, one retry only, non-retryable provider errors, safe user messages, and provider/model/token logging.
 - Applied AI fixes must be marked as pending verification in the current dashboard results, remain in violation counts, and return to ordinary axe-derived state when a new scan replaces the results.
-- Keep the AI model implicit. Lens selects the provider, while `laravel/ai` resolves that provider's configured default model.
+- Keep the AI model implicit for Gemini, OpenAI, and Anthropic so `laravel/ai` resolves the configured provider default. For Ollama only, Lens may pass the explicit `ai_ollama_model` tag introduced in v3.3, or use the SDK default when it is unset.
 - Dashboard tests must verify that unavailable features are explained and their actions are hidden.
 - Preserve existing tests for Blade, React, Vue, crawler, state scripts, history, baseline, PDF, preview, and CLI behavior.
 - Keep dashboard and CLI state scripts on the same `InteractionScriptParser` grammar and limits. CLI state mode must remain single-URL and incompatible with crawl mode.
@@ -109,8 +109,8 @@ The package README is the concise installation and feature reference. The websit
 
 - core: PHP 8.2+, Laravel 10–13
 - AI Fix: PHP 8.3+, Laravel 12+, optional `laravel/ai`
-- AI Fix sends a bounded semantic element/component and issue metadata to the configured external provider
-- v3 AI Fix uses a minimal replacement, one controlled retry for truncated/invalid structured output, and the provider's default `laravel/ai` model
+- AI Fix sends a bounded semantic element/component and issue metadata to the configured provider; default localhost Ollama processing stays on the application host, while cloud and remote Ollama endpoints receive the context over the network
+- v3 AI Fix uses a minimal replacement and one controlled retry for truncated/invalid structured output; cloud providers use their default `laravel/ai` model and timeout behavior, while v3.3 can select a local Ollama model tag explicitly and defaults its timeout to 120 seconds
 - applying an AI fix marks the current issue as pending re-scan but does not present it as axe-verified or remove it from counts
 - all non-AI features remain available when AI Fix is unsupported or disabled
 - dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default

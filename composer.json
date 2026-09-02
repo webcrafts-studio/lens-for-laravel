@@ -50,7 +50,7 @@
     "pestphp/pest-plugin-laravel": "^3.0"
   },
   "suggest": {
-    "laravel/ai": "Required only for AI Fix on PHP 8.3+ and Laravel 12+. Core accessibility scanning does not require it."
+    "laravel/ai": "Required only for cloud or local Ollama AI Fix on PHP 8.3+ and Laravel 12+. Core accessibility scanning does not require it."
   },
   "scripts": {
     "test": "vendor/bin/pest",

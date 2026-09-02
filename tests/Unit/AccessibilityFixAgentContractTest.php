@@ -6,8 +6,9 @@ use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use LensForLaravel\LensForLaravel\Ai\AccessibilityFixAgent;
+use LensForLaravel\LensForLaravel\Services\AiFixPromptRunner;
 
-test('optional accessibility agent keeps the provider default model and bounded generation settings', function () {
+test('optional accessibility agent keeps cloud provider defaults and supports bounded Ollama generation', function () {
     if (! interface_exists(Agent::class)) {
         $this->markTestSkipped('The optional laravel/ai SDK is not installed in the core test matrix.');
     }
@@ -17,6 +18,7 @@ test('optional accessibility agent keeps the provider default model and bounded 
     $temperature = $reflection->getAttributes(Temperature::class);
     $model = $reflection->getAttributes(Model::class);
     $agent = new AccessibilityFixAgent;
+    $providerMethod = new ReflectionMethod(AiFixPromptRunner::class, 'provider');
 
     expect($maxTokens)->toHaveCount(1)
         ->and($maxTokens[0]->newInstance()->value)->toBe(12000)
@@ -25,5 +27,7 @@ test('optional accessibility agent keeps the provider default model and bounded 
         ->and($model)->toBeEmpty()
         ->and($agent->providerOptions(Lab::Gemini))->toBe(['thinkingBudget' => 1024])
         ->and($agent->providerOptions(Lab::OpenAI))->toBe([])
-        ->and($agent->providerOptions(Lab::Anthropic))->toBe([]);
+        ->and($agent->providerOptions(Lab::Anthropic))->toBe([])
+        ->and($agent->providerOptions(Lab::Ollama))->toBe([])
+        ->and($providerMethod->invoke(new AiFixPromptRunner, 'ollama'))->toBe(Lab::Ollama);
 });

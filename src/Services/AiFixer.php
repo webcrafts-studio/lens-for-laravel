@@ -44,6 +44,8 @@ class AiFixer
 
         $wcagTags = implode(', ', array_filter($tags, fn ($t) => str_starts_with($t, 'wcag')));
         $provider = $this->configuredProvider();
+        $model = $this->configuredModel($provider);
+        $timeout = $this->configuredTimeout($provider);
 
         for ($attempt = 1; $attempt <= 2; $attempt++) {
             try {
@@ -59,10 +61,12 @@ class AiFixer
                         retry: $attempt === 2,
                     ),
                     $provider,
+                    $model,
+                    $timeout,
                 );
 
                 if ($generation->finishReason === 'length') {
-                    $this->logAttempt('warning', $generation->provider ?? $provider, $generation->model, 'length', $generation->usage, $attempt, true);
+                    $this->logAttempt('warning', $generation->provider ?? $provider, $generation->model ?? $model, 'length', $generation->usage, $attempt, true);
 
                     if ($attempt === 1) {
                         continue;
@@ -71,7 +75,7 @@ class AiFixer
                     throw AiFixGenerationException::incomplete();
                 }
 
-                $this->logAttempt('info', $generation->provider ?? $provider, $generation->model, $generation->finishReason, $generation->usage, $attempt, false);
+                $this->logAttempt('info', $generation->provider ?? $provider, $generation->model ?? $model, $generation->finishReason, $generation->usage, $attempt, false);
 
                 return [
                     'originalCode' => $context->code,
@@ -84,7 +88,7 @@ class AiFixer
                 throw $e;
             } catch (Throwable $e) {
                 $retryable = $this->isRetryable($e);
-                $this->logAttempt('warning', $provider, null, $this->inferredFinishReason($e), [], $attempt, $retryable, $e::class);
+                $this->logAttempt('warning', $provider, $model, $this->inferredFinishReason($e), [], $attempt, $retryable, $e::class);
 
                 if ($retryable && $attempt === 1) {
                     continue;
@@ -144,7 +148,27 @@ PROMPT;
     {
         $provider = strtolower((string) config('lens-for-laravel.ai_provider', 'gemini'));
 
-        return in_array($provider, ['gemini', 'openai', 'anthropic'], true) ? $provider : 'gemini';
+        return in_array($provider, ['gemini', 'openai', 'anthropic', 'ollama'], true) ? $provider : 'gemini';
+    }
+
+    protected function configuredModel(string $provider): ?string
+    {
+        if ($provider !== 'ollama') {
+            return null;
+        }
+
+        $model = trim((string) config('lens-for-laravel.ai_ollama_model', ''));
+
+        return $model !== '' ? $model : null;
+    }
+
+    protected function configuredTimeout(string $provider): ?int
+    {
+        if ($provider !== 'ollama') {
+            return null;
+        }
+
+        return max(1, (int) config('lens-for-laravel.ai_ollama_timeout', 120));
     }
 
     protected function isRetryable(Throwable $exception): bool

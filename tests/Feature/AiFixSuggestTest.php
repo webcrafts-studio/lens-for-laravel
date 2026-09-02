@@ -94,8 +94,10 @@ BLADE);
     $runner = Mockery::mock(AiFixPromptRunner::class);
     $runner->shouldReceive('generate')
         ->once()
-        ->withArgs(function (string $prompt, string $provider): bool {
+        ->withArgs(function (string $prompt, string $provider, ?string $model, ?int $timeout): bool {
             return $provider === 'gemini'
+                && $model === null
+                && $timeout === null
                 && str_contains($prompt, '<img src="logo.png">')
                 && ! str_contains($prompt, 'Private unrelated content')
                 && ! str_contains($prompt, 'More unrelated content');
@@ -132,6 +134,55 @@ BLADE);
             && $context['model'] === 'provider-default-model'
             && $context['finish_reason'] === 'stop'
             && $context['usage']['prompt_tokens'] === 100;
+    });
+
+    unlink($file);
+});
+
+test('POST /fix/suggest uses a configured local Ollama model', function () {
+    $viewsPath = $this->app->resourcePath('views');
+    if (! is_dir($viewsPath)) {
+        mkdir($viewsPath, 0755, true);
+    }
+    $file = $viewsPath.'/ollama-suggest-test.blade.php';
+    file_put_contents($file, '<img src="logo.png">');
+
+    $this->app['config']->set('lens-for-laravel.ai_provider', 'ollama');
+    $this->app['config']->set('lens-for-laravel.ai_ollama_model', 'qwen2.5-coder:7b');
+
+    $runner = Mockery::mock(AiFixPromptRunner::class);
+    $runner->shouldReceive('generate')
+        ->once()
+        ->withArgs(function (string $prompt, string $provider, ?string $model, ?int $timeout): bool {
+            return $provider === 'ollama'
+                && $model === 'qwen2.5-coder:7b'
+                && $timeout === 120
+                && str_contains($prompt, '<img src="logo.png">');
+        })
+        ->andReturn(new AiFixGeneration(
+            replacement: '<img src="logo.png" alt="Company logo">',
+            explanation: 'Adds alternative text.',
+            provider: 'ollama',
+            model: 'qwen2.5-coder:7b',
+            finishReason: 'stop',
+        ));
+    app()->instance(AiFixPromptRunner::class, $runner);
+
+    Log::spy();
+
+    $this->postJson(route('lens-for-laravel.fix.suggest'), [
+        'htmlSnippet' => '<img src="logo.png">',
+        'description' => 'Images must have alternate text',
+        'fileName' => 'ollama-suggest-test.blade.php',
+        'lineNumber' => 1,
+    ])->assertOk()
+        ->assertJsonPath('fixedCode', '<img src="logo.png" alt="Company logo">');
+
+    Log::shouldHaveReceived('log')->once()->withArgs(function (string $level, string $message, array $context): bool {
+        return $level === 'info'
+            && $message === 'Lens AI fix generation attempt'
+            && $context['provider'] === 'ollama'
+            && $context['model'] === 'qwen2.5-coder:7b';
     });
 
     unlink($file);

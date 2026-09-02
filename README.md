@@ -4,7 +4,7 @@
 
 Lens for Laravel scans your application with [axe-core](https://github.com/dequelabs/axe-core), renders JavaScript through [Spatie Browsershot](https://github.com/spatie/browsershot), maps violations back to source files, and can generate AI-assisted fixes for Blade, React, and Vue code.
 
-**v3.2 development line:** improves source mapping for dynamic Blade/Livewire routes and nested Blade, React, and Vue markup while retaining the v3.0 compatibility foundation and v3.1 AI Fix review workflows.
+**v3.3 development line:** adds local AI Fix models through Ollama. This is the only new v3.3 feature; the v3.2 source-mapping improvements and earlier v3 foundations remain unchanged.
 
 **[Documentation & full feature overview -> lens.webcrafts.pl](https://lens.webcrafts.pl/)**
 
@@ -18,7 +18,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Blade, Livewire, React, and Vue source locator** - maps DOM violations back to `resources/views/**/*.blade.php` and frontend files under `resources/js`, using named Blade routes, nested element signatures, nearby selector context, rendered filenames, and positional hints to disambiguate dynamic or repeated elements.
 - **Source type labels** - results include `sourceType` values: `blade`, `react`, or `vue`.
 - **Inertia-aware file discovery** - React/Vue pages under `resources/js/Pages/**` are included automatically.
-- **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through the optional `laravel/ai` SDK.
+- **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through Gemini, OpenAI, Anthropic, or a local Ollama model using the optional `laravel/ai` SDK.
 - **Editable AI Fix review** - inspect the live diff, edit the replacement with line numbers and indentation shortcuts, or restore the original AI proposal before applying.
 - **Progressive Fix All A/AA queues** - generate up to three suggestions concurrently and review ready fixes while later items continue loading.
 - **Honest AI verification state** - applied suggestions remain counted and are marked as pending until a fresh axe-core scan verifies the result.
@@ -64,7 +64,7 @@ AI Fix has a narrower runtime matrix than the core scanner:
 |---|---|
 | PHP | ^8.3 |
 | Laravel | ^12.0 \| ^13.0 |
-| Optional SDK | `laravel/ai` ^0.3.2 |
+| Optional SDK | `laravel/ai` 0.3.2 or newer |
 
 Laravel 10/11 and PHP 8.2 applications retain scanning, crawling, history, PDF, preview, source location, interactive states, and CLI support. The dashboard hides AI Fix actions and explains why they are unavailable.
 
@@ -83,7 +83,7 @@ The service provider is auto-discovered.
 The core package intentionally does not require an AI SDK. On a supported runtime, install AI Fix separately when you want generated fixes:
 
 ```bash
-composer require laravel/ai:^0.3.2 --dev
+composer require laravel/ai --dev
 ```
 
 AI Fix is optional. Lens continues to work without this package.
@@ -374,6 +374,10 @@ return [
     'ai_enabled' => env('LENS_FOR_LARAVEL_AI_ENABLED', true),
 
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),
+
+    'ai_ollama_model' => env('LENS_FOR_LARAVEL_AI_OLLAMA_MODEL'),
+
+    'ai_ollama_timeout' => env('LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT', 120),
 ];
 ```
 
@@ -391,6 +395,8 @@ LENS_FOR_LARAVEL_BASELINE_PATH=storage/app/lens-for-laravel/baseline.json
 LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=false
 LENS_FOR_LARAVEL_AI_ENABLED=true
 LENS_FOR_LARAVEL_AI_PROVIDER=gemini
+LENS_FOR_LARAVEL_AI_OLLAMA_MODEL=
+LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT=120
 ```
 
 Set `LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=true` only for trusted local environments with self-signed certificates. Since v3.0 the setting consistently covers axe scans, sitemap and page requests made by the crawler, optional JavaScript-rendered crawling, and element preview screenshots. Its default remains `false`.
@@ -414,6 +420,7 @@ Supported AI providers:
 - `gemini`
 - `openai`
 - `anthropic`
+- `ollama`
 
 Disable AI Fix explicitly while keeping all scanning features enabled:
 
@@ -474,9 +481,9 @@ The AI Fix workflow:
 9. Lens applies each reviewed replacement after running the same path and dangerous-code checks for both generated and edited proposals.
 10. The issue is immediately marked **AI Fix applied — pending re-scan** while remaining in the violation counts until a new axe-core scan verifies the result.
 
-Since v3.0, the agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Lens does not select or expose a model: `laravel/ai` uses the default model configured for the chosen provider. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
+Since v3.0, the agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Gemini, OpenAI, and Anthropic continue to use the default model configured in `laravel/ai`. In v3.3, Ollama can use the exact local model tag from `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`; when it is omitted, the Laravel AI SDK's Ollama default is used. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
 
-> **Privacy:** AI Fix sends the failing DOM snippet, accessibility issue details, WCAG tags, and a bounded element/component source fragment to the configured Gemini, OpenAI, or Anthropic provider. It does not send the entire repository. Review the selected source context for secrets or sensitive information before requesting a fix, and follow the chosen provider's data-handling policy.
+> **Privacy:** AI Fix sends the failing DOM snippet, accessibility issue details, WCAG tags, and a bounded element/component source fragment to the configured provider. With Ollama's default localhost endpoint, this data stays on the machine running the Laravel application. A remote Ollama endpoint and cloud providers receive that bounded context over the network. Lens does not send the entire repository; review the selected context for secrets or sensitive information before requesting a fix.
 
 Configure provider credentials:
 
@@ -492,6 +499,23 @@ OPENAI_API_KEY=your-key-here
 LENS_FOR_LARAVEL_AI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=your-key-here
 ```
+
+To run AI Fix locally, install [Ollama](https://ollama.com/download), then pull a code-capable model:
+
+```bash
+ollama pull qwen2.5-coder:7b
+```
+
+```env
+LENS_FOR_LARAVEL_AI_PROVIDER=ollama
+LENS_FOR_LARAVEL_AI_OLLAMA_MODEL=qwen2.5-coder:7b
+LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT=120
+OLLAMA_URL=http://127.0.0.1:11434
+```
+
+Ollama serves `http://127.0.0.1:11434` by default, so the URL can normally be omitted. `laravel/ai` 0.3.x names the optional URL override `OLLAMA_BASE_URL`; current releases use `OLLAMA_URL`. The selected model must already be present in `ollama list`. Larger code models can improve suggestions but require more memory and take longer to answer.
+
+To test the full local workflow, run `curl http://127.0.0.1:11434/api/tags`, clear Laravel's cached configuration with `php artisan optimize:clear`, and add a known violation such as `<img src="logo.png">` to a rendered page. Scan it in the dashboard, request **AI FIX**, and verify that `storage/logs/laravel.log` records provider `ollama` and the selected model without recording the source fragment. Review and apply the proposal, confirm the issue stays marked as pending, then re-scan to let axe-core verify the result.
 
 Supported writable files:
 
@@ -607,9 +631,23 @@ Always complement Lens with:
 
 ---
 
-## Upgrade Notes for v3.0, v3.1, and v3.2
+## Upgrade Notes for v3.0 through v3.3
 
-v3.2 is the current development line and requires no new migration or configuration key beyond the v3.0 foundation.
+v3.3 is the current development line. Its only new feature is local AI Fix model support through Ollama. It requires no migration.
+
+New in v3.3:
+
+- `ollama` is accepted by `LENS_FOR_LARAVEL_AI_PROVIDER`
+- `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL` selects an installed Ollama model tag
+- `LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT` allows slower local generation and defaults to 120 seconds
+- local generations keep the same bounded source context, structured response, one-retry policy, review diff, apply safeguards, and pending re-scan state as cloud providers
+
+If the Lens config was published before v3.3, add:
+
+```php
+'ai_ollama_model' => env('LENS_FOR_LARAVEL_AI_OLLAMA_MODEL'),
+'ai_ollama_timeout' => env('LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT', 120),
+```
 
 New in v3.2:
 
@@ -655,7 +693,7 @@ If you published the config before v3.0.0, add:
 Install the optional AI SDK only on a supported runtime when AI Fix is needed:
 
 ```bash
-composer require laravel/ai:^0.3.2 --dev
+composer require laravel/ai --dev
 ```
 
 ### Historical: Upgrade Notes for v2.0.0

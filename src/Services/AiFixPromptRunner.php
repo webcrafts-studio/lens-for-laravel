@@ -9,11 +9,13 @@ use RuntimeException;
 
 class AiFixPromptRunner
 {
-    public function generate(string $prompt, string $provider): AiFixGeneration
+    public function generate(string $prompt, string $provider, ?string $model = null, ?int $timeout = null): AiFixGeneration
     {
         $response = AccessibilityFixAgent::make()->prompt(
             $prompt,
             provider: $this->provider($provider),
+            model: $model,
+            timeout: $timeout,
         );
 
         $replacement = $response['replacement'] ?? null;
@@ -46,6 +48,7 @@ class AiFixPromptRunner
         return match (strtolower($provider)) {
             'openai' => Lab::OpenAI,
             'anthropic' => Lab::Anthropic,
+            'ollama' => Lab::Ollama,
             default => Lab::Gemini,
         };
     }
