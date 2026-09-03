@@ -4,7 +4,9 @@
 
 Lens for Laravel scans your application with [axe-core](https://github.com/dequelabs/axe-core), renders JavaScript through [Spatie Browsershot](https://github.com/spatie/browsershot), maps violations back to source files, and can generate AI-assisted fixes for Blade, React, and Vue code.
 
-**v3.3 development line:** adds local AI Fix models through Ollama. This is the only new v3.3 feature; the v3.2 source-mapping improvements and earlier v3 foundations remain unchanged.
+**v3.4 development line:** adds authenticated scans for pages behind login. This is the only new v3.4 feature; the v3.3 Ollama support and earlier v3 foundations remain unchanged.
+
+**v3.3:** adds local AI Fix models through Ollama.
 
 **[Documentation & full feature overview -> lens.webcrafts.pl](https://lens.webcrafts.pl/)**
 
@@ -27,6 +29,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **SPA crawler mode** - optionally renders JavaScript while crawling React/Vue/Inertia apps.
 - **Multi-URL scans** - scan selected URLs in a single dashboard or CLI run.
 - **Interactive state scans** - execute clicks, waits, typing, select changes, and checkbox states before scanning.
+- **Authenticated scans** - scan pages behind login by impersonating an existing user id resolved server-side (`--as-user`, dashboard user ID field); raw cookies and passwords are never accepted.
 - **Local HTTPS support** - optionally ignore self-signed certificate errors in local environments.
 - **Scan history** - stores scan runs, issue counts, affected URLs, source locations, and trend data.
 - **URL-aware scan comparison** - compare two historical scans by rule, normalized URL, interactive state, and selector to see new, fixed, and remaining issues without conflating the same selector across pages.
@@ -282,6 +285,9 @@ php artisan lens:audit --wcag=2.2
 # Execute a reusable interactive-state script
 php artisan lens:audit http://your-app.test --states=tests/accessibility/navigation.states
 
+# Scan pages behind login as an existing user (requires LENS_FOR_LARAVEL_AUTH_ENABLED=true)
+php artisan lens:audit http://your-app.test/dashboard --as-user=1
+
 # Fail with exit code 1 when violations exceed a threshold
 php artisan lens:audit --threshold=10
 
@@ -371,6 +377,12 @@ return [
 
     'ignore_https_errors' => env('LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS', false),
 
+    'auth_enabled' => env('LENS_FOR_LARAVEL_AUTH_ENABLED', false),
+
+    'auth_guard' => env('LENS_FOR_LARAVEL_AUTH_GUARD', 'web'),
+
+    'auth_allowed_user_ids' => /* comma-separated LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS, e.g. '1,2' */ [],
+
     'ai_enabled' => env('LENS_FOR_LARAVEL_AI_ENABLED', true),
 
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),
@@ -393,6 +405,9 @@ LENS_FOR_LARAVEL_SCAN_WAIT_MS=0
 LENS_FOR_LARAVEL_WCAG_VERSION=2.0
 LENS_FOR_LARAVEL_BASELINE_PATH=storage/app/lens-for-laravel/baseline.json
 LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=false
+LENS_FOR_LARAVEL_AUTH_ENABLED=false
+LENS_FOR_LARAVEL_AUTH_GUARD=web
+LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS=
 LENS_FOR_LARAVEL_AI_ENABLED=true
 LENS_FOR_LARAVEL_AI_PROVIDER=gemini
 LENS_FOR_LARAVEL_AI_OLLAMA_MODEL=
@@ -400,6 +415,22 @@ LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT=120
 ```
 
 Set `LENS_FOR_LARAVEL_IGNORE_HTTPS_ERRORS=true` only for trusted local environments with self-signed certificates. Since v3.0 the setting consistently covers axe scans, sitemap and page requests made by the crawler, optional JavaScript-rendered crawling, and element preview screenshots. Its default remains `false`.
+
+### Authenticated scans
+
+Pages behind login can be scanned by impersonating an existing user of the host application:
+
+```env
+LENS_FOR_LARAVEL_AUTH_ENABLED=true
+LENS_FOR_LARAVEL_AUTH_GUARD=web
+LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS=1,2
+```
+
+```bash
+php artisan lens:audit http://your-app.test/dashboard --as-user=1
+```
+
+The dashboard shows a user ID field when the feature is enabled; crawling, state scans, and element previews accept the same user. Only the numeric id travels from the client — Lens logs in server-side through the configured guard and passes a short-lived session cookie to Chromium. Raw cookies, tokens, and passwords are never accepted, logged, or stored in history, and the previous auth state is restored after the scan. Authenticated scans require a persistent session driver (`file`, `database`, or `redis`); the `array` driver cannot share sessions with the scanner browser. When `LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS` is set, only those ids may be used.
 
 ### Interface languages
 
@@ -589,6 +620,7 @@ Built-in protections:
 - AI Fix writes only to supported Blade/React/Vue source paths.
 - AI Fix blocks generated code containing server-side execution functions such as `shell_exec`, `system`, `exec`, `passthru`, `proc_open`, `popen`, and `eval`.
 - AI Fix blocks newly introduced raw PHP open tags unless they were already present in the original code block.
+- Authenticated scans accept only a numeric user id; login happens server-side, session cookies are short-lived and never logged or stored, and the previous auth state is restored after the scan.
 - Fix writes use `LOCK_EX`.
 - Scan, crawl, preview, fix, history, and report endpoints use throttling where appropriate.
 
@@ -631,9 +663,28 @@ Always complement Lens with:
 
 ---
 
-## Upgrade Notes for v3.0 through v3.3
+## Upgrade Notes for v3.0 through v3.4
 
-v3.3 is the current development line. Its only new feature is local AI Fix model support through Ollama. It requires no migration.
+v3.4 is the current development line. Its only new feature is authenticated scans for pages behind login. It requires no migration.
+
+New in v3.4:
+
+- `LENS_FOR_LARAVEL_AUTH_ENABLED=true` enables scanning as an existing user (default `false`)
+- `LENS_FOR_LARAVEL_AUTH_GUARD` selects the session guard used for login (default `web`)
+- `LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS` optionally restricts impersonation to a comma-separated id list
+- `php artisan lens:audit --as-user=1` scans single URLs, crawls, and state scripts as that user
+- the dashboard, crawler, state scans, and element previews accept the same server-resolved user id
+- authenticated scans require a persistent session driver (`file`, `database`, or `redis`)
+
+If the Lens config was published before v3.4, add:
+
+```php
+'auth_enabled' => env('LENS_FOR_LARAVEL_AUTH_ENABLED', false),
+'auth_guard' => env('LENS_FOR_LARAVEL_AUTH_GUARD', 'web'),
+'auth_allowed_user_ids' => /* comma-separated LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS, e.g. '1,2' */ [],
+```
+
+v3.3 added local AI Fix models through Ollama. It requires no migration.
 
 New in v3.3:
 
