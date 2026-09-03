@@ -75,6 +75,11 @@ return [
         'other_description' => 'These are best-practice recommendations and general improvements that do not strictly fall into a WCAG level but improve user experience.',
         'scanning_progress' => 'Scanning [:current/:total]: :url',
     ],
+    'auth' => [
+        'title' => 'Authenticated scan',
+        'user_id' => 'Scan as user ID',
+        'user_help' => 'Optional numeric user ID. Lens logs in server-side and passes only a short-lived session cookie to the scanner. Raw cookies and passwords are never accepted.',
+    ],
     'history' => [
         'trend_title' => 'Issue Trend (Last 30 Scans)',
         'no_history_short' => 'No scan history yet.',
@@ -245,6 +250,12 @@ return [
         'scan_failed_detail' => 'Scan failed: :message',
         'quality_gate_failed' => 'Quality gate failed: :count violation(s) found (threshold: :threshold)',
         'baseline_gate_failed' => 'Baseline gate failed: :count new violation(s) found.',
+        'auth_disabled' => 'Authenticated scans are disabled. Set LENS_FOR_LARAVEL_AUTH_ENABLED=true to enable them.',
+        'auth_not_allowed' => 'This user ID is not allowed for authenticated scans.',
+        'auth_user_not_found' => 'The requested user could not be found.',
+        'auth_session_driver' => 'Authenticated scans require a persistent session driver (file, database, or redis). The array driver cannot share sessions with the scanner browser.',
+        'auth_unavailable' => 'The configured auth guard is unavailable. Check the lens-for-laravel auth_guard setting.',
+        'auth_invalid_user' => 'The --as-user option requires a positive numeric user id.',
     ],
     'interaction_errors' => [
         'max_states' => 'Interactive scanning supports up to :max states.',

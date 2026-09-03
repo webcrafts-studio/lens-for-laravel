@@ -62,6 +62,11 @@ return [
         'other_description' => 'To zalecenia dobrych praktyk i ogólne usprawnienia, które nie należą bezpośrednio do poziomu WCAG, ale poprawiają doświadczenie użytkownika.',
         'scanning_progress' => 'Skanowanie [:current/:total]: :url',
     ],
+    'auth' => [
+        'title' => 'Skanowanie uwierzytelnione',
+        'user_id' => 'Skanuj jako użytkownik (ID)',
+        'user_help' => 'Opcjonalny numeryczny identyfikator użytkownika. Lens loguje się po stronie serwera i przekazuje skanerowi wyłącznie krótkotrwałe ciasteczko sesji. Surowe ciasteczka i hasła nie są akceptowane.',
+    ],
     'history' => [
         'trend_title' => 'Trend problemów (ostatnie 30 skanów)',
         'no_history_short' => 'Brak historii skanów.',
@@ -182,6 +187,12 @@ return [
         'scan_failed_detail' => 'Skanowanie nie powiodło się: :message',
         'quality_gate_failed' => 'Próg jakości przekroczony: znaleziono :count problemów (próg: :threshold)',
         'baseline_gate_failed' => 'Weryfikacja baseline nie powiodła się: znaleziono :count nowych problemów.',
+        'auth_disabled' => 'Skanowanie uwierzytelnione jest wyłączone. Ustaw LENS_FOR_LARAVEL_AUTH_ENABLED=true, aby je włączyć.',
+        'auth_not_allowed' => 'Ten identyfikator użytkownika nie jest dozwolony do skanowania uwierzytelnionego.',
+        'auth_user_not_found' => 'Nie znaleziono użytkownika o podanym identyfikatorze.',
+        'auth_session_driver' => 'Skanowanie uwierzytelnione wymaga trwałego sterownika sesji (file, database lub redis). Sterownik array nie współdzieli sesji z przeglądarką skanera.',
+        'auth_unavailable' => 'Skonfigurowany guard uwierzytelniania jest niedostępny. Sprawdź ustawienie auth_guard pakietu lens-for-laravel.',
+        'auth_invalid_user' => 'Opcja --as-user wymaga dodatniego numerycznego identyfikatora użytkownika.',
     ],
     'interaction_errors' => [
         'max_states' => 'Skan interaktywny obsługuje maksymalnie :max stanów.',

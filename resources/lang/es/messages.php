@@ -47,6 +47,11 @@ return [
         'other_description' => 'Son recomendaciones de buenas prácticas y mejoras generales fuera de un nivel WCAG concreto que mejoran la experiencia de uso.',
         'scanning_progress' => 'Escaneando [:current/:total]: :url',
     ],
+    'auth' => [
+        'title' => 'Análisis autenticado',
+        'user_id' => 'Analizar como usuario (ID)',
+        'user_help' => 'ID de usuario numérico opcional. Lens inicia sesión en el servidor y solo pasa una cookie de sesión temporal al analizador. No se aceptan cookies sin procesar ni contraseñas.',
+    ],
     'history' => [
         'trend_title' => 'Tendencia de problemas (últimos 30 escaneos)', 'no_history_short' => 'Todavía no hay historial de escaneos.',
         'title' => 'Historial de escaneos', 'empty_code' => 'Sin historial', 'empty' => 'Ejecuta un escaneo para comenzar a crear el historial.',
@@ -146,6 +151,12 @@ return [
         'scan_failed_detail' => 'El análisis falló: :message',
         'quality_gate_failed' => 'El control de calidad falló: se encontraron :count infracciones (umbral: :threshold)',
         'baseline_gate_failed' => 'La comprobación de baseline falló: se encontraron :count infracciones nuevas.',
+        'auth_disabled' => 'Los análisis autenticados están desactivados. Establece LENS_FOR_LARAVEL_AUTH_ENABLED=true para activarlos.',
+        'auth_not_allowed' => 'Este ID de usuario no está permitido para análisis autenticados.',
+        'auth_user_not_found' => 'No se encontró el usuario solicitado.',
+        'auth_session_driver' => 'Los análisis autenticados requieren un controlador de sesión persistente (file, database o redis). El controlador array no comparte sesiones con el navegador del analizador.',
+        'auth_unavailable' => 'El guard de autenticación configurado no está disponible. Revisa el ajuste auth_guard de lens-for-laravel.',
+        'auth_invalid_user' => 'La opción --as-user requiere un ID de usuario numérico positivo.',
     ],
     'interaction_errors' => [
         'max_states' => 'El escaneo interactivo admite hasta :max estados.', 'state_before_actions' => 'Línea :line: añade un estado antes de definir acciones.',

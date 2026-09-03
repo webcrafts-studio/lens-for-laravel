@@ -47,6 +47,11 @@ return [
         'other_description' => 'Il s’agit de recommandations de bonnes pratiques et d’améliorations générales hors d’un niveau WCAG précis qui améliorent l’expérience utilisateur.',
         'scanning_progress' => 'Scan [:current/:total] : :url',
     ],
+    'auth' => [
+        'title' => 'Analyse authentifiée',
+        'user_id' => 'Analyser en tant qu’utilisateur (ID)',
+        'user_help' => 'ID utilisateur numérique facultatif. Lens se connecte côté serveur et transmet uniquement un cookie de session éphémère à l’analyseur. Les cookies bruts et mots de passe ne sont jamais acceptés.',
+    ],
     'history' => [
         'trend_title' => 'Tendance des problèmes (30 derniers scans)', 'no_history_short' => 'Aucun historique de scan.',
         'title' => 'Historique des scans', 'empty_code' => 'Aucun historique', 'empty' => 'Lancez un scan pour commencer à créer l’historique.',
@@ -146,6 +151,12 @@ return [
         'scan_failed_detail' => 'L’analyse a échoué : :message',
         'quality_gate_failed' => 'Le contrôle qualité a échoué : :count violation(s) trouvée(s) (seuil : :threshold)',
         'baseline_gate_failed' => 'La vérification de la baseline a échoué : :count nouvelle(s) violation(s) trouvée(s).',
+        'auth_disabled' => 'Les analyses authentifiées sont désactivées. Définissez LENS_FOR_LARAVEL_AUTH_ENABLED=true pour les activer.',
+        'auth_not_allowed' => 'Cet ID utilisateur n’est pas autorisé pour les analyses authentifiées.',
+        'auth_user_not_found' => 'L’utilisateur demandé est introuvable.',
+        'auth_session_driver' => 'Les analyses authentifiées exigent un pilote de session persistant (file, database ou redis). Le pilote array ne partage pas les sessions avec le navigateur de l’analyseur.',
+        'auth_unavailable' => 'Le guard d’authentification configuré est indisponible. Vérifiez le paramètre auth_guard de lens-for-laravel.',
+        'auth_invalid_user' => 'L’option --as-user exige un ID utilisateur numérique positif.',
     ],
     'interaction_errors' => [
         'max_states' => 'Le scan interactif accepte jusqu’à :max états.', 'state_before_actions' => 'Ligne :line : ajoutez un état avant de définir des actions.',

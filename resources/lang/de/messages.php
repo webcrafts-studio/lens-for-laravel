@@ -47,6 +47,11 @@ return [
         'other_description' => 'Dies sind Best-Practice-Empfehlungen und allgemeine Verbesserungen außerhalb einer bestimmten WCAG-Stufe, die die Nutzung verbessern.',
         'scanning_progress' => 'Scan [:current/:total]: :url',
     ],
+    'auth' => [
+        'title' => 'Authentifizierter Scan',
+        'user_id' => 'Als Benutzer scannen (ID)',
+        'user_help' => 'Optionale numerische Benutzer-ID. Lens meldet sich serverseitig an und übergibt an den Scanner nur ein kurzlebiges Sitzungs-Cookie. Rohe Cookies oder Passwörter werden nie akzeptiert.',
+    ],
     'history' => [
         'trend_title' => 'Problemtrend (letzte 30 Scans)', 'no_history_short' => 'Noch keine Scan-Historie.',
         'title' => 'Scan-Historie', 'empty_code' => 'Keine Historie', 'empty' => 'Starte einen Scan, um die Historie aufzubauen.',
@@ -147,6 +152,12 @@ return [
         'scan_failed_detail' => 'Der Scan ist fehlgeschlagen: :message',
         'quality_gate_failed' => 'Das Quality Gate ist fehlgeschlagen: :count Verstoß/Verstöße gefunden (Schwellenwert: :threshold)',
         'baseline_gate_failed' => 'Die Baseline-Prüfung ist fehlgeschlagen: :count neue(r) Verstoß/Verstöße gefunden.',
+        'auth_disabled' => 'Authentifizierte Scans sind deaktiviert. Setze LENS_FOR_LARAVEL_AUTH_ENABLED=true, um sie zu aktivieren.',
+        'auth_not_allowed' => 'Diese Benutzer-ID ist für authentifizierte Scans nicht zugelassen.',
+        'auth_user_not_found' => 'Der angeforderte Benutzer wurde nicht gefunden.',
+        'auth_session_driver' => 'Authentifizierte Scans erfordern einen persistenten Session-Treiber (file, database oder redis). Der array-Treiber teilt keine Sessions mit dem Scanner-Browser.',
+        'auth_unavailable' => 'Der konfigurierte Auth-Guard ist nicht verfügbar. Prüfe die auth_guard-Einstellung von lens-for-laravel.',
+        'auth_invalid_user' => 'Die Option --as-user erfordert eine positive numerische Benutzer-ID.',
     ],
     'interaction_errors' => [
         'max_states' => 'Der interaktive Scan unterstützt bis zu :max Zustände.', 'state_before_actions' => 'Zeile :line: Füge vor den Aktionen einen Zustand hinzu.',
