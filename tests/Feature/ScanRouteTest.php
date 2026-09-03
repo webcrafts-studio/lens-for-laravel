@@ -39,7 +39,7 @@ test('POST /scan returns violations on success', function () {
     $scannerMock = Mockery::mock(AxeScanner::class);
     $scannerMock->shouldReceive('scan')
         ->once()
-        ->with('http://localhost')
+        ->with('http://localhost', null, null)
         ->andReturn(collect([$mockIssue]));
     app()->instance(AxeScanner::class, $scannerMock);
 
@@ -57,7 +57,7 @@ test('POST /scan passes the selected WCAG version to the scanner', function () {
     $scannerMock = Mockery::mock(AxeScanner::class);
     $scannerMock->shouldReceive('scan')
         ->once()
-        ->with('http://localhost', '2.2')
+        ->with('http://localhost', '2.2', null)
         ->andReturn(collect());
     app()->instance(AxeScanner::class, $scannerMock);
 

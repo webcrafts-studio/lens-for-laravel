@@ -18,7 +18,7 @@ test('--wcag passes the selected standard to the scanner', function () {
     $scannerMock = Mockery::mock(AxeScanner::class);
     $scannerMock->shouldReceive('scan')
         ->once()
-        ->with('https://example.com', '2.2')
+        ->with('https://example.com', '2.2', null)
         ->andReturn(collect());
     app()->instance(AxeScanner::class, $scannerMock);
 
@@ -68,7 +68,7 @@ test('--states runs an interactive state script for one URL', function () {
             return count($states) === 1
                 && $states[0]['label'] === 'Navigation open'
                 && $states[0]['actions'][0]['type'] === 'click';
-        }), '2.1')
+        }), '2.1', null)
         ->andReturn(collect([$issue]));
     app()->instance(AxeScanner::class, $scannerMock);
 

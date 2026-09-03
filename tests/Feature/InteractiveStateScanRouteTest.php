@@ -43,7 +43,7 @@ test('POST /scan/states returns interactive state issues with source locations',
                 && $states[0]['label'] === 'Modal open'
                 && $states[0]['actions'][0]['type'] === 'click'
                 && $states[0]['actions'][0]['selector'] === '[data-open-modal]';
-        }))
+        }), null, null)
         ->andReturn($issues);
     app()->instance(AxeScanner::class, $scannerMock);
 
@@ -72,7 +72,7 @@ test('POST /scan/states passes the selected WCAG version to the scanner', functi
     $scannerMock = Mockery::mock(AxeScanner::class);
     $scannerMock->shouldReceive('scanInteractiveStates')
         ->once()
-        ->with('http://localhost', Mockery::type('array'), '2.1')
+        ->with('http://localhost', Mockery::type('array'), '2.1', null)
         ->andReturn(collect());
     app()->instance(AxeScanner::class, $scannerMock);
 
