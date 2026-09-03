@@ -410,6 +410,26 @@
                                 </div>
                             </fieldset>
 
+                            @if ($authEnabled ?? false)
+                            <fieldset class="border border-black dark:border-neutral-700 p-4">
+                                <legend class="px-1 text-[10px] font-mono font-bold uppercase tracking-widest text-neutral-600 dark:text-neutral-300">
+                                    {{ __('lens-for-laravel::messages.auth.title') }}
+                                </legend>
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                                        {{ __('lens-for-laravel::messages.auth.user_help') }}
+                                    </p>
+                                    <div>
+                                        <label for="auth-user-id" class="sr-only">{{ __('lens-for-laravel::messages.auth.user_id') }}</label>
+                                        <input type="number" id="auth-user-id" x-model="authUserId" min="1" step="1"
+                                            inputmode="numeric"
+                                            placeholder="{{ __('lens-for-laravel::messages.auth.user_id') }}"
+                                            class="block w-full sm:w-56 rounded-none border-0 py-2 px-3 text-black dark:text-white dark:bg-black ring-1 ring-inset ring-black dark:ring-neutral-700 placeholder:text-neutral-500 focus:ring-2 focus:ring-inset focus:ring-[#E11D48] sm:text-sm font-mono bg-white outline-none">
+                                    </div>
+                                </div>
+                            </fieldset>
+                            @endif
+
                             <div
                                 class="flex flex-col sm:flex-row gap-0 border border-black dark:border-neutral-700 p-1 bg-neutral-50 dark:bg-neutral-900 min-w-0">
                                 <label for="target-url" class="sr-only">{{ __('lens-for-laravel::messages.scanner.target_url_label') }}</label>
@@ -1365,6 +1385,7 @@
                 wcagVersion: LENS_DEFAULT_WCAG_VERSION,
                 urlsText: '', // textarea content for multiple mode, one URL per line
                 statesScript: '',
+                authUserId: '', // optional numeric user id for authenticated scans
                 recorderChannel: null,
                 progressStatus: LENS_I18N.initializing,
                 progressPercent: 0,
@@ -1658,7 +1679,8 @@
                             },
                             body: JSON.stringify({
                                 url: issue.url || this.url,
-                                selector: issue.selector
+                                selector: issue.selector,
+                                ...this.authPayload()
                             })
                         });
                         if (!response.ok) throw new Error(LENS_I18N.screenshotFailed);
@@ -1741,7 +1763,8 @@
                                         'X-CSRF-TOKEN': token
                                     },
                                     body: JSON.stringify({
-                                        url: this.url
+                                        url: this.url,
+                                        ...this.authPayload()
                                     })
                                 });
 
@@ -1811,6 +1834,12 @@
                     }
                 },
 
+                authPayload() {
+                    const id = parseInt(this.authUserId, 10);
+
+                    return Number.isInteger(id) && id > 0 ? { asUserId: id } : {};
+                },
+
                 async scanInteractiveStates(targetUrl, token) {
                     const response = await fetch('{{ route('lens-for-laravel.scan.states') }}', {
                         method: 'POST',
@@ -1822,7 +1851,8 @@
                         body: JSON.stringify({
                             url: targetUrl,
                             script: this.statesScript,
-                            wcagVersion: this.wcagVersion
+                            wcagVersion: this.wcagVersion,
+                            ...this.authPayload()
                         })
                     });
 
@@ -1845,7 +1875,8 @@
                         },
                         body: JSON.stringify({
                             url: targetUrl,
-                            wcagVersion: this.wcagVersion
+                            wcagVersion: this.wcagVersion,
+                            ...this.authPayload()
                         })
                     });
 

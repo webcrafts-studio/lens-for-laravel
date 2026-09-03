@@ -6,8 +6,10 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use LensForLaravel\LensForLaravel\DTOs\AuthenticatedScanContext;
 use LensForLaravel\LensForLaravel\DTOs\Issue;
 use LensForLaravel\LensForLaravel\Exceptions\ScannerException;
+use LensForLaravel\LensForLaravel\Services\AuthenticatedScanResolver;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\BaselineManager;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
@@ -28,7 +30,8 @@ class LensAuditCommand extends Command
                             {--states= : Run interactive states from a script file (single URL only)}
                             {--baseline : Save the current filtered violations as the baseline and exit successfully}
                             {--baseline-file= : Baseline JSON path (defaults to storage/app/lens-for-laravel/baseline.json)}
-                            {--fail-on-new : Compare results against the baseline and fail only when new violations are found}';
+                            {--fail-on-new : Compare results against the baseline and fail only when new violations are found}
+                            {--as-user= : Scan as an existing user id (requires LENS_FOR_LARAVEL_AUTH_ENABLED=true)}';
 
     protected $description = 'Run an accessibility audit using axe-core via Browsershot and report WCAG violations';
 
@@ -68,38 +71,35 @@ class LensAuditCommand extends Command
 
         $this->renderHeader($urls[0], $levelFilter, $wcagVersion, $threshold, $crawlMode, $multipleMode, $statesMode);
 
-        // ── Scan ──────────────────────────────────────────────────────────────
-        if ($statesMode) {
-            $issues = $this->runInteractiveStateScan($urls[0], $statesFile, $wcagVersion);
-            $scannedUrls = [$urls[0]];
+        try {
+            $asUserId = $this->resolveAsUserOption();
+        } catch (InvalidArgumentException $e) {
+            $this->components->error($e->getMessage());
 
-            if ($issues === null) {
-                return self::FAILURE;
-            }
-        } elseif ($multipleMode) {
-            $result = $this->runMultipleUrlScan($urls, $wcagVersion);
-
-            if ($result === null) {
-                return self::FAILURE;
-            }
-
-            [$issues, $scannedUrls] = $result;
-        } elseif ($crawlMode) {
-            $result = $this->runCrawlScan($urls[0], $wcagVersion);
-
-            if ($result === null) {
-                return self::FAILURE;
-            }
-
-            [$issues, $scannedUrls] = $result;
-        } else {
-            $issues = $this->runScan($urls[0], $wcagVersion);
-            $scannedUrls = [$urls[0]];
-
-            if ($issues === null) {
-                return self::FAILURE;
-            }
+            return self::FAILURE;
         }
+
+        if ($asUserId !== null) {
+            $this->line("  <fg=gray>As user</>    : {$asUserId}");
+        }
+
+        // ── Scan (optionally impersonating a user) ─────────────────────────────
+        try {
+            $outcome = app(AuthenticatedScanResolver::class)->runAsUser(
+                $asUserId,
+                fn (?AuthenticatedScanContext $auth) => $this->executeScan($urls, $wcagVersion, $crawlMode, $multipleMode, $statesMode, $statesFile, $auth)
+            );
+        } catch (InvalidArgumentException $e) {
+            $this->components->error($e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        if ($outcome === null) {
+            return self::FAILURE;
+        }
+
+        [$issues, $scannedUrls] = $outcome;
 
         // ── Filter + render ───────────────────────────────────────────────────
         $filtered = $this->filterByLevel($issues, $levelFilter);
@@ -151,9 +151,38 @@ class LensAuditCommand extends Command
         return self::SUCCESS;
     }
 
+    // ─── Scan dispatch ──────────────────────────────────────────────────────────
+
+    /**
+     * Run the selected scan mode and return collected issues with scanned URLs.
+     *
+     * @param  string[]  $urls
+     * @return array{0: Collection<int, Issue>, 1: string[]}|null
+     */
+    private function executeScan(array $urls, string $wcagVersion, bool $crawlMode, bool $multipleMode, bool $statesMode, ?string $statesFile, ?AuthenticatedScanContext $auth): ?array
+    {
+        if ($statesMode) {
+            $issues = $this->runInteractiveStateScan($urls[0], (string) $statesFile, $wcagVersion, $auth);
+
+            return $issues === null ? null : [$issues, [$urls[0]]];
+        }
+
+        if ($multipleMode) {
+            return $this->runMultipleUrlScan($urls, $wcagVersion, $auth);
+        }
+
+        if ($crawlMode) {
+            return $this->runCrawlScan($urls[0], $wcagVersion, $auth);
+        }
+
+        $issues = $this->runScan($urls[0], $wcagVersion, $auth);
+
+        return $issues === null ? null : [$issues, [$urls[0]]];
+    }
+
     // ─── Interactive-state scan ────────────────────────────────────────────────
 
-    private function runInteractiveStateScan(string $url, string $scriptFile, string $wcagVersion): ?Collection
+    private function runInteractiveStateScan(string $url, string $scriptFile, string $wcagVersion, ?AuthenticatedScanContext $auth = null): ?Collection
     {
         $this->newLine();
 
@@ -186,8 +215,8 @@ class LensAuditCommand extends Command
 
             $this->components->task(
                 "Executing {$stateCount} interactive state(s) from {$scriptFile}",
-                function () use ($url, $states, $wcagVersion, $scanner, &$issues) {
-                    $issues = $scanner->scanInteractiveStates($url, $states, $wcagVersion);
+                function () use ($url, $states, $wcagVersion, $scanner, $auth, &$issues) {
+                    $issues = $scanner->scanInteractiveStates($url, $states, $wcagVersion, $auth);
                 }
             );
 
@@ -209,7 +238,7 @@ class LensAuditCommand extends Command
 
     // ─── Single-URL scan ────────────────────────────────────────────────────────
 
-    private function runScan(string $url, string $wcagVersion): ?Collection
+    private function runScan(string $url, string $wcagVersion, ?AuthenticatedScanContext $auth = null): ?Collection
     {
         $this->newLine();
 
@@ -219,8 +248,8 @@ class LensAuditCommand extends Command
 
             $this->components->task('Launching Browsershot + axe-core', function () {});
 
-            $this->components->task("Scanning <href={$url}>{$url}</>", function () use ($url, $wcagVersion, $scanner, &$issues) {
-                $issues = $scanner->scan($url, $wcagVersion);
+            $this->components->task("Scanning <href={$url}>{$url}</>", function () use ($url, $wcagVersion, $scanner, $auth, &$issues) {
+                $issues = $scanner->scan($url, $wcagVersion, $auth);
             });
 
             $this->components->task('Resolving source locations', fn () => $this->resolveSourceLocations($issues));
@@ -244,7 +273,7 @@ class LensAuditCommand extends Command
      * @param  string[]  $urls
      * @return array{0: Collection<Issue>, 1: string[]}|null
      */
-    private function runMultipleUrlScan(array $urls, string $wcagVersion): ?array
+    private function runMultipleUrlScan(array $urls, string $wcagVersion, ?AuthenticatedScanContext $auth = null): ?array
     {
         $total = count($urls);
         $this->newLine();
@@ -266,7 +295,7 @@ class LensAuditCommand extends Command
             $bar->display();
 
             try {
-                $pageIssues = $scanner->scan($pageUrl, $wcagVersion);
+                $pageIssues = $scanner->scan($pageUrl, $wcagVersion, $auth);
 
                 foreach ($pageIssues as $issue) {
                     $location = $locator->locate($issue->htmlSnippet, $issue->selector);
@@ -316,7 +345,7 @@ class LensAuditCommand extends Command
      *
      * @return array{0: Collection<Issue>, 1: string[]}|null
      */
-    private function runCrawlScan(string $url, string $wcagVersion): ?array
+    private function runCrawlScan(string $url, string $wcagVersion, ?AuthenticatedScanContext $auth = null): ?array
     {
         $maxPages = (int) config('lens-for-laravel.crawl_max_pages', 50);
 
@@ -327,8 +356,8 @@ class LensAuditCommand extends Command
 
         $this->components->task(
             "Crawling site (limit: {$maxPages} pages)",
-            function () use ($url, $maxPages, &$urls) {
-                $urls = app(SiteCrawler::class)->crawl($url, $maxPages);
+            function () use ($url, $maxPages, $auth, &$urls) {
+                $urls = app(SiteCrawler::class)->crawl($url, $maxPages, $auth);
             }
         );
 
@@ -367,7 +396,7 @@ class LensAuditCommand extends Command
             $bar->display();
 
             try {
-                $pageIssues = $scanner->scan($pageUrl, $wcagVersion);
+                $pageIssues = $scanner->scan($pageUrl, $wcagVersion, $auth);
 
                 foreach ($pageIssues as $issue) {
                     $location = $locator->locate($issue->htmlSnippet, $issue->selector);
@@ -561,6 +590,21 @@ class LensAuditCommand extends Command
         $option = $this->option('states');
 
         return is_string($option) && trim($option) !== '' ? trim($option) : null;
+    }
+
+    private function resolveAsUserOption(): ?int
+    {
+        $option = $this->option('as-user');
+
+        if ($option === null || trim((string) $option) === '') {
+            return null;
+        }
+
+        if (! ctype_digit(trim((string) $option)) || (int) $option < 1) {
+            throw new InvalidArgumentException(__('lens-for-laravel::messages.errors.auth_invalid_user'));
+        }
+
+        return (int) $option;
     }
 
     private function resolveFilePath(string $path): string

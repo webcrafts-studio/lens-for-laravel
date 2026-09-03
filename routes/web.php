@@ -5,10 +5,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use LensForLaravel\LensForLaravel\DTOs\AuthenticatedScanContext;
 use LensForLaravel\LensForLaravel\Exceptions\AiFixGenerationException;
 use LensForLaravel\LensForLaravel\Models\Scan;
 use LensForLaravel\LensForLaravel\Services\AiFixAvailability;
 use LensForLaravel\LensForLaravel\Services\AiFixer;
+use LensForLaravel\LensForLaravel\Services\AuthenticatedScanResolver;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 use LensForLaravel\LensForLaravel\Services\HttpsClientConfiguration;
@@ -83,6 +85,7 @@ Route::get('/dashboard', function () {
 
     return view('lens-for-laravel::dashboard', [
         'aiFixStatus' => app(AiFixAvailability::class)->status(),
+        'authEnabled' => (bool) config('lens-for-laravel.auth_enabled', false),
     ]);
 })->name('lens-for-laravel.dashboard');
 
@@ -109,16 +112,26 @@ Route::post('/crawl', function (Request $request) use ($domainRule) {
 
     $request->validate([
         'url' => ['required', 'url', $domainRule],
+        'asUserId' => ['nullable', 'integer', 'min:1'],
     ]);
 
     try {
         $crawler = app(SiteCrawler::class);
-        $urls = $crawler->crawl($request->url, config('lens-for-laravel.crawl_max_pages', 50));
+        $asUserId = $request->filled('asUserId') ? (int) $request->input('asUserId') : null;
+        $urls = app(AuthenticatedScanResolver::class)->runAsUser(
+            $asUserId,
+            fn (?AuthenticatedScanContext $auth) => $crawler->crawl($request->url, config('lens-for-laravel.crawl_max_pages', 50), $auth)
+        );
 
         return response()->json([
             'status' => 'success',
             'urls' => $urls,
         ]);
+    } catch (InvalidArgumentException $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+        ], 422);
     } catch (Throwable $e) {
         return response()->json([
             'status' => 'error',
@@ -135,13 +148,17 @@ Route::post('/scan', function (Request $request) use ($domainRule) {
     $request->validate([
         'url' => ['required', 'url', $domainRule],
         'wcagVersion' => ['sometimes', 'string', 'in:2.0,2.1,2.2'],
+        'asUserId' => ['nullable', 'integer', 'min:1'],
     ]);
 
     try {
         $scanner = app(AxeScanner::class);
-        $issues = $request->filled('wcagVersion')
-            ? $scanner->scan($request->url, $request->wcagVersion)
-            : $scanner->scan($request->url);
+        $wcagVersion = $request->filled('wcagVersion') ? $request->wcagVersion : null;
+        $asUserId = $request->filled('asUserId') ? (int) $request->input('asUserId') : null;
+        $issues = app(AuthenticatedScanResolver::class)->runAsUser(
+            $asUserId,
+            fn (?AuthenticatedScanContext $auth) => $scanner->scan($request->url, $wcagVersion, $auth)
+        );
 
         $fileLocator = app(FileLocator::class);
 
@@ -159,6 +176,11 @@ Route::post('/scan', function (Request $request) use ($domainRule) {
             'status' => 'success',
             'issues' => $issues,
         ]);
+    } catch (InvalidArgumentException $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+        ], 422);
     } catch (Throwable $e) {
         return response()->json([
             'status' => 'error',
@@ -176,15 +198,19 @@ Route::post('/scan/states', function (Request $request) use ($domainRule) {
         'url' => ['required', 'url', $domainRule],
         'script' => ['required', 'string', 'max:10000'],
         'wcagVersion' => ['sometimes', 'string', 'in:2.0,2.1,2.2'],
+        'asUserId' => ['nullable', 'integer', 'min:1'],
     ]);
 
     try {
         $states = app(InteractionScriptParser::class)->parse($validated['script']);
 
         $scanner = app(AxeScanner::class);
-        $issues = isset($validated['wcagVersion'])
-            ? $scanner->scanInteractiveStates($validated['url'], $states, $validated['wcagVersion'])
-            : $scanner->scanInteractiveStates($validated['url'], $states);
+        $wcagVersion = $validated['wcagVersion'] ?? null;
+        $asUserId = isset($validated['asUserId']) ? (int) $validated['asUserId'] : null;
+        $issues = app(AuthenticatedScanResolver::class)->runAsUser(
+            $asUserId,
+            fn (?AuthenticatedScanContext $auth) => $scanner->scanInteractiveStates($validated['url'], $states, $wcagVersion, $auth)
+        );
 
         $fileLocator = app(FileLocator::class);
 
@@ -226,6 +252,7 @@ Route::post('/preview', function (Request $request) use ($domainRule) {
     $request->validate([
         'url' => ['required', 'url', $domainRule],
         'selector' => ['required', 'string', 'max:500'],
+        'asUserId' => ['nullable', 'integer', 'min:1'],
     ]);
 
     $selectorJson = json_encode($request->selector);
@@ -256,15 +283,29 @@ Route::post('/preview', function (Request $request) use ($domainRule) {
     JS;
 
     try {
-        $screenshot = app(HttpsClientConfiguration::class)
-            ->configureBrowser(Browsershot::url($request->url))
-            ->noSandbox()
-            ->waitUntilNetworkIdle()
-            ->windowSize(1280, 800)
-            ->setOption('addScriptTag', json_encode(['content' => $highlightScript]))
-            ->screenshot();
+        $asUserId = $request->filled('asUserId') ? (int) $request->input('asUserId') : null;
+        $screenshot = app(AuthenticatedScanResolver::class)->runAsUser(
+            $asUserId,
+            function (?AuthenticatedScanContext $auth) use ($request, $highlightScript) {
+                $browser = app(HttpsClientConfiguration::class)
+                    ->configureBrowser(Browsershot::url($request->url))
+                    ->noSandbox()
+                    ->waitUntilNetworkIdle()
+                    ->windowSize(1280, 800);
+
+                if ($auth !== null && ! $auth->isEmpty()) {
+                    $browser->useCookies($auth->cookies);
+                }
+
+                return $browser
+                    ->setOption('addScriptTag', json_encode(['content' => $highlightScript]))
+                    ->screenshot();
+            }
+        );
 
         return response($screenshot, 200, ['Content-Type' => 'image/png']);
+    } catch (InvalidArgumentException $e) {
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()], 422);
     } catch (Throwable $e) {
         return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.screenshot_failed')], 500);
     }
