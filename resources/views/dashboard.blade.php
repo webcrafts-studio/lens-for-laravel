@@ -760,7 +760,7 @@
                                                 <span class="text-black dark:text-white">>>></span> {{ __('lens-for-laravel::messages.scanner.source_location') }}
                                                 <span x-show="editorEnabled"
                                                     class="normal-case tracking-normal font-normal text-neutral-400 dark:text-neutral-500 ml-1"
-                                                    x-cloak>— {{ __('lens-for-laravel::messages.scanner.click_to_open') }}</span>
+                                                    x-cloak>- {{ __('lens-for-laravel::messages.scanner.click_to_open') }}</span>
                                             </p>
                                             <template x-if="issue.fileName">
                                                 <div class="flex items-center gap-2 text-sm font-mono bg-white dark:bg-black border border-black dark:border-neutral-700 px-3 py-2 w-max text-black dark:text-white transition-colors"
@@ -791,7 +791,7 @@
                                                 <span class="text-black dark:text-white sm:hidden">>>></span>
                                                 {{ __('lens-for-laravel::messages.scanner.css_selector') }}
                                                 <span
-                                                    class="normal-case tracking-normal font-normal text-neutral-400 dark:text-neutral-500 ml-1">—
+                                                    class="normal-case tracking-normal font-normal text-neutral-400 dark:text-neutral-500 ml-1">-
                                                     {{ __('lens-for-laravel::messages.scanner.click_to_copy') }}</span>
                                             </p>
                                             <div class="group cursor-pointer flex items-center gap-2 text-sm font-mono bg-white dark:bg-black border border-black dark:border-neutral-700 px-3 py-2 overflow-x-auto break-all sm:ml-auto w-fit max-w-full text-black dark:text-white transition-colors hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
@@ -1203,7 +1203,7 @@
                                 <!-- Diff legend -->
                                 <div
                                     class="flex items-center gap-4 px-4 py-2 bg-neutral-800 border-b border-neutral-700 text-xs font-mono">
-                                    <span class="text-red-400">— {{ __('lens-for-laravel::messages.ai_fix.original') }}</span>
+                                    <span class="text-red-400">- {{ __('lens-for-laravel::messages.ai_fix.original') }}</span>
                                     <span class="text-neutral-600">|</span>
                                     <span class="text-green-400">+ {{ __('lens-for-laravel::messages.ai_fix.fixed') }}</span>
                                 </div>
@@ -1239,7 +1239,7 @@
                 </template>
             </div>
 
-            <!-- Footer — actions -->
+            <!-- Footer - actions -->
             <div x-show="!isLoadingFix && fixData && !fixApplied && !fixRejected" x-cloak
                 class="border-t border-black dark:border-white px-6 py-4 flex flex-wrap justify-end gap-3 bg-neutral-100 dark:bg-neutral-900 shrink-0">
                 <button @click="rejectFix()"
@@ -1257,7 +1257,7 @@
                 </button>
             </div>
 
-            <!-- Footer — after applied -->
+            <!-- Footer - after applied -->
             <div x-show="fixApplied || fixRejected" x-cloak
                 class="border-t border-black dark:border-white px-6 py-4 flex flex-wrap justify-end gap-3 bg-neutral-100 dark:bg-neutral-900 shrink-0">
                 <button x-show="isBulkFix && hasNextFix" type="button" @click="nextFix()"

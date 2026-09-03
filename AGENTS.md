@@ -1,12 +1,12 @@
-# Lens for Laravel — Contributor Guide
+# Lens for Laravel - Contributor Guide
 
 ## Project Scope
 
 Lens for Laravel is a local-first accessibility auditing package for Laravel applications. It renders application pages in Chromium, runs axe-core, maps violations back to Blade/React/Vue source files, and exposes the results through a dashboard and the `lens:audit` Artisan command.
 
-The current development line is v3.3.0. Its only new feature is local AI Fix model support through Ollama. New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must otherwise be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1/v3.2 upgrade notes as historical documentation.
+The current development line is v3.4.0. Its new features are authenticated scans for pages behind login and four additional AI Fix providers (OpenRouter, xAI, DeepSeek, Mistral). New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must otherwise be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1/v3.2/v3.3 upgrade notes as historical documentation.
 
-The package supports PHP 8.2+ and Laravel 10–13 for its core, non-AI features.
+The package supports PHP 8.2+ and Laravel 10-13 for its core, non-AI features.
 
 AI Fix is an optional integration with a narrower compatibility range:
 
@@ -18,26 +18,28 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 
 ## Main Components
 
-- `src/Services/AxeScanner.php` — browser-based axe-core scans, including interactive states
-- `src/Services/SiteCrawler.php` — sitemap and internal-link discovery
-- `src/Services/HttpsClientConfiguration.php` — shared TLS behavior for HTTP and Chromium clients
-- `src/Services/FileLocator.php` — heuristic Blade/React/Vue source mapping
-- `src/Services/InteractionScriptParser.php` — state script validation and parsing
-- `src/Services/BaselineManager.php` — stable CI baseline fingerprints
-- `src/Services/ScanComparator.php` — URL- and state-aware history comparison
-- `src/Support/UrlNormalizer.php` — host-independent URL path/query identity
-- `src/Http/Middleware/SetLensLocale.php` — configured and session-selected package locale
-- `src/Services/AiFixAvailability.php` — runtime and optional-SDK capability checks
-- `src/Ai/AccessibilityFixAgent.php` — structured v3 AI agent options and provider-specific controls
-- `src/Services/AiFixContextExtractor.php` — bounded semantic element/component extraction
-- `src/Services/AiFixPromptRunner.php` — optional Laravel AI SDK boundary and response metadata
-- `src/Services/AiFixer.php` — prompt orchestration, controlled retry, safe errors, and diagnostics
-- `src/Support/Wcag.php` — supported WCAG versions, cumulative axe-core tags, and result-level classification
-- `src/Console/Commands/LensAuditCommand.php` — CLI audit workflow
-- `routes/web.php` — dashboard JSON endpoints
-- `resources/views/dashboard.blade.php` — dashboard interface
-- `resources/views/state-recorder.blade.php` — visual interaction recorder
-- `resources/views/report.blade.php` — PDF report
+- `src/Services/AxeScanner.php` - browser-based axe-core scans, including interactive states
+- `src/Services/SiteCrawler.php` - sitemap and internal-link discovery
+- `src/Services/HttpsClientConfiguration.php` - shared TLS behavior for HTTP and Chromium clients
+- `src/Services/FileLocator.php` - heuristic Blade/React/Vue source mapping
+- `src/Services/InteractionScriptParser.php` - state script validation and parsing
+- `src/Services/BaselineManager.php` - stable CI baseline fingerprints
+- `src/Services/ScanComparator.php` - URL- and state-aware history comparison
+- `src/Support/UrlNormalizer.php` - host-independent URL path/query identity
+- `src/Http/Middleware/SetLensLocale.php` - configured and session-selected package locale
+- `src/Services/AiFixAvailability.php` - runtime and optional-SDK capability checks
+- `src/Ai/AccessibilityFixAgent.php` - structured v3 AI agent options and provider-specific controls
+- `src/Services/AiFixContextExtractor.php` - bounded semantic element/component extraction
+- `src/Services/AiFixPromptRunner.php` - optional Laravel AI SDK boundary and response metadata
+- `src/Services/AiFixer.php` - prompt orchestration, controlled retry, safe errors, and diagnostics
+- `src/DTOs/AuthenticatedScanContext.php` - server-issued session cookies for authenticated scans
+- `src/Services/AuthenticatedScanResolver.php` - guard login, allowlist, and auth-state restore
+- `src/Support/Wcag.php` - supported WCAG versions, cumulative axe-core tags, and result-level classification
+- `src/Console/Commands/LensAuditCommand.php` - CLI audit workflow
+- `routes/web.php` - dashboard JSON endpoints
+- `resources/views/dashboard.blade.php` - dashboard interface
+- `resources/views/state-recorder.blade.php` - visual interaction recorder
+- `resources/views/report.blade.php` - PDF report
 
 ## Compatibility Rules
 
@@ -95,7 +97,8 @@ Do not commit that temporary dependency as a mandatory production requirement.
 - Route tests must verify that unavailable AI Fix endpoints return a clear `503` without exposing provider internals.
 - AI Fix tests must cover semantic context boundaries, malformed structured output, token-limit finish reasons, one retry only, non-retryable provider errors, safe user messages, and provider/model/token logging.
 - Applied AI fixes must be marked as pending verification in the current dashboard results, remain in violation counts, and return to ordinary axe-derived state when a new scan replaces the results.
-- Keep the AI model implicit for Gemini, OpenAI, and Anthropic so `laravel/ai` resolves the configured provider default. For Ollama only, Lens may pass the explicit `ai_ollama_model` tag introduced in v3.3, or use the SDK default when it is unset.
+- Keep the AI model implicit for Gemini, OpenAI, Anthropic, OpenRouter, xAI, DeepSeek, and Mistral so `laravel/ai` resolves the configured provider default. For Ollama only, Lens may pass the explicit `ai_ollama_model` tag introduced in v3.3, or use the SDK default when it is unset.
+- New AI providers must be added to the `AiFixer` allowlist and the `AiFixPromptRunner` `Lab` mapping together, with passthrough tests that keep model and timeout implicit.
 - Dashboard tests must verify that unavailable features are explained and their actions are hidden.
 - Preserve existing tests for Blade, React, Vue, crawler, state scripts, history, baseline, PDF, preview, and CLI behavior.
 - Keep dashboard and CLI state scripts on the same `InteractionScriptParser` grammar and limits. CLI state mode must remain single-URL and incompatible with crawl mode.
@@ -107,10 +110,11 @@ Do not commit that temporary dependency as a mandatory production requirement.
 
 The package README is the concise installation and feature reference. The website contains the full documentation. Keep these claims exact:
 
-- core: PHP 8.2+, Laravel 10–13
+- core: PHP 8.2+, Laravel 10-13
 - AI Fix: PHP 8.3+, Laravel 12+, optional `laravel/ai`
 - AI Fix sends a bounded semantic element/component and issue metadata to the configured provider; default localhost Ollama processing stays on the application host, while cloud and remote Ollama endpoints receive the context over the network
 - v3 AI Fix uses a minimal replacement and one controlled retry for truncated/invalid structured output; cloud providers use their default `laravel/ai` model and timeout behavior, while v3.3 can select a local Ollama model tag explicitly and defaults its timeout to 120 seconds
+- v3.4 adds OpenRouter, xAI, DeepSeek, and Mistral as implicit-model cloud providers alongside Gemini, OpenAI, and Anthropic
 - applying an AI fix marks the current issue as pending re-scan but does not present it as axe-verified or remove it from counts
 - all non-AI features remain available when AI Fix is unsupported or disabled
 - dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default

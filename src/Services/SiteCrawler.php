@@ -110,12 +110,12 @@ class SiteCrawler
                     continue;
                 }
 
-                // Sitemap index — each <sitemap> points to another sitemap file
+                // Sitemap index - each <sitemap> points to another sitemap file
                 foreach ($xml->sitemap ?? [] as $child) {
                     $this->parseSitemapXml((string) $child->loc);
                 }
 
-                // Regular sitemap — each <url><loc> is a page URL
+                // Regular sitemap - each <url><loc> is a page URL
                 foreach ($xml->url ?? [] as $entry) {
                     $loc = rtrim((string) $entry->loc, '/');
                     if ($loc && $this->isInternalPage($loc) && ! in_array($loc, $this->toVisit)) {
@@ -123,7 +123,7 @@ class SiteCrawler
                     }
                 }
 
-                // Found a valid sitemap — no need to check further candidates.
+                // Found a valid sitemap - no need to check further candidates.
                 return;
             } catch (Throwable) {
                 continue;
@@ -161,7 +161,7 @@ class SiteCrawler
 
     /**
      * Fetch a page via HTTP and extract all internal <a href> links.
-     * This deliberately avoids headless Chrome — plain HTTP is sufficient for link discovery.
+     * This deliberately avoids headless Chrome - plain HTTP is sufficient for link discovery.
      */
     protected function extractLinks(string $url): array
     {
@@ -294,7 +294,7 @@ class SiteCrawler
             return rtrim($this->scheme.'://'.$this->host.$href, '/');
         }
 
-        // Path-relative — resolve against the current page's directory
+        // Path-relative - resolve against the current page's directory
         $base = parse_url($pageUrl);
         $dir = rtrim(dirname($base['path'] ?? '/'), '/');
 

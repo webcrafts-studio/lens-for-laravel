@@ -30,7 +30,7 @@ return [
         'total_violations' => 'Infracciones totales',
         'export_pdf' => 'Exportar PDF',
         'generating' => 'Generando...',
-        'page_title' => 'Lens For Laravel — Auditor técnico', 'target_url_label' => 'URL objetivo que se va a escanear',
+        'page_title' => 'Lens For Laravel - Auditor técnico', 'target_url_label' => 'URL objetivo que se va a escanear',
         'diagnostic_report' => 'Informe de diagnóstico', 'info' => 'Información', 'filtered_logs' => 'Resultados filtrados: :level',
         'diagnostic_logs' => 'Resultados de diagnóstico', 'clear_filter' => 'Limpiar filtro', 'showing' => 'Mostrando',
         'ready' => 'Listo', 'idle' => 'Sistema listo. Ejecuta un escaneo para comenzar el análisis.',
@@ -108,7 +108,7 @@ return [
         'title' => 'Informe de accesibilidad', 'audit_report' => 'Informe de auditoría de accesibilidad', 'generated' => 'Generado',
         'target' => 'Objetivo', 'standard' => 'Estándar', 'violations' => 'Infracciones', 'state' => 'Estado',
         'html_snippet' => 'Fragmento HTML', 'css_selector' => 'Selector CSS', 'source_location' => 'Ubicación en el código',
-        'reference' => 'Referencia', 'no_violations' => 'No se encontraron infracciones.', 'footer' => 'Lens For Laravel — Auditor de accesibilidad',
+        'reference' => 'Referencia', 'no_violations' => 'No se encontraron infracciones.', 'footer' => 'Lens For Laravel - Auditor de accesibilidad',
         'impact' => ['critical' => 'Crítica', 'serious' => 'Grave', 'moderate' => 'Moderada', 'minor' => 'Leve', 'unknown' => 'Desconocida'],
     ],
     'errors' => [

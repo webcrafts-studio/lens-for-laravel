@@ -270,7 +270,7 @@ Route::post('/preview', function (Request $request) use ($domainRule) {
             var dim = document.createElement('div');
             dim.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);pointer-events:none;z-index:2147483646;';
             document.documentElement.appendChild(dim);
-            // Red highlight box cut-out (just a border, no fill — so the element stays readable)
+            // Red highlight box cut-out (just a border, no fill - so the element stays readable)
             var box = document.createElement('div');
             box.style.cssText = 'position:fixed;pointer-events:none;z-index:2147483647;box-sizing:border-box;border:3px solid #E11D48;outline:1px solid rgba(0,0,0,0.5);';
             box.style.top    = r.top    + 'px';
@@ -397,7 +397,7 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
 
         // Protect against prompt-injection attacks where a malicious scanned page causes
         // the AI to embed RCE payloads in the suggested fix.
-        // Check unconditionally for server-side code execution functions — these have no
+        // Check unconditionally for server-side code execution functions - these have no
         // place in a Blade template regardless of what was in the original code block.
         $rcePatterns = ['shell_exec(', 'system(', 'exec(', 'passthru(', 'proc_open(', 'popen(', 'eval('];
         foreach ($rcePatterns as $pattern) {
@@ -412,7 +412,7 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
         }
 
         // Reject PHP open tags introduced by the AI that were not present in the
-        // original code block — a legitimate accessibility fix never needs to add raw PHP.
+        // original code block - a legitimate accessibility fix never needs to add raw PHP.
         foreach (['<?php', '<?='] as $phpTag) {
             if (str_contains($fixedCode, $phpTag) && ! str_contains($originalCode, $phpTag)) {
                 logger()->warning('Lens AI fix blocked: unexpected PHP tag in AI response', ['tag' => $phpTag]);

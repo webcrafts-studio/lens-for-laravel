@@ -30,7 +30,7 @@ return [
         'total_violations' => 'Verstöße gesamt',
         'export_pdf' => 'PDF exportieren',
         'generating' => 'Erstellung...',
-        'page_title' => 'Lens For Laravel – Technischer Auditor', 'target_url_label' => 'Zu prüfende Ziel-URL',
+        'page_title' => 'Lens For Laravel - Technischer Auditor', 'target_url_label' => 'Zu prüfende Ziel-URL',
         'diagnostic_report' => 'Diagnosebericht', 'info' => 'Info', 'filtered_logs' => 'Gefilterte Ergebnisse: :level',
         'diagnostic_logs' => 'Diagnoseergebnisse', 'clear_filter' => 'Filter löschen', 'showing' => 'Angezeigt',
         'ready' => 'Bereit', 'idle' => 'System bereit. Starte einen Zielscan, um die Analyse zu beginnen.',
@@ -108,7 +108,7 @@ return [
         'title' => 'Barrierefreiheitsbericht', 'audit_report' => 'Bericht zur Barrierefreiheitsprüfung', 'generated' => 'Erstellt',
         'target' => 'Ziel', 'standard' => 'Standard', 'violations' => 'Verstöße', 'state' => 'Zustand',
         'html_snippet' => 'HTML-Ausschnitt', 'css_selector' => 'CSS-Selektor', 'source_location' => 'Quellposition',
-        'reference' => 'Referenz', 'no_violations' => 'Keine Verstöße gefunden.', 'footer' => 'Lens For Laravel — Barrierefreiheits-Auditor',
+        'reference' => 'Referenz', 'no_violations' => 'Keine Verstöße gefunden.', 'footer' => 'Lens For Laravel - Barrierefreiheits-Auditor',
         'impact' => ['critical' => 'Kritisch', 'serious' => 'Schwerwiegend', 'moderate' => 'Mittel', 'minor' => 'Gering', 'unknown' => 'Unbekannt'],
     ],
     'errors' => [

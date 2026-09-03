@@ -30,7 +30,7 @@ return [
         'total_violations' => 'Violations totales',
         'export_pdf' => 'Exporter PDF',
         'generating' => 'Génération...',
-        'page_title' => 'Lens For Laravel — Auditeur technique', 'target_url_label' => 'URL cible à scanner',
+        'page_title' => 'Lens For Laravel - Auditeur technique', 'target_url_label' => 'URL cible à scanner',
         'diagnostic_report' => 'Rapport de diagnostic', 'info' => 'Information', 'filtered_logs' => 'Résultats filtrés : :level',
         'diagnostic_logs' => 'Résultats du diagnostic', 'clear_filter' => 'Effacer le filtre', 'showing' => 'Affichés',
         'ready' => 'Prêt', 'idle' => 'Système prêt. Lancez un scan pour commencer l’analyse.',
@@ -108,7 +108,7 @@ return [
         'title' => 'Rapport d’accessibilité', 'audit_report' => 'Rapport d’audit d’accessibilité', 'generated' => 'Généré',
         'target' => 'Cible', 'standard' => 'Norme', 'violations' => 'Violations', 'state' => 'État',
         'html_snippet' => 'Extrait HTML', 'css_selector' => 'Sélecteur CSS', 'source_location' => 'Emplacement source',
-        'reference' => 'Référence', 'no_violations' => 'Aucune violation trouvée.', 'footer' => 'Lens For Laravel — Auditeur d’accessibilité',
+        'reference' => 'Référence', 'no_violations' => 'Aucune violation trouvée.', 'footer' => 'Lens For Laravel - Auditeur d’accessibilité',
         'impact' => ['critical' => 'Critique', 'serious' => 'Grave', 'moderate' => 'Modérée', 'minor' => 'Mineure', 'unknown' => 'Inconnue'],
     ],
     'errors' => [

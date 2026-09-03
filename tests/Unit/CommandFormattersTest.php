@@ -114,7 +114,7 @@ test('filterByLevel all returns every issue', function () {
 test('resolveLevelFilter defaults to all', function () {
     $this->artisan('lens:audit --help'); // trigger command registration
 
-    // Test via the artisan runner with no flag — exit code from missing Chrome is OK
+    // Test via the artisan runner with no flag - exit code from missing Chrome is OK
     // Level filter logic is tested via filterByLevel above
     expect(true)->toBeTrue(); // placeholder: logic covered by filterByLevel tests
 });

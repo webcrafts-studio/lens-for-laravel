@@ -5,7 +5,7 @@ use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
 
-// ── Multiple URL mode — exit 0 with no violations ─────────────────────────────
+// ── Multiple URL mode - exit 0 with no violations ─────────────────────────────
 
 test('lens:audit accepts multiple url arguments and exits 0 with no violations', function () {
     $scannerMock = Mockery::mock(AxeScanner::class);
@@ -22,7 +22,7 @@ test('lens:audit accepts multiple url arguments and exits 0 with no violations',
         ->expectsOutputToContain('No violations found');
 });
 
-// ── Multiple URL mode — aggregates issues from all URLs ───────────────────────
+// ── Multiple URL mode - aggregates issues from all URLs ───────────────────────
 
 test('lens:audit aggregates issues from multiple urls', function () {
     $issue = new Issue('image-alt', 'critical', 'desc', 'url', '<img>', 'img', ['wcag2a'], 'https://example.com');
@@ -42,7 +42,7 @@ test('lens:audit aggregates issues from multiple urls', function () {
     ])->assertExitCode(1);
 });
 
-// ── Multiple URL mode — quality gate ─────────────────────────────────────────
+// ── Multiple URL mode - quality gate ─────────────────────────────────────────
 
 test('lens:audit exits 1 when combined violations exceed threshold', function () {
     $issues = collect([
@@ -66,7 +66,7 @@ test('lens:audit exits 1 when combined violations exceed threshold', function ()
     ])->assertExitCode(1);
 });
 
-// ── Multiple URL mode — does not invoke SiteCrawler ───────────────────────────
+// ── Multiple URL mode - does not invoke SiteCrawler ───────────────────────────
 
 test('lens:audit with multiple urls uses multi-url scan not crawl', function () {
     $crawlerMock = Mockery::mock(SiteCrawler::class);

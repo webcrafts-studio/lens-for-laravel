@@ -60,26 +60,26 @@
         color: #111;
         padding: 16px 18px;
     }
-    /* All — thick black border */
+    /* All - thick black border */
     .stat-box.all {
         border-color: #111;
         border-width: 3px;
     }
-    /* A Level — red border */
+    /* A Level - red border */
     .stat-box.level-a {
         border-color: #E11D48;
     }
-    /* AA Level — white, solid border */
+    /* AA Level - white, solid border */
     .stat-box.level-aa {
         border-color: #111;
         border-style: solid;
     }
-    /* AAA Level — white, dashed border */
+    /* AAA Level - white, dashed border */
     .stat-box.level-aaa {
         border-color: #9ca3af;
         border-style: dashed;
     }
-    /* Other — white, dotted border */
+    /* Other - white, dotted border */
     .stat-box.other {
         border-color: #9ca3af;
         border-style: dotted;

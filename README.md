@@ -4,7 +4,7 @@
 
 Lens for Laravel scans your application with [axe-core](https://github.com/dequelabs/axe-core), renders JavaScript through [Spatie Browsershot](https://github.com/spatie/browsershot), maps violations back to source files, and can generate AI-assisted fixes for Blade, React, and Vue code.
 
-**v3.4 development line:** adds authenticated scans for pages behind login. This is the only new v3.4 feature; the v3.3 Ollama support and earlier v3 foundations remain unchanged.
+**v3.4 development line:** adds authenticated scans for pages behind login plus four additional AI Fix providers (OpenRouter, xAI, DeepSeek, Mistral). The v3.3 Ollama support and earlier v3 foundations remain unchanged.
 
 **v3.3:** adds local AI Fix models through Ollama.
 
@@ -20,7 +20,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Blade, Livewire, React, and Vue source locator** - maps DOM violations back to `resources/views/**/*.blade.php` and frontend files under `resources/js`, using named Blade routes, nested element signatures, nearby selector context, rendered filenames, and positional hints to disambiguate dynamic or repeated elements.
 - **Source type labels** - results include `sourceType` values: `blade`, `react`, or `vue`.
 - **Inertia-aware file discovery** - React/Vue pages under `resources/js/Pages/**` are included automatically.
-- **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through Gemini, OpenAI, Anthropic, or a local Ollama model using the optional `laravel/ai` SDK.
+- **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through Gemini, OpenAI, Anthropic, OpenRouter, xAI, DeepSeek, Mistral, or a local Ollama model using the optional `laravel/ai` SDK.
 - **Editable AI Fix review** - inspect the live diff, edit the replacement with line numbers and indentation shortcuts, or restore the original AI proposal before applying.
 - **Progressive Fix All A/AA queues** - generate up to three suggestions concurrently and review ready fixes while later items continue loading.
 - **Honest AI verification state** - applied suggestions remain counted and are marked as pending until a fresh axe-core scan verifies the result.
@@ -430,7 +430,7 @@ LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS=1,2
 php artisan lens:audit http://your-app.test/dashboard --as-user=1
 ```
 
-The dashboard shows a user ID field when the feature is enabled; crawling, state scans, and element previews accept the same user. Only the numeric id travels from the client — Lens logs in server-side through the configured guard and passes a short-lived session cookie to Chromium. Raw cookies, tokens, and passwords are never accepted, logged, or stored in history, and the previous auth state is restored after the scan. Authenticated scans require a persistent session driver (`file`, `database`, or `redis`); the `array` driver cannot share sessions with the scanner browser. When `LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS` is set, only those ids may be used.
+The dashboard shows a user ID field when the feature is enabled; crawling, state scans, and element previews accept the same user. Only the numeric id travels from the client - Lens logs in server-side through the configured guard and passes a short-lived session cookie to Chromium. Raw cookies, tokens, and passwords are never accepted, logged, or stored in history, and the previous auth state is restored after the scan. Authenticated scans require a persistent session driver (`file`, `database`, or `redis`); the `array` driver cannot share sessions with the scanner browser. When `LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS` is set, only those ids may be used.
 
 ### Interface languages
 
@@ -452,6 +452,10 @@ Supported AI providers:
 - `openai`
 - `anthropic`
 - `ollama`
+- `openrouter`
+- `xai`
+- `deepseek`
+- `mistral`
 
 Disable AI Fix explicitly while keeping all scanning features enabled:
 
@@ -510,9 +514,9 @@ The AI Fix workflow:
 7. **Fix All A** and **Fix All AA** create review queues for every located issue at the selected level. Lens generates up to three suggestions concurrently, opens the queue immediately, and lets you move between ready suggestions while later items continue loading.
 8. Each queued fix keeps its own generated, edited, rejected, failed, or applied state. A failed suggestion can be retried without restarting the rest of the queue.
 9. Lens applies each reviewed replacement after running the same path and dangerous-code checks for both generated and edited proposals.
-10. The issue is immediately marked **AI Fix applied — pending re-scan** while remaining in the violation counts until a new axe-core scan verifies the result.
+10. The issue is immediately marked **AI Fix applied - pending re-scan** while remaining in the violation counts until a new axe-core scan verifies the result.
 
-Since v3.0, the agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Gemini, OpenAI, and Anthropic continue to use the default model configured in `laravel/ai`. In v3.3, Ollama can use the exact local model tag from `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`; when it is omitted, the Laravel AI SDK's Ollama default is used. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
+Since v3.0, the agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Gemini, OpenAI, Anthropic, OpenRouter, xAI, DeepSeek, and Mistral continue to use the default model configured in `laravel/ai`. In v3.3, Ollama can use the exact local model tag from `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`; when it is omitted, the Laravel AI SDK's Ollama default is used. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
 
 > **Privacy:** AI Fix sends the failing DOM snippet, accessibility issue details, WCAG tags, and a bounded element/component source fragment to the configured provider. With Ollama's default localhost endpoint, this data stays on the machine running the Laravel application. A remote Ollama endpoint and cloud providers receive that bounded context over the network. Lens does not send the entire repository; review the selected context for secrets or sensitive information before requesting a fix.
 
@@ -529,6 +533,22 @@ OPENAI_API_KEY=your-key-here
 # or
 LENS_FOR_LARAVEL_AI_PROVIDER=anthropic
 ANTHROPIC_API_KEY=your-key-here
+
+# or
+LENS_FOR_LARAVEL_AI_PROVIDER=openrouter
+OPENROUTER_API_KEY=your-key-here
+
+# or
+LENS_FOR_LARAVEL_AI_PROVIDER=xai
+XAI_API_KEY=your-key-here
+
+# or
+LENS_FOR_LARAVEL_AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=your-key-here
+
+# or
+LENS_FOR_LARAVEL_AI_PROVIDER=mistral
+MISTRAL_API_KEY=your-key-here
 ```
 
 To run AI Fix locally, install [Ollama](https://ollama.com/download), then pull a code-capable model:
@@ -665,10 +685,13 @@ Always complement Lens with:
 
 ## Upgrade Notes for v3.0 through v3.4
 
-v3.4 is the current development line. Its only new feature is authenticated scans for pages behind login. It requires no migration.
+v3.4 is the current development line. Its new features are authenticated scans for pages behind login and four additional AI Fix providers. It requires no migration.
 
 New in v3.4:
 
+- `openrouter`, `xai`, `deepseek`, and `mistral` are accepted by `LENS_FOR_LARAVEL_AI_PROVIDER`
+- the new providers keep the same implicit SDK-default model behavior as Gemini, OpenAI, and Anthropic; only Ollama uses an explicit model tag
+- configure credentials with `OPENROUTER_API_KEY`, `XAI_API_KEY`, `DEEPSEEK_API_KEY`, or `MISTRAL_API_KEY` in the host application
 - `LENS_FOR_LARAVEL_AUTH_ENABLED=true` enables scanning as an existing user (default `false`)
 - `LENS_FOR_LARAVEL_AUTH_GUARD` selects the session guard used for login (default `web`)
 - `LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS` optionally restricts impersonation to a comma-separated id list
@@ -722,7 +745,7 @@ The v3.0 foundation includes:
 - URL-aware history comparisons that distinguish identical rules and selectors on different pages
 - reusable interactive-state scripts in the CLI through `--states=path`
 - consistent `ignore_https_errors` handling for scans, HTTP/browser crawling, and previews
-- core support for PHP 8.2+ and Laravel 10–13
+- core support for PHP 8.2+ and Laravel 10-13
 - AI Fix isolated as an optional feature requiring PHP 8.3+, Laravel 12+, and `laravel/ai`
 - stabilized AI Fix with semantic source fragments, minimal replacements, bounded Gemini thinking, one controlled structured-output retry, safe errors, and provider/model/token diagnostics
 - immediate pending-verification status on issues changed by AI Fix, without claiming success before a new axe-core scan

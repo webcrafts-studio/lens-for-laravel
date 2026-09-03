@@ -31,7 +31,7 @@ return [
         'total_violations' => 'Łącznie naruszeń',
         'export_pdf' => 'Eksportuj PDF',
         'generating' => 'Generowanie...',
-        'page_title' => 'Lens For Laravel — audytor techniczny',
+        'page_title' => 'Lens For Laravel - audytor techniczny',
         'target_url_label' => 'Docelowy URL do przeskanowania',
         'diagnostic_report' => 'Raport diagnostyczny',
         'info' => 'Informacja',
@@ -140,7 +140,7 @@ return [
         'violations' => 'Naruszenia', 'state' => 'Stan', 'html_snippet' => 'Fragment HTML',
         'css_selector' => 'Selektor CSS', 'source_location' => 'Lokalizacja w źródle',
         'reference' => 'Dokumentacja', 'no_violations' => 'Nie znaleziono naruszeń.',
-        'footer' => 'Lens For Laravel — audytor dostępności',
+        'footer' => 'Lens For Laravel - audytor dostępności',
         'impact' => ['critical' => 'Krytyczny', 'serious' => 'Poważny', 'moderate' => 'Umiarkowany', 'minor' => 'Niewielki', 'unknown' => 'Nieznany'],
     ],
     'errors' => [

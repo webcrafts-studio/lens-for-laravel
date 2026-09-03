@@ -659,7 +659,7 @@ class LensAuditCommand extends Command
         };
 
         $this->newLine();
-        $this->line('  <options=bold>Lens For Laravel — Accessibility Audit</>');
+        $this->line('  <options=bold>Lens For Laravel - Accessibility Audit</>');
         $this->line('  ─────────────────────────────────────────────');
         $this->line("  <fg=gray>URL</>       : {$url}");
         $this->line("  <fg=gray>Mode</>      : {$modeLabel}");
@@ -694,10 +694,10 @@ class LensAuditCommand extends Command
             ];
 
             if ($includeState) {
-                $row[] = $issue->stateLabel ?? '—';
+                $row[] = $issue->stateLabel ?? '-';
             }
 
-            $row[] = $issue->fileName ? "{$issue->fileName}:{$issue->lineNumber}" : '—';
+            $row[] = $issue->fileName ? "{$issue->fileName}:{$issue->lineNumber}" : '-';
 
             return $row;
         })->all();
@@ -718,7 +718,7 @@ class LensAuditCommand extends Command
     private function renderCrawlTable(Collection $issues): void
     {
         $this->newLine();
-        $this->line('  <options=bold>Diagnostic Report — aggregated across all pages</>');
+        $this->line('  <options=bold>Diagnostic Report - aggregated across all pages</>');
         $this->line('  <fg=gray>Issues are grouped by rule ID. Use -v to see full node HTML.</>');
         $this->newLine();
 
@@ -739,7 +739,7 @@ class LensAuditCommand extends Command
 
             $location = $first->fileName
                 ? "{$first->fileName}:{$first->lineNumber}"
-                : '—';
+                : '-';
 
             return [
                 $this->formatLevel($first->tags),

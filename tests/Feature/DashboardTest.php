@@ -49,7 +49,7 @@ test('dashboard returns 200 in testing environment', function () {
 });
 
 test('dashboard returns 403 when environment is not in allowed list', function () {
-    // Remove 'testing' from allowed envs — the app still runs under 'testing'
+    // Remove 'testing' from allowed envs - the app still runs under 'testing'
     $this->app['config']->set('lens-for-laravel.enabled_environments', ['local']);
 
     $this->get(route('lens-for-laravel.dashboard'))

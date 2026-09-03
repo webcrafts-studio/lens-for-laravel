@@ -188,7 +188,7 @@ return [
         'source_location' => 'Source Location',
         'reference' => 'Reference',
         'no_violations' => 'No violations found.',
-        'footer' => 'Lens For Laravel — Accessibility Auditor',
+        'footer' => 'Lens For Laravel - Accessibility Auditor',
         'impact' => [
             'critical' => 'Critical',
             'serious' => 'Serious',
