@@ -29,5 +29,14 @@ test('optional accessibility agent keeps cloud provider defaults and supports bo
         ->and($agent->providerOptions(Lab::OpenAI))->toBe([])
         ->and($agent->providerOptions(Lab::Anthropic))->toBe([])
         ->and($agent->providerOptions(Lab::Ollama))->toBe([])
-        ->and($providerMethod->invoke(new AiFixPromptRunner, 'ollama'))->toBe(Lab::Ollama);
+        ->and($agent->providerOptions(Lab::OpenRouter))->toBe([])
+        ->and($agent->providerOptions(Lab::xAI))->toBe([])
+        ->and($agent->providerOptions(Lab::DeepSeek))->toBe([])
+        ->and($agent->providerOptions(Lab::Mistral))->toBe([])
+        ->and($providerMethod->invoke(new AiFixPromptRunner, 'ollama'))->toBe(Lab::Ollama)
+        ->and($providerMethod->invoke(new AiFixPromptRunner, 'openrouter'))->toBe(Lab::OpenRouter)
+        ->and($providerMethod->invoke(new AiFixPromptRunner, 'xai'))->toBe(Lab::xAI)
+        ->and($providerMethod->invoke(new AiFixPromptRunner, 'deepseek'))->toBe(Lab::DeepSeek)
+        ->and($providerMethod->invoke(new AiFixPromptRunner, 'mistral'))->toBe(Lab::Mistral)
+        ->and($providerMethod->invoke(new AiFixPromptRunner, 'unknown'))->toBe(Lab::Gemini);
 });

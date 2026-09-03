@@ -49,6 +49,10 @@ class AiFixPromptRunner
             'openai' => Lab::OpenAI,
             'anthropic' => Lab::Anthropic,
             'ollama' => Lab::Ollama,
+            'openrouter' => Lab::OpenRouter,
+            'xai' => Lab::xAI,
+            'deepseek' => Lab::DeepSeek,
+            'mistral' => Lab::Mistral,
             default => Lab::Gemini,
         };
     }

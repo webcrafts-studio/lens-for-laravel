@@ -178,7 +178,8 @@ return [
     | laravel/ai Composer package. Core scanning remains available when this is
     | disabled or unsupported by the host application's runtime.
     |
-    | Supported values: 'gemini', 'openai', 'anthropic', 'ollama'
+    | Supported values: 'gemini', 'openai', 'anthropic', 'ollama',
+    | 'openrouter', 'xai', 'deepseek', 'mistral'
     | Cloud providers use their configured default model. For Ollama, set the
     | exact locally installed model tag or leave it null to use the SDK default.
     |

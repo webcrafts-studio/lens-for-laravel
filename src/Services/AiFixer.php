@@ -148,7 +148,7 @@ PROMPT;
     {
         $provider = strtolower((string) config('lens-for-laravel.ai_provider', 'gemini'));
 
-        return in_array($provider, ['gemini', 'openai', 'anthropic', 'ollama'], true) ? $provider : 'gemini';
+        return in_array($provider, ['gemini', 'openai', 'anthropic', 'ollama', 'openrouter', 'xai', 'deepseek', 'mistral'], true) ? $provider : 'gemini';
     }
 
     protected function configuredModel(string $provider): ?string
