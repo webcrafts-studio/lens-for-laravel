@@ -3,6 +3,7 @@
 namespace LensForLaravel\LensForLaravel\Services;
 
 use Illuminate\Support\Collection;
+use LensForLaravel\LensForLaravel\DTOs\AuthenticatedScanContext;
 use LensForLaravel\LensForLaravel\DTOs\Issue;
 use LensForLaravel\LensForLaravel\Exceptions\ScannerException;
 use LensForLaravel\LensForLaravel\Support\Wcag;
@@ -18,7 +19,7 @@ class AxeScanner
      *
      * @throws ScannerException
      */
-    public function scan(string $url, ?string $wcagVersion = null): Collection
+    public function scan(string $url, ?string $wcagVersion = null, ?AuthenticatedScanContext $auth = null): Collection
     {
         try {
             $wcagVersion ??= Wcag::configuredVersion();
@@ -29,6 +30,7 @@ class AxeScanner
             $browsershot = $this->configureBrowsershot(
                 $this->browsershotForUrl($this->freshScanUrl($url))
             );
+            $this->applyAuthCookies($browsershot, $auth);
 
             // We need to inject the axe-core library and run it.
             // Spatie Browsershot allows evaluating JavaScript on the page.
@@ -72,13 +74,14 @@ JS;
      *
      * @throws ScannerException
      */
-    public function scanInteractiveStates(string $url, array $states, ?string $wcagVersion = null): Collection
+    public function scanInteractiveStates(string $url, array $states, ?string $wcagVersion = null, ?AuthenticatedScanContext $auth = null): Collection
     {
         try {
             $wcagVersion ??= Wcag::configuredVersion();
             $browsershot = $this->configureBrowsershot(
                 $this->browsershotForUrl($this->freshScanUrl($url))
             );
+            $this->applyAuthCookies($browsershot, $auth);
 
             $statesJson = json_encode($states, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
             $tagsJson = json_encode(Wcag::tags($wcagVersion), JSON_THROW_ON_ERROR);
@@ -108,6 +111,18 @@ JS;
     protected function browsershotForUrl(string $url): Browsershot
     {
         return Browsershot::url($url);
+    }
+
+    /**
+     * Attach server-issued session cookies so Chromium scans the
+     * authenticated page. The cookies always come from
+     * AuthenticatedScanResolver, never from client input.
+     */
+    protected function applyAuthCookies(Browsershot $browsershot, ?AuthenticatedScanContext $auth): void
+    {
+        if ($auth !== null && ! $auth->isEmpty()) {
+            $browsershot->useCookies($auth->cookies);
+        }
     }
 
     /**

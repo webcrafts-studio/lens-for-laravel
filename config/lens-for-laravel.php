@@ -145,6 +145,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Authenticated Scans
+    |--------------------------------------------------------------------------
+    |
+    | Scan pages behind login by impersonating an existing user of the host
+    | application. The dashboard and CLI only accept a numeric user id, which
+    | is resolved server-side through the configured guard. Raw session
+    | cookies, tokens, and passwords are never accepted from the client.
+    |
+    | 'auth_enabled' switches the feature on (default off). 'auth_guard' is
+    | the session guard used for login (usually 'web'). When
+    | 'auth_allowed_user_ids' is non-empty, only those ids may be used.
+    | Authenticated scans require a persistent session driver (file, database,
+    | or redis) so the Chromium process can read the issued session.
+    |
+    */
+    'auth_enabled' => env('LENS_FOR_LARAVEL_AUTH_ENABLED', false),
+
+    'auth_guard' => env('LENS_FOR_LARAVEL_AUTH_GUARD', 'web'),
+
+    'auth_allowed_user_ids' => array_values(array_filter(array_map(
+        fn ($id) => is_numeric(trim((string) $id)) ? (int) trim((string) $id) : null,
+        explode(',', (string) env('LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS', ''))
+    ))),
+
+    /*
+    |--------------------------------------------------------------------------
     | AI Fix
     |--------------------------------------------------------------------------
     |

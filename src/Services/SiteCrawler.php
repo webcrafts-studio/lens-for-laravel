@@ -6,6 +6,7 @@ use DOMDocument;
 use DOMXPath;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
+use LensForLaravel\LensForLaravel\DTOs\AuthenticatedScanContext;
 use Spatie\Browsershot\Browsershot;
 use Throwable;
 
@@ -21,6 +22,8 @@ class SiteCrawler
 
     protected string $scheme = '';
 
+    protected ?AuthenticatedScanContext $authContext = null;
+
     /**
      * Crawl the website starting from the given URL and return all discovered internal page URLs.
      *
@@ -29,9 +32,10 @@ class SiteCrawler
      *  2. BFS crawl by following <a href> links discovered via plain HTTP.
      *  3. Optionally render JavaScript in Chromium before falling back to plain HTTP.
      */
-    public function crawl(string $url, int $maxPages = 50): array
+    public function crawl(string $url, int $maxPages = 50, ?AuthenticatedScanContext $auth = null): array
     {
         $this->baseUrl = rtrim($url, '/');
+        $this->authContext = $auth;
 
         $parsed = parse_url($this->baseUrl);
         $this->host = $parsed['host'] ?? '';
@@ -188,11 +192,16 @@ class SiteCrawler
     protected function extractLinksWithBrowser(string $url): array
     {
         try {
-            $json = app(HttpsClientConfiguration::class)
+            $browser = app(HttpsClientConfiguration::class)
                 ->configureBrowser(Browsershot::url($url))
                 ->noSandbox()
-                ->waitUntilNetworkIdle()
-                ->evaluate(<<<'JS'
+                ->waitUntilNetworkIdle();
+
+            if ($this->authContext !== null && ! $this->authContext->isEmpty()) {
+                $browser->useCookies($this->authContext->cookies);
+            }
+
+            $json = $browser->evaluate(<<<'JS'
                     JSON.stringify(
                         Array.from(document.querySelectorAll('a[href]'))
                             .map((anchor) => anchor.getAttribute('href'))
@@ -216,9 +225,13 @@ class SiteCrawler
 
     protected function httpRequest(int $timeout): PendingRequest
     {
-        return app(HttpsClientConfiguration::class)->configureHttp(
-            Http::timeout($timeout)
-        );
+        $request = Http::timeout($timeout);
+
+        if ($this->authContext !== null && ! $this->authContext->isEmpty() && $this->host !== '') {
+            $request->withCookies($this->authContext->cookies, $this->host);
+        }
+
+        return app(HttpsClientConfiguration::class)->configureHttp($request);
     }
 
     protected function parseLinksFromHtml(string $html, string $baseUrl): array
