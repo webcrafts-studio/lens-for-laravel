@@ -116,6 +116,8 @@ The package README is the concise installation and feature reference. The websit
 - v3 AI Fix uses a minimal replacement and one controlled retry for truncated/invalid structured output; cloud providers use their default `laravel/ai` model and timeout behavior unless the optional `ai_model` override is set, while v3.3 can select a local Ollama model tag explicitly and defaults its timeout to 120 seconds
 - v3.4 adds OpenRouter, xAI, DeepSeek, and Mistral as implicit-model cloud providers alongside Gemini, OpenAI, and Anthropic
 - v3.5 adds an optional `LENS_FOR_LARAVEL_AI_MODEL` override for any provider and a dashboard note that reports the SDK default or the manually configured model name
+- v3.5 removes the pinned temperature of `0` so models without temperature support stop failing with a provider error; generation uses the provider default temperature
+- v3.5 Fix All queues apply every ready suggestion with one bulk action using each item's reviewed or edited code, with per-item failures reported and rate limiting retried once
 - applying an AI fix marks the current issue as pending re-scan but does not present it as axe-verified or remove it from counts
 - all non-AI features remain available when AI Fix is unsupported or disabled
 - dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default
