@@ -102,6 +102,8 @@ return [
         'queue_item_label' => 'Correction :current sur :total, :rule, statut : :status',
         'status_queued' => 'en attente', 'status_loading' => 'génération', 'status_ready' => 'prête',
         'status_applied' => 'appliquée', 'status_rejected' => 'refusée', 'status_error' => 'échec',
+        'model_default' => 'AI Fix utilise :provider avec le modèle par défaut du AI SDK.',
+        'model_manual' => 'AI Fix utilise :provider avec un modèle configuré manuellement (:model).',
     ],
     'preview' => ['title' => 'Aperçu de l’élément', 'rendering' => 'Génération de la capture...', 'alt' => 'Capture de l’aperçu de l’élément', 'save' => 'Enregistrer', 'frame_title' => 'Aperçu de l’enregistreur d’états'],
     'report' => [

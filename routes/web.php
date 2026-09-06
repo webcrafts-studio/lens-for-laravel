@@ -85,6 +85,7 @@ Route::get('/dashboard', function () {
 
     return view('lens-for-laravel::dashboard', [
         'aiFixStatus' => app(AiFixAvailability::class)->status(),
+        'aiModelInfo' => AiFixer::modelSummary(),
         'authEnabled' => (bool) config('lens-for-laravel.auth_enabled', false),
     ]);
 })->name('lens-for-laravel.dashboard');

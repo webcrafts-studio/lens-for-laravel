@@ -335,6 +335,17 @@
                         </div>
                     @endif
 
+                    @if ($aiFixStatus['available'])
+                        <p class="font-mono text-[11px] uppercase tracking-widest text-neutral-500 dark:text-neutral-400"
+                            role="status">
+                            @if ($aiModelInfo['model'] === null)
+                                {{ __('lens-for-laravel::messages.ai_fix.model_default', ['provider' => $aiModelInfo['provider']]) }}
+                            @else
+                                {{ __('lens-for-laravel::messages.ai_fix.model_manual', ['provider' => $aiModelInfo['provider'], 'model' => $aiModelInfo['model']]) }}
+                            @endif
+                        </p>
+                    @endif
+
                 <!-- Hero Section & Controls -->
                 <div class="relative">
                     <div

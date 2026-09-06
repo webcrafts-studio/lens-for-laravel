@@ -1,5 +1,7 @@
 <?php
 
+use LensForLaravel\LensForLaravel\Services\AiFixAvailability;
+
 function lensDashboardThemeVariables(string $html, string $selector): array
 {
     $pattern = '/'.preg_quote($selector, '/').'\s*\{(?<declarations>.*?)\n\s*\}/s';
@@ -283,4 +285,56 @@ test('state recorder can switch to Spanish locale', function () {
     $response->assertStatus(200)
         ->assertSee('Grabador de estados Lens')
         ->assertSee('Enviar script');
+});
+
+test('dashboard shows the default AI SDK model label when no model is configured', function () {
+    $availability = Mockery::mock(AiFixAvailability::class);
+    $availability->shouldReceive('status')->andReturn(['available' => true, 'message' => null]);
+    app()->instance(AiFixAvailability::class, $availability);
+
+    $this->app['config']->set('lens-for-laravel.ai_provider', 'openai');
+    $this->app['config']->set('lens-for-laravel.ai_model', null);
+    $this->app['config']->set('lens-for-laravel.ai_ollama_model', null);
+
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('AI Fix uses openai with the default AI SDK model.')
+        ->assertDontSee('manually configured model');
+});
+
+test('dashboard shows a manually configured model name', function () {
+    $availability = Mockery::mock(AiFixAvailability::class);
+    $availability->shouldReceive('status')->andReturn(['available' => true, 'message' => null]);
+    app()->instance(AiFixAvailability::class, $availability);
+
+    $this->app['config']->set('lens-for-laravel.ai_provider', 'openai');
+    $this->app['config']->set('lens-for-laravel.ai_model', 'gpt-5.6-luna');
+
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('AI Fix uses openai with a manually configured model (gpt-5.6-luna).', false)
+        ->assertDontSee('default AI SDK model');
+});
+
+test('dashboard escapes a manually configured model name', function () {
+    $availability = Mockery::mock(AiFixAvailability::class);
+    $availability->shouldReceive('status')->andReturn(['available' => true, 'message' => null]);
+    app()->instance(AiFixAvailability::class, $availability);
+
+    $this->app['config']->set('lens-for-laravel.ai_provider', 'openai');
+    $this->app['config']->set('lens-for-laravel.ai_model', '<script>alert(1)</script>');
+
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertDontSee('<script>alert(1)</script>', false)
+        ->assertSee(e('<script>alert(1)</script>'), false);
+});
+
+test('dashboard hides the model info when AI Fix is unavailable', function () {
+    $this->app['config']->set('lens-for-laravel.ai_enabled', false);
+
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertDontSee('default AI SDK model')
+        ->assertDontSee('manually configured model');
 });

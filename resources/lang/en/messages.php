@@ -167,6 +167,8 @@ return [
         'status_applied' => 'applied',
         'status_rejected' => 'rejected',
         'status_error' => 'failed',
+        'model_default' => 'AI Fix uses :provider with the default AI SDK model.',
+        'model_manual' => 'AI Fix uses :provider with a manually configured model (:model).',
     ],
     'preview' => [
         'title' => 'Element preview',
