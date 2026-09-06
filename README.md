@@ -4,7 +4,9 @@
 
 Lens for Laravel scans your application with [axe-core](https://github.com/dequelabs/axe-core), renders JavaScript through [Spatie Browsershot](https://github.com/spatie/browsershot), maps violations back to source files, and can generate AI-assisted fixes for Blade, React, and Vue code.
 
-**v3.4 development line:** adds authenticated scans for pages behind login plus four additional AI Fix providers (OpenRouter, xAI, DeepSeek, Mistral). The v3.3 Ollama support and earlier v3 foundations remain unchanged.
+**v3.5 development line:** adds an optional explicit AI model override and dashboard info about the active AI Fix model. The v3.4 authenticated scans, additional providers, v3.3 Ollama support, and earlier v3 foundations remain unchanged.
+
+**v3.4:** adds authenticated scans for pages behind login plus four additional AI Fix providers (OpenRouter, xAI, DeepSeek, Mistral).
 
 **v3.3:** adds local AI Fix models through Ollama.
 
@@ -694,16 +696,27 @@ Always complement Lens with:
 
 ---
 
-## Upgrade Notes for v3.0 through v3.4
+## Upgrade Notes for v3.0 through v3.5
 
-v3.4 is the current development line. Its new features are authenticated scans for pages behind login, four additional AI Fix providers, an optional explicit AI model override, and dashboard info about the active AI Fix model. It requires no migration.
+v3.5 is the current development line. Its new features are an optional explicit AI model override and dashboard info about the active AI Fix model. It requires no migration.
+
+New in v3.5:
+
+- `LENS_FOR_LARAVEL_AI_MODEL` optionally pins an explicit model for any provider at your own responsibility; when it is empty, cloud providers keep the SDK default and Ollama falls back to `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`
+- the new providers keep the same implicit SDK-default model behavior as Gemini, OpenAI, and Anthropic unless `LENS_FOR_LARAVEL_AI_MODEL` sets an explicit model; Ollama still accepts its explicit model tag
+- the dashboard reports whether AI Fix uses the default AI SDK model or a manually configured model name
+
+If the Lens config was published before v3.5, add:
+
+```php
+'ai_model' => env('LENS_FOR_LARAVEL_AI_MODEL'),
+```
+
+v3.4 added authenticated scans for pages behind login and four additional AI Fix providers. It requires no migration.
 
 New in v3.4:
 
 - `openrouter`, `xai`, `deepseek`, and `mistral` are accepted by `LENS_FOR_LARAVEL_AI_PROVIDER`
-- the new providers keep the same implicit SDK-default model behavior as Gemini, OpenAI, and Anthropic unless `LENS_FOR_LARAVEL_AI_MODEL` sets an explicit model; Ollama still accepts its explicit model tag
-- `LENS_FOR_LARAVEL_AI_MODEL` optionally pins an explicit model for any provider at your own responsibility; when it is empty, cloud providers keep the SDK default and Ollama falls back to `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`
-- the dashboard reports whether AI Fix uses the default AI SDK model or a manually configured model name
 - configure credentials with `OPENROUTER_API_KEY`, `XAI_API_KEY`, `DEEPSEEK_API_KEY`, or `MISTRAL_API_KEY` in the host application
 - `LENS_FOR_LARAVEL_AUTH_ENABLED=true` enables scanning as an existing user (default `false`)
 - `LENS_FOR_LARAVEL_AUTH_GUARD` selects the session guard used for login (default `web`)
@@ -718,7 +731,6 @@ If the Lens config was published before v3.4, add:
 'auth_enabled' => env('LENS_FOR_LARAVEL_AUTH_ENABLED', false),
 'auth_guard' => env('LENS_FOR_LARAVEL_AUTH_GUARD', 'web'),
 'auth_allowed_user_ids' => /* comma-separated LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS, e.g. '1,2' */ [],
-'ai_model' => env('LENS_FOR_LARAVEL_AI_MODEL'),
 ```
 
 v3.3 added local AI Fix models through Ollama. It requires no migration.

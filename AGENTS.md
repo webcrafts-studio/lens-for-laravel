@@ -4,7 +4,7 @@
 
 Lens for Laravel is a local-first accessibility auditing package for Laravel applications. It renders application pages in Chromium, runs axe-core, maps violations back to Blade/React/Vue source files, and exposes the results through a dashboard and the `lens:audit` Artisan command.
 
-The current development line is v3.4.0. Its new features are authenticated scans for pages behind login, four additional AI Fix providers (OpenRouter, xAI, DeepSeek, Mistral), an optional explicit AI model override, and dashboard info about the active AI Fix model. New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must otherwise be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1/v3.2/v3.3 upgrade notes as historical documentation.
+The current development line is v3.5.0. Its new features are an optional explicit AI model override and dashboard info about the active AI Fix model. The released v3.4.0 added authenticated scans for pages behind login and four additional AI Fix providers (OpenRouter, xAI, DeepSeek, Mistral). New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must otherwise be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1/v3.2/v3.3/v3.4 upgrade notes as historical documentation.
 
 The package supports PHP 8.2+ and Laravel 10-13 for its core, non-AI features.
 
@@ -114,7 +114,8 @@ The package README is the concise installation and feature reference. The websit
 - AI Fix: PHP 8.3+, Laravel 12+, optional `laravel/ai`
 - AI Fix sends a bounded semantic element/component and issue metadata to the configured provider; default localhost Ollama processing stays on the application host, while cloud and remote Ollama endpoints receive the context over the network
 - v3 AI Fix uses a minimal replacement and one controlled retry for truncated/invalid structured output; cloud providers use their default `laravel/ai` model and timeout behavior unless the optional `ai_model` override is set, while v3.3 can select a local Ollama model tag explicitly and defaults its timeout to 120 seconds
-- v3.4 adds OpenRouter, xAI, DeepSeek, and Mistral as implicit-model cloud providers alongside Gemini, OpenAI, and Anthropic, plus an optional `LENS_FOR_LARAVEL_AI_MODEL` override for any provider and a dashboard note that reports the SDK default or the manually configured model name
+- v3.4 adds OpenRouter, xAI, DeepSeek, and Mistral as implicit-model cloud providers alongside Gemini, OpenAI, and Anthropic
+- v3.5 adds an optional `LENS_FOR_LARAVEL_AI_MODEL` override for any provider and a dashboard note that reports the SDK default or the manually configured model name
 - applying an AI fix marks the current issue as pending re-scan but does not present it as axe-verified or remove it from counts
 - all non-AI features remain available when AI Fix is unsupported or disabled
 - dashboard and CLI support WCAG 2.0, 2.1, and 2.2, with WCAG 2.0 as the backward-compatible default
