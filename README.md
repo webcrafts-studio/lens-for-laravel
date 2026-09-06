@@ -387,6 +387,8 @@ return [
 
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),
 
+    'ai_model' => env('LENS_FOR_LARAVEL_AI_MODEL'),
+
     'ai_ollama_model' => env('LENS_FOR_LARAVEL_AI_OLLAMA_MODEL'),
 
     'ai_ollama_timeout' => env('LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT', 120),
@@ -410,6 +412,7 @@ LENS_FOR_LARAVEL_AUTH_GUARD=web
 LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS=
 LENS_FOR_LARAVEL_AI_ENABLED=true
 LENS_FOR_LARAVEL_AI_PROVIDER=gemini
+LENS_FOR_LARAVEL_AI_MODEL=
 LENS_FOR_LARAVEL_AI_OLLAMA_MODEL=
 LENS_FOR_LARAVEL_AI_OLLAMA_TIMEOUT=120
 ```
@@ -516,7 +519,7 @@ The AI Fix workflow:
 9. Lens applies each reviewed replacement after running the same path and dangerous-code checks for both generated and edited proposals.
 10. The issue is immediately marked **AI Fix applied - pending re-scan** while remaining in the violation counts until a new axe-core scan verifies the result.
 
-Since v3.0, the agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Gemini, OpenAI, Anthropic, OpenRouter, xAI, DeepSeek, and Mistral continue to use the default model configured in `laravel/ai`. In v3.3, Ollama can use the exact local model tag from `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`; when it is omitted, the Laravel AI SDK's Ollama default is used. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
+Since v3.0, the agent uses a deterministic temperature of `0`, a `12000`-token output ceiling, and a reduced Gemini thinking budget. Gemini, OpenAI, Anthropic, OpenRouter, xAI, DeepSeek, and Mistral use the default model configured in `laravel/ai` unless `LENS_FOR_LARAVEL_AI_MODEL` sets an explicit model at your own responsibility. In v3.3, Ollama can use the exact local model tag from `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`; when both model settings are empty, the Laravel AI SDK default is used. The dashboard reports whether AI Fix uses the default AI SDK model or a manually configured model name. If the provider reaches its token limit or returns malformed structured output, Lens performs one controlled retry. Persistent failures produce a safe, understandable message; provider, resolved model, finish reason, and token usage are recorded in the application log without logging the submitted source fragment.
 
 > **Privacy:** AI Fix sends the failing DOM snippet, accessibility issue details, WCAG tags, and a bounded element/component source fragment to the configured provider. With Ollama's default localhost endpoint, this data stays on the machine running the Laravel application. A remote Ollama endpoint and cloud providers receive that bounded context over the network. Lens does not send the entire repository; review the selected context for secrets or sensitive information before requesting a fix.
 
@@ -549,6 +552,14 @@ DEEPSEEK_API_KEY=your-key-here
 # or
 LENS_FOR_LARAVEL_AI_PROVIDER=mistral
 MISTRAL_API_KEY=your-key-here
+```
+
+To use a specific model instead of the SDK default, set an explicit model at your own responsibility (for example `gpt-5.6-luna` for OpenAI). An empty value keeps the SDK default behavior.
+
+```env
+LENS_FOR_LARAVEL_AI_PROVIDER=openai
+LENS_FOR_LARAVEL_AI_MODEL=gpt-5.6-luna
+OPENAI_API_KEY=your-key-here
 ```
 
 To run AI Fix locally, install [Ollama](https://ollama.com/download), then pull a code-capable model:
@@ -685,12 +696,14 @@ Always complement Lens with:
 
 ## Upgrade Notes for v3.0 through v3.4
 
-v3.4 is the current development line. Its new features are authenticated scans for pages behind login and four additional AI Fix providers. It requires no migration.
+v3.4 is the current development line. Its new features are authenticated scans for pages behind login, four additional AI Fix providers, an optional explicit AI model override, and dashboard info about the active AI Fix model. It requires no migration.
 
 New in v3.4:
 
 - `openrouter`, `xai`, `deepseek`, and `mistral` are accepted by `LENS_FOR_LARAVEL_AI_PROVIDER`
-- the new providers keep the same implicit SDK-default model behavior as Gemini, OpenAI, and Anthropic; only Ollama uses an explicit model tag
+- the new providers keep the same implicit SDK-default model behavior as Gemini, OpenAI, and Anthropic unless `LENS_FOR_LARAVEL_AI_MODEL` sets an explicit model; Ollama still accepts its explicit model tag
+- `LENS_FOR_LARAVEL_AI_MODEL` optionally pins an explicit model for any provider at your own responsibility; when it is empty, cloud providers keep the SDK default and Ollama falls back to `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`
+- the dashboard reports whether AI Fix uses the default AI SDK model or a manually configured model name
 - configure credentials with `OPENROUTER_API_KEY`, `XAI_API_KEY`, `DEEPSEEK_API_KEY`, or `MISTRAL_API_KEY` in the host application
 - `LENS_FOR_LARAVEL_AUTH_ENABLED=true` enables scanning as an existing user (default `false`)
 - `LENS_FOR_LARAVEL_AUTH_GUARD` selects the session guard used for login (default `web`)
@@ -705,6 +718,7 @@ If the Lens config was published before v3.4, add:
 'auth_enabled' => env('LENS_FOR_LARAVEL_AUTH_ENABLED', false),
 'auth_guard' => env('LENS_FOR_LARAVEL_AUTH_GUARD', 'web'),
 'auth_allowed_user_ids' => /* comma-separated LENS_FOR_LARAVEL_AUTH_ALLOWED_IDS, e.g. '1,2' */ [],
+'ai_model' => env('LENS_FOR_LARAVEL_AI_MODEL'),
 ```
 
 v3.3 added local AI Fix models through Ollama. It requires no migration.
