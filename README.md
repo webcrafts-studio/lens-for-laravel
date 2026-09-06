@@ -705,7 +705,7 @@ New in v3.5:
 - `LENS_FOR_LARAVEL_AI_MODEL` optionally pins an explicit model for any provider at your own responsibility; when it is empty, cloud providers keep the SDK default and Ollama falls back to `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`
 - the new providers keep the same implicit SDK-default model behavior as Gemini, OpenAI, and Anthropic unless `LENS_FOR_LARAVEL_AI_MODEL` sets an explicit model; Ollama still accepts its explicit model tag
 - the dashboard reports whether AI Fix uses the default AI SDK model or a manually configured model name
-- Fix All queues apply every ready suggestion with one action, using each item's reviewed or edited code; per-item failures (for example stale source after an earlier apply in the same file, or rate limiting with one wait-and-retry) are reported without stopping the rest; earlier iterations only generated the queue and closing the modal silently discarded unapplied items, so a re-scan could show the same violations again
+- Fix All queues gained an apply-all action that writes every ready suggestion at once, using each item's reviewed or edited code; previously each ready suggestion had to be accepted individually; per-item failures (for example stale source after an earlier apply in the same file, or rate limiting with one wait-and-retry) are reported without stopping the rest
 - the accessibility agent no longer pins temperature to `0`, so models without temperature support (for example `gpt-5.6-luna`) stop failing with a provider error; generation uses the provider default temperature
 
 If the Lens config was published before v3.5, add:
