@@ -4,7 +4,6 @@ namespace LensForLaravel\LensForLaravel\Ai;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
-use Laravel\Ai\Attributes\Temperature;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
@@ -12,7 +11,6 @@ use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
 
 #[MaxTokens(12000)]
-#[Temperature(0)]
 class AccessibilityFixAgent implements Agent, HasProviderOptions, HasStructuredOutput
 {
     use Promptable;

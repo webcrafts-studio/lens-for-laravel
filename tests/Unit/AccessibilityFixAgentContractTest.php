@@ -22,8 +22,7 @@ test('optional accessibility agent keeps cloud provider defaults and supports bo
 
     expect($maxTokens)->toHaveCount(1)
         ->and($maxTokens[0]->newInstance()->value)->toBe(12000)
-        ->and($temperature)->toHaveCount(1)
-        ->and($temperature[0]->newInstance()->value)->toBe(0.0)
+        ->and($temperature)->toBeEmpty()
         ->and($model)->toBeEmpty()
         ->and($agent->providerOptions(Lab::Gemini))->toBe(['thinkingBudget' => 1024])
         ->and($agent->providerOptions(Lab::OpenAI))->toBe([])
