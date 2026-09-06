@@ -104,6 +104,9 @@ return [
         'status_applied' => 'aplicada', 'status_rejected' => 'rechazada', 'status_error' => 'fallida',
         'model_default' => 'AI Fix usa :provider con el modelo predeterminado del AI SDK.',
         'model_manual' => 'AI Fix usa :provider con un modelo configurado manualmente (:model).',
+        'apply_all' => 'Aplicar todas las listas',
+        'applying_all' => 'Aplicando todo...',
+        'bulk_result' => 'Aplicadas :applied de :total, fallidas: :failed.',
     ],
     'preview' => ['title' => 'Vista previa del elemento', 'rendering' => 'Generando captura...', 'alt' => 'Captura de la vista previa del elemento', 'save' => 'Guardar', 'frame_title' => 'Vista previa del grabador de estados'],
     'report' => [

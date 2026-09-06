@@ -24,7 +24,7 @@ Lens for Laravel scans your application with [axe-core](https://github.com/deque
 - **Inertia-aware file discovery** - React/Vue pages under `resources/js/Pages/**` are included automatically.
 - **Optional AI Fix assistant** - on PHP 8.3+ and Laravel 12+, generates reviewable fixes for Blade, React, and Vue through Gemini, OpenAI, Anthropic, OpenRouter, xAI, DeepSeek, Mistral, or a local Ollama model using the optional `laravel/ai` SDK.
 - **Editable AI Fix review** - inspect the live diff, edit the replacement with line numbers and indentation shortcuts, or restore the original AI proposal before applying.
-- **Progressive Fix All A/AA queues** - generate up to three suggestions concurrently and review ready fixes while later items continue loading.
+- **Progressive Fix All A/AA queues** - generate up to three suggestions concurrently, review ready fixes while later items continue loading, and apply every ready suggestion with one bulk action.
 - **Honest AI verification state** - applied suggestions remain counted and are marked as pending until a fresh axe-core scan verifies the result.
 - **Fresh re-scans** - cache-busted browser navigation and current-result action identities prevent stale markup or late AI responses from remaining attached to an older issue.
 - **Whole-site crawler** - discovers pages from sitemaps and internal links.
@@ -516,7 +516,7 @@ The AI Fix workflow:
 4. A dedicated accessibility agent returns a minimal replacement and explanation.
 5. The dashboard shows a diff preview.
 6. You can accept the proposal as generated or edit it directly in the modal. The built-in editor includes line numbers, indentation shortcuts, a live diff, and an option to restore the AI version.
-7. **Fix All A** and **Fix All AA** create review queues for every located issue at the selected level. Lens generates up to three suggestions concurrently, opens the queue immediately, and lets you move between ready suggestions while later items continue loading.
+7. **Fix All A** and **Fix All AA** create review queues for every located issue at the selected level. Lens generates up to three suggestions concurrently, opens the queue immediately, and lets you move between ready suggestions while later items continue loading. One bulk action then applies every ready suggestion with its reviewed or edited code, and per-item failures are reported without stopping the rest.
 8. Each queued fix keeps its own generated, edited, rejected, failed, or applied state. A failed suggestion can be retried without restarting the rest of the queue.
 9. Lens applies each reviewed replacement after running the same path and dangerous-code checks for both generated and edited proposals.
 10. The issue is immediately marked **AI Fix applied - pending re-scan** while remaining in the violation counts until a new axe-core scan verifies the result.
@@ -705,6 +705,7 @@ New in v3.5:
 - `LENS_FOR_LARAVEL_AI_MODEL` optionally pins an explicit model for any provider at your own responsibility; when it is empty, cloud providers keep the SDK default and Ollama falls back to `LENS_FOR_LARAVEL_AI_OLLAMA_MODEL`
 - the new providers keep the same implicit SDK-default model behavior as Gemini, OpenAI, and Anthropic unless `LENS_FOR_LARAVEL_AI_MODEL` sets an explicit model; Ollama still accepts its explicit model tag
 - the dashboard reports whether AI Fix uses the default AI SDK model or a manually configured model name
+- Fix All queues apply every ready suggestion with one action, using each item's reviewed or edited code; per-item failures (for example stale source after an earlier apply in the same file, or rate limiting with one wait-and-retry) are reported without stopping the rest; earlier iterations only generated the queue and closing the modal silently discarded unapplied items, so a re-scan could show the same violations again
 - the accessibility agent no longer pins temperature to `0`, so models without temperature support (for example `gpt-5.6-luna`) stop failing with a provider error; generation uses the provider default temperature
 
 If the Lens config was published before v3.5, add:

@@ -131,6 +131,9 @@ return [
         'status_applied' => 'zastosowana', 'status_rejected' => 'odrzucona', 'status_error' => 'błąd',
         'model_default' => 'AI Fix używa :provider z domyślnym modelem AI SDK.',
         'model_manual' => 'AI Fix używa :provider z ręcznie skonfigurowanym modelem (:model).',
+        'apply_all' => 'Zastosuj wszystkie gotowe',
+        'applying_all' => 'Stosowanie wszystkich...',
+        'bulk_result' => 'Zastosowano :applied z :total, nieudane: :failed.',
     ],
     'preview' => [
         'title' => 'Podgląd elementu', 'rendering' => 'Generowanie zrzutu...',

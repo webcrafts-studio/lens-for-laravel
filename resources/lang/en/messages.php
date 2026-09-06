@@ -169,6 +169,9 @@ return [
         'status_error' => 'failed',
         'model_default' => 'AI Fix uses :provider with the default AI SDK model.',
         'model_manual' => 'AI Fix uses :provider with a manually configured model (:model).',
+        'apply_all' => 'Apply all ready',
+        'applying_all' => 'Applying all...',
+        'bulk_result' => 'Applied :applied of :total, :failed failed.',
     ],
     'preview' => [
         'title' => 'Element preview',

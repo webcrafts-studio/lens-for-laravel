@@ -1067,11 +1067,16 @@
                     <p class="font-mono text-xs uppercase tracking-widest text-neutral-600 dark:text-neutral-300"
                         x-text="fixQueueProgress"></p>
                     <div class="flex items-center gap-2">
-                        <button type="button" @click="previousFix()" :disabled="!hasPreviousFix || isApplyingFix"
+                        <button type="button" @click="applyAllFixes()" :disabled="isApplyingAll || isApplyingFix"
+                            class="border-2 border-[#E11D48] bg-[#E11D48] px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest text-white transition-colors hover:bg-black hover:border-black disabled:cursor-not-allowed disabled:opacity-30">
+                            <span x-show="!isApplyingAll">{{ __('lens-for-laravel::messages.ai_fix.apply_all') }}</span>
+                            <span x-show="isApplyingAll" x-cloak>{{ __('lens-for-laravel::messages.ai_fix.applying_all') }}</span>
+                        </button>
+                        <button type="button" @click="previousFix()" :disabled="!hasPreviousFix || isApplyingFix || isApplyingAll"
                             class="border border-black px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-30 dark:border-white dark:hover:bg-white dark:hover:text-black">
                             ← {{ __('lens-for-laravel::messages.ai_fix.previous') }}
                         </button>
-                        <button type="button" @click="nextFix()" :disabled="!hasNextFix || isApplyingFix"
+                        <button type="button" @click="nextFix()" :disabled="!hasNextFix || isApplyingFix || isApplyingAll"
                             class="border border-black px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-widest transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-30 dark:border-white dark:hover:bg-white dark:hover:text-black">
                             {{ __('lens-for-laravel::messages.ai_fix.next') }} →
                         </button>
@@ -1099,6 +1104,9 @@
                         </button>
                     </template>
                 </div>
+                <p x-show="bulkApplyMessage" x-cloak
+                    class="mt-2 font-mono text-xs uppercase tracking-widest text-neutral-600 dark:text-neutral-300"
+                    role="status" x-text="bulkApplyMessage"></p>
             </div>
 
             <!-- Body -->
@@ -1371,6 +1379,7 @@
             'statusApplied' => __('lens-for-laravel::messages.ai_fix.status_applied'),
             'statusRejected' => __('lens-for-laravel::messages.ai_fix.status_rejected'),
             'statusError' => __('lens-for-laravel::messages.ai_fix.status_error'),
+            'bulkResult' => __('lens-for-laravel::messages.ai_fix.bulk_result'),
             'deleteConfirm' => __('lens-for-laravel::messages.history.delete_confirm'),
             'chartTotal' => __('lens-for-laravel::messages.history.chart_total'),
             'levelA' => __('lens-for-laravel::messages.common.level_a'),
@@ -1438,6 +1447,9 @@
                 activeFixIndex: 0,
                 issueDomSequence: 0,
                 fixRequestSequence: 0,
+                isApplyingAll: false,
+                bulkApplyMessage: null,
+                fixQueueGeneration: null,
 
 
                 init() {
@@ -1933,8 +1945,10 @@
                     }));
                     this.activeFixIndex = 0;
                     this.showFixModal = true;
+                    this.isApplyingAll = false;
+                    this.bulkApplyMessage = null;
                     this.loadActiveFix();
-                    this.runFixQueue(requestId);
+                    this.fixQueueGeneration = this.runFixQueue(requestId);
                 },
 
                 runFixQueue(requestId) {
@@ -1953,7 +1967,7 @@
                         }
                     };
 
-                    Promise.all(Array.from({ length: workerCount }, (_, index) => worker(index)));
+                    return Promise.all(Array.from({ length: workerCount }, (_, index) => worker(index)));
                 },
 
                 async generateFixForQueueItem(index, requestId) {
@@ -2007,8 +2021,47 @@
                     }
                 },
 
+                async postApplyFix(fileName, originalCode, fixedCode) {
+                    const token = document.querySelector('meta[name="csrf-token"]')
+                        .getAttribute('content');
+                    const response = await fetch('{{ route('lens-for-laravel.fix.apply') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ fileName, originalCode, fixedCode })
+                    });
+                    const data = await response.json().catch(() => ({}));
+
+                    if (!response.ok) {
+                        const error = new Error(data.message || LENS_I18N.applyFailed);
+                        error.status = response.status;
+                        error.retryAfter = parseInt(response.headers.get('Retry-After') || '0', 10) || 0;
+                        throw error;
+                    }
+
+                    return data;
+                },
+
+                async sleepInterruptible(ms, runId) {
+                    const step = 250;
+                    let waited = 0;
+
+                    while (waited < ms) {
+                        if (runId !== this.fixRequestSequence || !this.showFixModal) {
+                            throw new Error('aborted');
+                        }
+
+                        const chunk = Math.min(step, ms - waited);
+                        await new Promise(resolve => window.setTimeout(resolve, chunk));
+                        waited += chunk;
+                    }
+                },
+
                 async applyFix() {
-                    if (!this.fixData) return;
+                    if (!this.fixData || this.isApplyingAll) return;
                     if (!this.editedFixCode.trim()) {
                         this.fixError = LENS_I18N.emptyFixCode;
                         this.startEditingFix();
@@ -2017,23 +2070,11 @@
                     this.isApplyingFix = true;
                     this.fixError = null;
                     try {
-                        const token = document.querySelector('meta[name="csrf-token"]')
-                            .getAttribute('content');
-                        const response = await fetch('{{ route('lens-for-laravel.fix.apply') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': token
-                            },
-                            body: JSON.stringify({
-                                fileName: this.fixData.fileName,
-                                originalCode: this.fixData.originalCode,
-                                fixedCode: this.editedFixCode,
-                            })
-                        });
-                        const data = await response.json();
-                        if (!response.ok) throw new Error(data.message || LENS_I18N.applyFailed);
+                        await this.postApplyFix(
+                            this.fixData.fileName,
+                            this.fixData.originalCode,
+                            this.editedFixCode
+                        );
                         this.fixIssue.aiFixStatus = 'pending_verification';
                         this.fixApplied = true;
                         const item = this.fixQueue[this.activeFixIndex];
@@ -2046,6 +2087,88 @@
                         this.fixError = err.message;
                     } finally {
                         this.isApplyingFix = false;
+                    }
+                },
+
+                async applyAllFixes() {
+                    if (this.isApplyingAll || this.isApplyingFix || !this.fixQueue.length) return;
+
+                    this.persistActiveFixEdits();
+                    this.isApplyingAll = true;
+                    this.bulkApplyMessage = null;
+                    this.fixError = null;
+                    const runId = this.fixRequestSequence;
+
+                    try {
+                        if (this.fixQueueGeneration) {
+                            try {
+                                await this.fixQueueGeneration;
+                            } catch (err) {}
+                        }
+
+                        let applied = 0;
+                        let failed = 0;
+
+                        for (let index = 0; index < this.fixQueue.length; index++) {
+                            if (runId !== this.fixRequestSequence || !this.showFixModal) break;
+
+                            const item = this.fixQueue[index];
+                            if (!item || item.status !== 'ready' || !item.data) continue;
+
+                            const code = (item.editedCode || item.data.fixedCode || '').trim();
+                            if (!code) {
+                                item.error = LENS_I18N.emptyFixCode;
+                                failed++;
+                                continue;
+                            }
+
+                            try {
+                                await this.applyQueueItemWithRateLimitRetry(item, code, runId);
+                                item.issue.aiFixStatus = 'pending_verification';
+                                item.status = 'applied';
+                                item.editedCode = code;
+                                item.isEditing = false;
+                                item.error = null;
+                                applied++;
+                            } catch (err) {
+                                if (err.message === 'aborted' || runId !== this.fixRequestSequence) break;
+
+                                item.error = err.message;
+                                failed++;
+                            }
+                        }
+
+                        if (runId === this.fixRequestSequence && this.showFixModal) {
+                            const failedIndex = this.fixQueue.findIndex(item =>
+                                item.status === 'ready' && item.error);
+                            const errorIndex = failedIndex !== -1
+                                ? failedIndex
+                                : this.fixQueue.findIndex(item => item.status === 'error');
+
+                            if (errorIndex !== -1) {
+                                this.activeFixIndex = errorIndex;
+                            }
+
+                            this.bulkApplyMessage = LENS_I18N.bulkResult
+                                .replace(':applied', applied)
+                                .replace(':total', this.fixQueue.length)
+                                .replace(':failed', failed);
+                        }
+                    } finally {
+                        this.isApplyingAll = false;
+                        this.loadActiveFix();
+                    }
+                },
+
+                async applyQueueItemWithRateLimitRetry(item, code, runId) {
+                    try {
+                        await this.postApplyFix(item.data.fileName, item.data.originalCode, code);
+                    } catch (err) {
+                        if (err.status !== 429 || runId !== this.fixRequestSequence) throw err;
+
+                        const waitMs = Math.min(Math.max(err.retryAfter, 1), 60) * 1000;
+                        await this.sleepInterruptible(waitMs, runId);
+                        await this.postApplyFix(item.data.fileName, item.data.originalCode, code);
                     }
                 },
 
@@ -2063,6 +2186,9 @@
                     this.isBulkFix = false;
                     this.fixQueue = [];
                     this.activeFixIndex = 0;
+                    this.isApplyingAll = false;
+                    this.bulkApplyMessage = null;
+                    this.fixQueueGeneration = null;
                 },
 
                 cancelAiFixRequest() {
@@ -2093,7 +2219,7 @@
                 },
 
                 goToFix(index) {
-                    if (index < 0 || index >= this.fixQueue.length || this.isApplyingFix) return;
+                    if (index < 0 || index >= this.fixQueue.length || this.isApplyingFix || this.isApplyingAll) return;
 
                     this.persistActiveFixEdits();
                     this.activeFixIndex = index;
@@ -2126,7 +2252,7 @@
 
                 retryCurrentFix() {
                     const item = this.fixQueue[this.activeFixIndex];
-                    if (!item || item.status !== 'error') return;
+                    if (!item || item.status !== 'error' || this.isApplyingAll) return;
 
                     item.status = 'queued';
                     item.data = null;

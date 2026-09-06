@@ -158,7 +158,8 @@ test('dashboard lets users edit and review an AI fix before applying it', functi
         ->assertSee('x-model="editedFixCode"', false)
         ->assertSee('@keydown.tab.prevent="handleFixEditorTab($event)"', false)
         ->assertSee('@keydown.ctrl.enter.prevent="applyFix()"', false)
-        ->assertSee('fixedCode: this.editedFixCode', false)
+        ->assertSee('postApplyFix(', false)
+        ->assertSee('JSON.stringify({ fileName, originalCode, fixedCode })', false)
         ->assertSee('this.editedFixCode.split', false);
 
     $this->get(route('lens-for-laravel.dashboard', ['lens_locale' => 'pl']))
@@ -337,4 +338,25 @@ test('dashboard hides the model info when AI Fix is unavailable', function () {
         ->assertOk()
         ->assertDontSee('default AI SDK model')
         ->assertDontSee('manually configured model');
+});
+
+test('dashboard offers a bulk apply action for Fix All queues', function () {
+    $this->get(route('lens-for-laravel.dashboard'))
+        ->assertOk()
+        ->assertSee('applyAllFixes()', false)
+        ->assertSee('Apply all ready')
+        ->assertSee('isApplyingAll', false)
+        ->assertSee('bulkApplyMessage', false)
+        ->assertSee('bulkResult', false)
+        ->assertSee('Applied :applied of :total, :failed failed.');
+});
+
+test('dashboard bulk apply uses each queue item review state', function () {
+    $html = $this->get(route('lens-for-laravel.dashboard'))->assertOk()->getContent();
+
+    expect($html)
+        ->toContain('item.editedCode || item.data.fixedCode')
+        ->toContain('item.issue.aiFixStatus')
+        ->toContain('pending_verification')
+        ->toContain('postApplyFix');
 });

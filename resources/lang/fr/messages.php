@@ -104,6 +104,9 @@ return [
         'status_applied' => 'appliquée', 'status_rejected' => 'refusée', 'status_error' => 'échec',
         'model_default' => 'AI Fix utilise :provider avec le modèle par défaut du AI SDK.',
         'model_manual' => 'AI Fix utilise :provider avec un modèle configuré manuellement (:model).',
+        'apply_all' => 'Tout appliquer',
+        'applying_all' => 'Application en cours...',
+        'bulk_result' => ':applied sur :total appliquées, :failed en échec.',
     ],
     'preview' => ['title' => 'Aperçu de l’élément', 'rendering' => 'Génération de la capture...', 'alt' => 'Capture de l’aperçu de l’élément', 'save' => 'Enregistrer', 'frame_title' => 'Aperçu de l’enregistreur d’états'],
     'report' => [

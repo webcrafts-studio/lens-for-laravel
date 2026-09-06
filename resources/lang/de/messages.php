@@ -104,6 +104,9 @@ return [
         'status_applied' => 'angewendet', 'status_rejected' => 'abgelehnt', 'status_error' => 'fehlgeschlagen',
         'model_default' => 'AI Fix verwendet :provider mit dem Standardmodell des AI SDK.',
         'model_manual' => 'AI Fix verwendet :provider mit einem manuell konfigurierten Modell (:model).',
+        'apply_all' => 'Alle fertigen anwenden',
+        'applying_all' => 'Wird angewendet...',
+        'bulk_result' => ':applied von :total angewendet, :failed fehlgeschlagen.',
     ],
     'preview' => ['title' => 'Elementvorschau', 'rendering' => 'Screenshot wird erstellt...', 'alt' => 'Screenshot der Elementvorschau', 'save' => 'Speichern', 'frame_title' => 'Vorschau des Zustandsrekorders'],
     'report' => [
