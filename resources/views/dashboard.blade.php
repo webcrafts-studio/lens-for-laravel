@@ -335,17 +335,6 @@
                         </div>
                     @endif
 
-                    @if ($aiFixStatus['available'])
-                        <p class="font-mono text-[11px] uppercase tracking-widest text-neutral-500 dark:text-neutral-400"
-                            role="status">
-                            @if ($aiModelInfo['model'] === null)
-                                {{ __('lens-for-laravel::messages.ai_fix.model_default', ['provider' => $aiModelInfo['provider']]) }}
-                            @else
-                                {{ __('lens-for-laravel::messages.ai_fix.model_manual', ['provider' => $aiModelInfo['provider'], 'model' => $aiModelInfo['model']]) }}
-                            @endif
-                        </p>
-                    @endif
-
                 <!-- Hero Section & Controls -->
                 <div class="relative">
                     <div
@@ -364,6 +353,16 @@
                                 class="mt-4 text-sm font-sans text-neutral-600 dark:text-neutral-400 leading-relaxed italic">
                                 {{ __('lens-for-laravel::messages.scanner.intro_2') }}
                             </p>
+                            @if ($aiFixStatus['available'])
+                                <p class="mt-3 text-xs font-sans text-neutral-400 dark:text-neutral-500 leading-relaxed"
+                                    role="status">
+                                    @if ($aiModelInfo['model'] === null)
+                                        {{ __('lens-for-laravel::messages.ai_fix.model_default', ['provider' => $aiModelInfo['provider']]) }}
+                                    @else
+                                        {{ __('lens-for-laravel::messages.ai_fix.model_manual', ['provider' => $aiModelInfo['provider'], 'model' => $aiModelInfo['model']]) }}
+                                    @endif
+                                </p>
+                            @endif
                         </div>
 
                         <form @submit.prevent="performScan" class="mt-8 space-y-4 relative z-10">
