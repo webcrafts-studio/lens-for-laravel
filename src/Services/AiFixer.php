@@ -146,13 +146,44 @@ PROMPT;
 
     protected function configuredProvider(): string
     {
+        return self::resolveProvider();
+    }
+
+    public static function resolveProvider(): string
+    {
         $provider = strtolower((string) config('lens-for-laravel.ai_provider', 'gemini'));
 
         return in_array($provider, ['gemini', 'openai', 'anthropic', 'ollama', 'openrouter', 'xai', 'deepseek', 'mistral'], true) ? $provider : 'gemini';
     }
 
+    /**
+     * @return array{provider: string, model: string|null, manual: bool}
+     */
+    public static function modelSummary(): array
+    {
+        $provider = self::resolveProvider();
+        $model = self::resolveModel($provider);
+
+        return [
+            'provider' => $provider,
+            'model' => $model,
+            'manual' => $model !== null,
+        ];
+    }
+
     protected function configuredModel(string $provider): ?string
     {
+        return self::resolveModel($provider);
+    }
+
+    public static function resolveModel(string $provider): ?string
+    {
+        $model = trim((string) config('lens-for-laravel.ai_model', ''));
+
+        if ($model !== '') {
+            return $model;
+        }
+
         if ($provider !== 'ollama') {
             return null;
         }

@@ -180,13 +180,21 @@ return [
     |
     | Supported values: 'gemini', 'openai', 'anthropic', 'ollama',
     | 'openrouter', 'xai', 'deepseek', 'mistral'
-    | Cloud providers use their configured default model. For Ollama, set the
+    | Cloud providers use their configured default model unless 'ai_model'
+    | is set. For Ollama, set the
     | exact locally installed model tag or leave it null to use the SDK default.
+    |
+    | 'ai_model' is an optional explicit override for any provider and is used
+    | at your own responsibility (for example a newer model than the SDK
+    | default). Leave it empty to keep the SDK default behavior. For Ollama,
+    | 'ai_ollama_model' stays supported as a fallback when 'ai_model' is empty.
     |
     */
     'ai_enabled' => env('LENS_FOR_LARAVEL_AI_ENABLED', true),
 
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),
+
+    'ai_model' => env('LENS_FOR_LARAVEL_AI_MODEL'),
 
     'ai_ollama_model' => env('LENS_FOR_LARAVEL_AI_OLLAMA_MODEL'),
 
