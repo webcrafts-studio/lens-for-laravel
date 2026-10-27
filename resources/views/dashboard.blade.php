@@ -1394,6 +1394,8 @@
                 hasResults: false,
                 error: null,
                 issues: [],
+                scanStartedAt: Date.now() / 1000,
+                mcpPollTimer: null,
                 theme: localStorage.getItem('lens-theme') ||
                     localStorage.getItem('theme') ||
                     (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
@@ -1461,6 +1463,9 @@
                         this.renderTrendChart();
                     });
                     this.initStateRecorderListener();
+                    @if (app(\LensForLaravel\LensForLaravel\Services\McpAvailability::class)->status()['available'])
+                    this.mcpPollTimer = window.setInterval(() => this.syncMcpChanges(), 5000);
+                    @endif
                 },
 
                 toggleTheme() {
@@ -1754,7 +1759,33 @@
                     }
                 },
 
+                destroy() {
+                    if (this.mcpPollTimer) window.clearInterval(this.mcpPollTimer);
+                },
+
+                async syncMcpChanges() {
+                    if (!this.hasResults || this.isLoading || document.hidden) return;
+                    const since = this.scanStartedAt;
+                    try {
+                        const response = await fetch('{{ route('lens-for-laravel.mcp.changes') }}?since=' + since, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (!response.ok || since !== this.scanStartedAt) return;
+                        const data = await response.json();
+                        if (since !== this.scanStartedAt) return;
+                        const key = issue => {
+                            const url = new URL(issue.url || this.url, this.url);
+                            return JSON.stringify([issue.id, url.pathname + url.search, issue.selector, issue.stateLabel || null, issue.fileName]);
+                        };
+                        const changed = new Set((data.changes || []).map(key));
+                        for (const issue of this.issues) {
+                            if (changed.has(key(issue))) issue.aiFixStatus = 'pending_verification';
+                        }
+                    } catch (error) {}
+                },
+
                 async performScan() {
+                    this.scanStartedAt = Date.now() / 1000;
                     this.isLoading = true;
                     this.hasResults = false;
                     this.error = null;

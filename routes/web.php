@@ -3,10 +3,10 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use LensForLaravel\LensForLaravel\DTOs\AuthenticatedScanContext;
 use LensForLaravel\LensForLaravel\Exceptions\AiFixGenerationException;
+use LensForLaravel\LensForLaravel\Mcp\DashboardBridge;
 use LensForLaravel\LensForLaravel\Models\Scan;
 use LensForLaravel\LensForLaravel\Services\AiFixAvailability;
 use LensForLaravel\LensForLaravel\Services\AiFixer;
@@ -15,8 +15,11 @@ use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use LensForLaravel\LensForLaravel\Services\FileLocator;
 use LensForLaravel\LensForLaravel\Services\HttpsClientConfiguration;
 use LensForLaravel\LensForLaravel\Services\InteractionScriptParser;
+use LensForLaravel\LensForLaravel\Services\McpAvailability;
+use LensForLaravel\LensForLaravel\Services\ReportExporter;
 use LensForLaravel\LensForLaravel\Services\ScanComparator;
 use LensForLaravel\LensForLaravel\Services\SiteCrawler;
+use LensForLaravel\LensForLaravel\Services\SourceFixApplier;
 use LensForLaravel\LensForLaravel\Support\Wcag;
 use Spatie\Browsershot\Browsershot;
 
@@ -176,6 +179,7 @@ Route::post('/scan', function (Request $request) use ($domainRule) {
         return response()->json([
             'status' => 'success',
             'issues' => $issues,
+            'runId' => app(DashboardBridge::class)->capture($issues, $request->url, $wcagVersion, $asUserId),
         ]);
     } catch (InvalidArgumentException $e) {
         return response()->json([
@@ -231,6 +235,7 @@ Route::post('/scan/states', function (Request $request) use ($domainRule) {
                 'actionCount' => count($state['actions']),
             ], $states),
             'issues' => $issues,
+            'runId' => app(DashboardBridge::class)->capture($issues, $validated['url'], $wcagVersion, $asUserId, $validated['script']),
         ]);
     } catch (InvalidArgumentException $e) {
         return response()->json([
@@ -426,7 +431,8 @@ Route::post('/fix/apply', function (Request $request) use ($resolveEditableSourc
         }
 
         // LOCK_EX ensures the write is atomic and prevents concurrent overwrites.
-        file_put_contents($source['path'], Str::replaceFirst($originalCode, $fixedCode, $content), LOCK_EX);
+        $sourceHash = app(SourceFixApplier::class)->apply($fileName, $originalCode, $fixedCode, hash('sha256', $content));
+        app(DashboardBridge::class)->recordSourceChange($fileName, $sourceHash);
 
         clearstatcache(true, $source['path']);
 
@@ -482,18 +488,7 @@ Route::post('/report/pdf', function (Request $request) {
     ]);
 
     try {
-        $html = view('lens-for-laravel::report', [
-            'issues' => $request->issues,
-            'url' => $request->url,
-            'wcagVersion' => $request->input('wcagVersion', Wcag::configuredVersion()),
-            'generatedAt' => now(),
-        ])->render();
-
-        $pdf = Browsershot::html($html)
-            ->noSandbox()
-            ->format('A4')
-            ->margins(0, 0, 0, 0)
-            ->pdf();
+        $pdf = app(ReportExporter::class)->pdf($request->issues, $request->url, $request->input('wcagVersion', Wcag::configuredVersion()));
 
         $filename = 'accessibility-report-'.now()->format('Y-m-d').'.pdf';
 
@@ -684,3 +679,12 @@ Route::delete('/history/{id}', function (int $id) {
         return response()->json(['status' => 'error', 'message' => __('lens-for-laravel::messages.errors.history_failed')], 500);
     }
 })->name('lens-for-laravel.history.destroy')->middleware('throttle:10,1');
+
+Route::get('/mcp/changes', function (Request $request) {
+    if (! app(McpAvailability::class)->status()['available']) {
+        abort(403, __('lens-for-laravel::messages.mcp.disabled'));
+    }
+    $validated = $request->validate(['since' => ['required', 'numeric', 'min:0']]);
+
+    return response()->json(['changes' => app(DashboardBridge::class)->changes((float) $validated['since'])]);
+})->name('lens-for-laravel.mcp.changes')->middleware('throttle:20,1');
