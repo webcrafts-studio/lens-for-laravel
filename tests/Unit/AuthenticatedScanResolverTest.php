@@ -3,6 +3,8 @@
 use Illuminate\Auth\GenericUser;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use LensForLaravel\LensForLaravel\DTOs\AuthenticatedScanContext;
 use LensForLaravel\LensForLaravel\Services\AuthenticatedScanResolver;
@@ -159,4 +161,31 @@ test('runAsUser restores auth state when the scan fails', function () {
     }))->toThrow(RuntimeException::class, 'scan exploded');
 
     expect(Auth::guard('web')->guest())->toBeTrue();
+});
+
+test('isolated MCP auth encrypts browser cookies and destroys the temporary session', function () {
+    $resolver = app(AuthenticatedScanResolver::class);
+    $issuedId = null;
+    $originalId = session()->getId();
+    $resolver->runIsolatedAsUser(7, function (AuthenticatedScanContext $context) use (&$issuedId) {
+        $name = config('session.cookie');
+        $request = Request::create('/', 'GET', cookies: $context->cookies);
+        app(EncryptCookies::class)->handle($request, function ($request) use ($name, &$issuedId) {
+            $issuedId = $request->cookie($name);
+            expect($issuedId)->toBe(session()->getId());
+
+            return response('');
+        });
+        expect($context->cookies[$name])->not->toBe($issuedId)
+            ->and(is_file($this->lensSessionDir.'/'.$issuedId))->toBeTrue();
+    });
+    expect(is_file($this->lensSessionDir.'/'.$issuedId))->toBeFalse()
+        ->and(session()->getId())->toBe($originalId)->and(Auth::guard('web')->guest())->toBeTrue();
+});
+
+test('isolated MCP auth restores caller session data after a failed operation', function () {
+    session()->put('caller-state', 'preserved');
+    $originalId = session()->getId();
+    expect(fn () => app(AuthenticatedScanResolver::class)->runIsolatedAsUser(7, fn () => throw new RuntimeException('scan failed')))->toThrow(RuntimeException::class);
+    expect(session()->getId())->toBe($originalId)->and(session('caller-state'))->toBe('preserved');
 });

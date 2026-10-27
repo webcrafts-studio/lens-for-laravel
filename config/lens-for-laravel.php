@@ -190,6 +190,20 @@ return [
     | 'ai_ollama_model' stays supported as a fallback when 'ai_model' is empty.
     |
     */
+    'mcp' => [
+        'enabled' => env('LENS_FOR_LARAVEL_MCP_ENABLED'),
+        'allow_writes' => env('LENS_FOR_LARAVEL_MCP_ALLOW_WRITES', false),
+        'allowed_origins' => [],
+        'storage_path' => null,
+        'retention_hours' => 24,
+        'max_concurrent_runs' => 2,
+        'max_stored_runs' => 200,
+        'run_timeout' => 900,
+        'browser_timeout' => 120,
+        'max_run_bytes' => 16777216,
+        'max_output_bytes' => 131072,
+    ],
+
     'ai_enabled' => env('LENS_FOR_LARAVEL_AI_ENABLED', true),
 
     'ai_provider' => env('LENS_FOR_LARAVEL_AI_PROVIDER', 'gemini'),

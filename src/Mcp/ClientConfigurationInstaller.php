@@ -1,0 +1,71 @@
+<?php
+
+namespace LensForLaravel\LensForLaravel\Mcp;
+
+use LensForLaravel\LensForLaravel\Exceptions\McpException;
+use LensForLaravel\LensForLaravel\Services\McpAvailability;
+
+class ClientConfigurationInstaller
+{
+    public function install(string $client, string $root, bool $force = false): string
+    {
+        $entry = ['command' => PHP_BINARY, 'args' => [$root.'/artisan', 'lens:mcp', '--enabled']];
+        $path = $root.($client === 'codex' ? '/.codex/config.toml' : '/.mcp.json');
+        if (! in_array($client, ['codex', 'claude'], true) || is_link($path) || is_link(dirname($path))) {
+            throw new McpException('INVALID_CONFIGURATION', 'install_failed');
+        }
+        $original = is_file($path) ? file_get_contents($path) : '';
+        if ($original === false) {
+            throw new McpException('INVALID_CONFIGURATION', 'install_failed');
+        }
+        if ($client === 'claude') {
+            try {
+                $config = $original === '' ? new \stdClass : json_decode($original, false, 512, JSON_THROW_ON_ERROR);
+            } catch (\Throwable) {
+                throw new McpException('INVALID_CONFIGURATION', 'install_failed');
+            }
+            if (! $config instanceof \stdClass || (isset($config->mcpServers) && ! $config->mcpServers instanceof \stdClass)) {
+                throw new McpException('INVALID_CONFIGURATION', 'install_failed');
+            }
+            $config->mcpServers ??= new \stdClass;
+            $entry = ['type' => 'stdio', ...$entry];
+            if (isset($config->mcpServers->lens) && (array) $config->mcpServers->lens !== $entry && ! $force) {
+                throw new McpException('CONFIGURATION_EXISTS', 'configuration_exists');
+            }
+            $config->mcpServers->lens = (object) $entry;
+            $updated = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR).PHP_EOL;
+        } else {
+            $encode = fn ($value) => json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            $section = '[mcp_servers.lens]'.PHP_EOL.'command = '.$encode($entry['command']).PHP_EOL.'args = '.$encode($entry['args']).PHP_EOL.'cwd = '.$encode($root).PHP_EOL.'startup_timeout_sec = 20'.PHP_EOL.'tool_timeout_sec = 180'.PHP_EOL;
+            $pattern = '/^\[mcp_servers\.lens(?:\.[^\]]+)?\][^\r\n]*\R.*?(?=^\[|\z)/ms';
+            if (preg_match($pattern, $original, $match) && trim($match[0]) !== trim($section) && ! $force) {
+                throw new McpException('CONFIGURATION_EXISTS', 'configuration_exists');
+            }
+            $updated = rtrim(preg_replace($pattern, '', $original)).PHP_EOL.PHP_EOL.$section;
+            $updated = ltrim($updated, "\r\n");
+        }
+        $directory = dirname($path);
+        if (! is_dir($directory) && ! mkdir($directory, 0700, true) && ! is_dir($directory)) {
+            throw new McpException('INSTALL_FAILED', 'install_failed');
+        }
+        $temporary = tempnam($directory, '.lens-');
+        try {
+            if (! $temporary || file_put_contents($temporary, $updated) === false || ! chmod($temporary, is_file($path) ? fileperms($path) & 0777 : 0600) || ! rename($temporary, $path)) {
+                throw new McpException('INSTALL_FAILED', 'install_failed');
+            }
+        } finally {
+            if ($temporary && is_file($temporary)) {
+                @unlink($temporary);
+            }
+        }
+
+        $marker = app(McpAvailability::class)->markerPath($root);
+        $markerDirectory = dirname($marker);
+        if ((! is_dir($markerDirectory) && ! mkdir($markerDirectory, 0700, true) && ! is_dir($markerDirectory)) || is_link($marker)
+            || file_put_contents($marker, hash('sha256', $root), LOCK_EX) === false || ! chmod($marker, 0600)) {
+            throw new McpException('INSTALL_FAILED', 'install_failed');
+        }
+
+        return $path;
+    }
+}

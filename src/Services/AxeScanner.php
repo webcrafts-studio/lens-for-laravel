@@ -58,9 +58,17 @@ class AxeScanner
                 })();
 JS;
 
-            $violations = json_decode($browsershot->evaluate($script), true);
+            $script = str_replace('(async () => {', '(async () => {'.$this->navigationGuard($url), $script);
+            $raw = $browsershot->evaluate($script);
+            if (! is_array(json_decode($raw, false, 512, JSON_THROW_ON_ERROR))) {
+                throw new \RuntimeException(__('lens-for-laravel::messages.mcp.invalid_scan_result'));
+            }
+            $violations = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+            if (! is_array($violations) || ! array_is_list($violations)) {
+                throw new \RuntimeException(__('lens-for-laravel::messages.mcp.invalid_scan_result'));
+            }
 
-            return $this->mapViolationsToIssues(is_array($violations) ? $violations : [], $url);
+            return $this->mapViolationsToIssues($violations, $url);
         } catch (Throwable $e) {
             throw new ScannerException(__('lens-for-laravel::messages.errors.axe_scan_failed', ['message' => $e->getMessage()]), 0, $e);
         }
@@ -86,12 +94,21 @@ JS;
             $statesJson = json_encode($states, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
             $tagsJson = json_encode(Wcag::tags($wcagVersion), JSON_THROW_ON_ERROR);
             $script = $this->interactiveScanScript($statesJson, $tagsJson);
-            $payload = json_decode($browsershot->evaluate($script), true);
+            $script = str_replace('(async () => {', '(async () => {'.$this->navigationGuard($url), $script);
+            $payload = json_decode($browsershot->evaluate($script), true, 512, JSON_THROW_ON_ERROR);
+            if (! is_array($payload) || ! isset($payload['states']) || ! is_array($payload['states'])
+                || ! array_is_list($payload['states']) || count($payload['states']) !== count($states)
+                || array_column($payload['states'], 'label') !== array_column($states, 'label')) {
+                throw new \RuntimeException(__('lens-for-laravel::messages.mcp.invalid_scan_result'));
+            }
 
             $issues = collect();
             foreach (($payload['states'] ?? []) as $stateResult) {
+                if (! isset($stateResult['violations']) || ! is_array($stateResult['violations']) || ! array_is_list($stateResult['violations'])) {
+                    throw new \RuntimeException(__('lens-for-laravel::messages.mcp.invalid_scan_result'));
+                }
                 $stateIssues = $this->mapViolationsToIssues(
-                    is_array($stateResult['violations'] ?? null) ? $stateResult['violations'] : [],
+                    $stateResult['violations'],
                     $url
                 );
 
@@ -106,6 +123,58 @@ JS;
         } catch (Throwable $e) {
             throw new ScannerException(__('lens-for-laravel::messages.errors.axe_state_scan_failed', ['message' => $e->getMessage()]), 0, $e);
         }
+    }
+
+    protected function navigationGuard(string $url): string
+    {
+        if (! config('lens-for-laravel.mcp.strict_navigation', false)) {
+            return '';
+        }
+        $expected = json_encode($url, JSON_THROW_ON_ERROR);
+
+        return "const expected = new URL({$expected}); const actual = new URL(location.href); expected.searchParams.delete('__lens_scan'); actual.searchParams.delete('__lens_scan'); expected.hash = ''; actual.hash = ''; if (actual.href !== expected.href) throw new Error('Lens navigation changed');";
+    }
+
+    public function preview(string $url, string $selector, array $states = [], ?AuthenticatedScanContext $auth = null): string
+    {
+        $browser = $this->configureBrowsershot($this->browsershotForUrl($this->freshScanUrl($url)))->windowSize(1280, 800);
+        $this->applyAuthCookies($browser, $auth);
+        $actions = json_encode(array_merge(...array_map(fn ($s) => $s['actions'], $states ?: [['actions' => []]])), JSON_THROW_ON_ERROR);
+        $target = json_encode($selector, JSON_THROW_ON_ERROR);
+        $guard = $this->navigationGuard($url);
+        $script = <<<JS
+        window.__lensPreviewReady = false;
+        (async () => {
+            {$guard}
+            const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+            for (const action of {$actions}) {
+                if (action.type === 'wait') { await wait(action.ms); continue; }
+                const el = document.querySelector(action.selector);
+                if (!el) throw new Error('Lens selector unavailable');
+                if (action.type === 'click') {
+                    const prevent = event => event.preventDefault();
+                    document.addEventListener('click', prevent, true);
+                    document.addEventListener('submit', prevent, true);
+                    try { el.click(); await wait(150); }
+                    finally { document.removeEventListener('click', prevent, true); document.removeEventListener('submit', prevent, true); }
+                } else {
+                    if (action.type === 'check' || action.type === 'uncheck') el.checked = action.type === 'check';
+                    else { el.focus(); el.value = action.value; }
+                    el.dispatchEvent(new Event('input', {bubbles:true}));
+                    el.dispatchEvent(new Event('change', {bubbles:true}));
+                    await wait(100);
+                }
+            }
+            const el = document.querySelector({$target});
+            if (!el) throw new Error('Lens selector unavailable');
+            el.scrollIntoView({block:'center'});
+            el.style.outline = '3px solid #e11d48';
+            window.__lensPreviewReady = true;
+        })().catch(() => { window.__lensPreviewFailed = true; });
+        JS;
+
+        return $browser->setOption('addScriptTag', json_encode(['content' => $script], JSON_THROW_ON_ERROR))
+            ->waitForFunction('window.__lensPreviewReady === true')->screenshot();
     }
 
     protected function browsershotForUrl(string $url): Browsershot
@@ -157,6 +226,10 @@ JS;
                 'Pragma' => 'no-cache',
                 'Expires' => '0',
             ]);
+
+        if (config('lens-for-laravel.mcp.strict_navigation', false)) {
+            $browsershot->timeout(max(5, (int) config('lens-for-laravel.mcp.browser_timeout', 120)));
+        }
 
         $scanWaitMs = (int) config('lens-for-laravel.scan_wait_ms', 0);
         if ($scanWaitMs > 0) {
@@ -306,6 +379,9 @@ JS;
         $issues = collect();
 
         foreach ($violations as $violation) {
+            if (! is_array($violation) || ! isset($violation['id'], $violation['description'], $violation['nodes']) || ! is_array($violation['nodes']) || ! array_is_list($violation['nodes'])) {
+                throw new \RuntimeException(__('lens-for-laravel::messages.mcp.invalid_scan_result'));
+            }
             // Axe groups nodes (HTML elements) under each violation type.
             // We want an individual Issue DTO for every HTML element that failed.
             foreach ($violation['nodes'] ?? [] as $node) {

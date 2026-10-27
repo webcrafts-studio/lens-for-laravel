@@ -5,7 +5,13 @@ namespace LensForLaravel\LensForLaravel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use LensForLaravel\LensForLaravel\Console\Commands\LensAuditCommand;
+use LensForLaravel\LensForLaravel\Console\Commands\LensMcpCommand;
+use LensForLaravel\LensForLaravel\Console\Commands\LensMcpInstallCommand;
+use LensForLaravel\LensForLaravel\Console\Commands\LensMcpRunsCommand;
+use LensForLaravel\LensForLaravel\Console\Commands\LensMcpScanCommand;
+use LensForLaravel\LensForLaravel\Console\Commands\LensMcpWorkCommand;
 use LensForLaravel\LensForLaravel\Http\Middleware\SetLensLocale;
+use LensForLaravel\LensForLaravel\Mcp\RunProcessManager;
 
 class LensForLaravelServiceProvider extends ServiceProvider
 {
@@ -15,6 +21,7 @@ class LensForLaravelServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/lens-for-laravel.php', 'lens-for-laravel');
+        $this->app->singleton(RunProcessManager::class);
     }
 
     /**
@@ -67,6 +74,11 @@ class LensForLaravelServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 LensAuditCommand::class,
+                LensMcpCommand::class,
+                LensMcpInstallCommand::class,
+                LensMcpWorkCommand::class,
+                LensMcpRunsCommand::class,
+                LensMcpScanCommand::class,
             ]);
         }
     }

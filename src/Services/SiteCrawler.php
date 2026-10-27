@@ -134,6 +134,9 @@ class SiteCrawler
     protected function parseSitemapXml(string $sitemapUrl): void
     {
         try {
+            if (config('lens-for-laravel.mcp.strict_navigation', false)) {
+                app(ScanTargetPolicy::class)->resolve($sitemapUrl);
+            }
             $response = $this->httpRequest(5)->get($sitemapUrl);
 
             if (! $response->successful()) {
@@ -165,6 +168,9 @@ class SiteCrawler
      */
     protected function extractLinks(string $url): array
     {
+        if (config('lens-for-laravel.mcp.strict_navigation', false)) {
+            app(ScanTargetPolicy::class)->resolve($url);
+        }
         if (config('lens-for-laravel.crawler_render_javascript', false)) {
             $browserLinks = $this->extractLinksWithBrowser($url);
 
@@ -226,6 +232,9 @@ class SiteCrawler
     protected function httpRequest(int $timeout): PendingRequest
     {
         $request = Http::timeout($timeout);
+        if (config('lens-for-laravel.mcp.strict_navigation', false)) {
+            $request->withoutRedirecting();
+        }
 
         if ($this->authContext !== null && ! $this->authContext->isEmpty() && $this->host !== '') {
             $request->withCookies($this->authContext->cookies, $this->host);

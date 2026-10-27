@@ -10,6 +10,7 @@ class Scan extends Model
     protected $table = 'lens_scans';
 
     protected $fillable = [
+        'run_id',
         'url',
         'scan_mode',
         'wcag_version',

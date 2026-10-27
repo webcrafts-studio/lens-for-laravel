@@ -1,5 +1,6 @@
 <?php
 
+use LensForLaravel\LensForLaravel\Exceptions\ScannerException;
 use LensForLaravel\LensForLaravel\Services\AxeScanner;
 use Spatie\Browsershot\Browsershot;
 
@@ -219,7 +220,7 @@ test('scanner cache busts browser navigation while preserving the original issue
 
 test('interactive scanner sends no-cache headers when loading pages', function () {
     $fakeBrowsershot = new FakeBrowsershotForAxeScannerTest;
-    $fakeBrowsershot->evaluateResponse = json_encode(['states' => []]);
+    $fakeBrowsershot->evaluateResponse = json_encode(['states' => [['label' => 'Initial', 'violations' => []]]]);
     $scanner = new class($fakeBrowsershot) extends AxeScanner
     {
         public function __construct(private readonly Browsershot $fakeBrowsershot) {}
@@ -287,3 +288,18 @@ test('interactive scanner maps state labels onto violations', function () {
         ->and($fakeBrowsershot->lastScript)->toContain('clickWithoutNavigation')
         ->and($fakeBrowsershot->lastScript)->toContain("document.addEventListener('submit', preventDefault, true)");
 });
+
+test('scanner rejects invalid or incomplete browser results instead of reporting zero violations', function (string $payload) {
+    $browser = new FakeBrowsershotForAxeScannerTest;
+    $browser->evaluateResponse = $payload;
+    $scanner = new class($browser) extends AxeScanner
+    {
+        public function __construct(private Browsershot $browser) {}
+
+        protected function browsershotForUrl(string $url): Browsershot
+        {
+            return $this->browser;
+        }
+    };
+    expect(fn () => $scanner->scan('http://localhost'))->toThrow(ScannerException::class);
+})->with(['null', '{}', 'invalid JSON', '[{}]']);

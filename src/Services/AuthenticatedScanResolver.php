@@ -3,13 +3,71 @@
 namespace LensForLaravel\LensForLaravel\Services;
 
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use LensForLaravel\LensForLaravel\DTOs\AuthenticatedScanContext;
+use Symfony\Component\HttpFoundation\Cookie;
 use Throwable;
 
 class AuthenticatedScanResolver
 {
+    /** Run an MCP operation with a disposable session and browser-ready cookies. */
+    public function runIsolatedAsUser(?int $userId, callable $callback): mixed
+    {
+        if ($userId === null) {
+            return $callback(null);
+        }
+        $session = session();
+        $originalId = $session->getId();
+        $originalData = $session->all();
+        $session->flush();
+        $session->setId(Str::random(40));
+        try {
+            return $this->runAsUser($userId, function (AuthenticatedScanContext $auth) use ($callback, $session) {
+                $issuedId = $session->getId();
+                $handler = $session->getHandler();
+                $active = true;
+                register_shutdown_function(static function () use (&$active, $handler, $issuedId) {
+                    if ($active) {
+                        $handler->destroy($issuedId);
+                    }
+                });
+                try {
+                    $name = (string) config('session.cookie');
+                    $middlewareClass = EncryptCookies::class;
+                    foreach (app('router')->getMiddlewareGroups()['web'] ?? [] as $class) {
+                        if (is_string($class) && is_a($class, EncryptCookies::class, true)) {
+                            $middlewareClass = $class;
+                            break;
+                        }
+                    }
+                    $response = response('');
+                    $response->headers->setCookie(new Cookie($name, $auth->cookies[$name]));
+                    $response = app($middlewareClass)->handle(Request::create('/'), fn () => $response);
+                    $cookies = [];
+                    foreach ($response->headers->getCookies() as $cookie) {
+                        $cookies[$cookie->getName()] = $cookie->getValue();
+                    }
+
+                    return $callback(new AuthenticatedScanContext($cookies));
+                } finally {
+                    $handler->destroy($issuedId);
+                    $active = false;
+                }
+            });
+        } finally {
+            if ($session->getId() !== $originalId) {
+                $session->getHandler()->destroy($session->getId());
+            }
+            $session->setId($originalId);
+            $session->flush();
+            $session->replace($originalData);
+        }
+    }
+
     public function available(): bool
     {
         return (bool) config('lens-for-laravel.auth_enabled', false);
