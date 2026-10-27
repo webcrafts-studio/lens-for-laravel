@@ -301,9 +301,9 @@ return [
         'sent' => 'Script sent to Lens dashboard.',
     ],
     'mcp' => [
-        'requirements' => 'Lens MCP requires Laravel 11.45.3+, 12.41.1+, or 13+ and the optional laravel/mcp package (^0.6.3).',
-        'unsupported_runtime' => 'Lens MCP requires at least Laravel 11. Core scanning remains available.',
-        'sdk_missing' => 'Install the optional laravel/mcp package (^0.6.3) to use Lens MCP.',
+        'requirements' => 'Lens MCP requires Laravel 10.49+ and the optional laravel/mcp package (^0.5.3, ^0.6.3, or ^1.0). Composer selects the compatible SDK for your application.',
+        'unsupported_runtime' => 'Lens MCP requires at least Laravel 10.49. Core scanning remains available.',
+        'sdk_missing' => 'Install the optional laravel/mcp package (^0.5.3, ^0.6.3, or ^1.0) to use Lens MCP.',
         'disabled' => 'Lens MCP is disabled. Enable it in configuration or explicitly for this process.',
         'environment' => 'Lens MCP is not allowed in this environment.',
         'invalid_source' => 'The source file is unavailable or outside the allowed directories.',

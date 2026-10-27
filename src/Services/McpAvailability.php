@@ -9,7 +9,7 @@ class McpAvailability
     public function status(): array
     {
         $key = match (true) {
-            version_compare($this->laravelVersion(), '11.0.0', '<') => 'unsupported_runtime',
+            version_compare($this->laravelVersion(), '10.49.0', '<') => 'unsupported_runtime',
             ! $this->sdkInstalled() => 'sdk_missing',
             ! $this->enabled() => 'disabled',
             ! in_array(app()->environment(), config('lens-for-laravel.enabled_environments', ['local']), true) => 'environment',

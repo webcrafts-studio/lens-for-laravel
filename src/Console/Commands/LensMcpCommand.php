@@ -3,7 +3,6 @@
 namespace LensForLaravel\LensForLaravel\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Str;
 use LensForLaravel\LensForLaravel\Exceptions\McpException;
 use LensForLaravel\LensForLaravel\Mcp\LensServer;
 use LensForLaravel\LensForLaravel\Mcp\ManagedStdioTransport;
@@ -24,7 +23,7 @@ class LensMcpCommand extends Command
         try {
             $availability->ensureAvailable();
             ini_set('display_errors', 'stderr');
-            $transport = new ManagedStdioTransport((string) Str::uuid());
+            $transport = new ManagedStdioTransport;
             $server = app(LensServer::class, ['transport' => $transport]);
             $server->start();
             if (function_exists('pcntl_signal')) {

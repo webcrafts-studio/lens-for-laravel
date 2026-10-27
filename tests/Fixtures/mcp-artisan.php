@@ -13,7 +13,11 @@ use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 // An isolated consumer application for real stdio and worker-process tests.
-require dirname(__DIR__, 2).'/vendor/autoload.php';
+$loader = require dirname(__DIR__, 2).'/vendor/autoload.php';
+if ($sdk = getenv('LENS_MCP_TEST_SDK_PATH')) {
+    $loader->addPsr4(implode(chr(92), ['Laravel', 'Mcp', 'Server', '']), $sdk.'/src/Server', true);
+    $loader->addPsr4(implode(chr(92), ['Laravel', 'Mcp', '']), $sdk.'/src', true);
+}
 
 $root = getenv('LENS_MCP_TEST_ROOT');
 $app = Application::create(null, null, [

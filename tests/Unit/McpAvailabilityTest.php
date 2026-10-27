@@ -20,9 +20,10 @@ function fakeMcpAvailability(string $laravel, bool $sdk): McpAvailability
     };
 }
 
-test('MCP availability requires Laravel 11 independently of optional AI', function () {
+test('MCP availability requires Laravel 10.49 independently of optional AI', function () {
     config(['lens-for-laravel.mcp.enabled' => true, 'lens-for-laravel.ai_enabled' => false]);
     expect(fakeMcpAvailability('10.48.0', true)->status()['reason'])->toBe('unsupported_runtime')
+        ->and(fakeMcpAvailability('10.49.0', true)->status()['available'])->toBeTrue()
         ->and(fakeMcpAvailability('11.45.3', true)->status()['available'])->toBeTrue()
         ->and(fakeMcpAvailability('12.41.1', true)->status()['available'])->toBeTrue()
         ->and(fakeMcpAvailability('13.0.0', true)->status()['available'])->toBeTrue();
