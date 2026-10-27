@@ -1,7 +1,9 @@
 <?php
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use LensForLaravel\LensForLaravel\DTOs\AuthenticatedScanContext;
 use LensForLaravel\LensForLaravel\Mcp\RunService;
 use LensForLaravel\LensForLaravel\Mcp\RunStore;
 use LensForLaravel\LensForLaravel\Mcp\SourceContext;
@@ -55,6 +57,18 @@ beforeEach(function () {
     });
     app()->instance(AxeScanner::class, new class extends AxeScanner
     {
+        public array $failures = [];
+
+        public function scan(string $url, ?string $wcagVersion = null, ?AuthenticatedScanContext $auth = null): Collection
+        {
+            try {
+                return parent::scan($url, $wcagVersion, $auth);
+            } catch (Throwable $e) {
+                $this->failures[] = $e->getMessage();
+                throw $e;
+            }
+        }
+
         protected function browsershotForUrl(string $url): Browsershot
         {
             return Browsershot::url($url)->setNodeModulePath(getenv('LENS_MCP_BROWSER_MODULES'))->setChromePath(getenv('LENS_MCP_CHROME_PATH'));
@@ -83,7 +97,7 @@ test('real MCP browser scan maps source applies a patch and verifies the changed
     app(SourceContext::class)->apply($run['run_id'], $patch['patch_id']);
     copy($this->browserFile, $this->browserDirectory.'/page.html');
     $verified = app(RunService::class)->verify($run['run_id'], false);
-    expect($verified['status'])->toBe('completed')->and($verified['comparison']['complete'])->toBeTrue()
+    expect($verified['status'])->toBe('completed', implode("\n", app(AxeScanner::class)->failures))->and($verified['comparison']['complete'])->toBeTrue()
         ->and(array_column($verified['comparison']['no_longer_detected'], 'rule_id'))->toContain('image-alt');
     $export = app(ToolActions::class)->export($verified['run_id'], 'pdf');
     expect(substr(file_get_contents($export['path']), 0, 5))->toBe('%PDF-');

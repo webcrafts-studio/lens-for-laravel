@@ -44,6 +44,9 @@ $app->instance(AxeScanner::class, new class extends AxeScanner
 {
     public function scan(string $url, ?string $wcagVersion = null, ?AuthenticatedScanContext $auth = null): Collection
     {
+        if (str_contains($url, '/crash')) {
+            exit(70);
+        }
         if (str_contains($url, 'slow')) {
             usleep(2000000);
         }

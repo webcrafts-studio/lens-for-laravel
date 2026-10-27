@@ -43,8 +43,8 @@ class LensFakeUserProvider implements UserProvider
 
 beforeEach(function () {
     Auth::provider('lens-test-users', fn () => new LensFakeUserProvider([
-        5 => new GenericUser(['id' => 5, 'name' => 'Original', 'remember_token' => null]),
-        7 => new GenericUser(['id' => 7, 'name' => 'Target', 'remember_token' => null]),
+        5 => new GenericUser(['id' => 5, 'name' => 'Original', 'password' => 'fixture-password-hash', 'remember_token' => null]),
+        7 => new GenericUser(['id' => 7, 'name' => 'Target', 'password' => 'fixture-password-hash', 'remember_token' => null]),
     ]));
     config()->set('auth.providers.users.driver', 'lens-test-users');
     config()->set('lens-for-laravel.auth_enabled', true);

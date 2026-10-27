@@ -77,6 +77,19 @@ test('MCP stdio stays responsive during real worker processes and cancels long s
         $id = $started['result']['structuredContent']['run_id'];
         $cancelled = $request(41, 'tools/call', ['name' => 'lens_cancel_run', 'arguments' => ['run_id' => $id]]);
         expect($cancelled['result']['structuredContent']['status'])->toBe('cancelled');
+        $crashed = $request(42, 'tools/call', ['name' => 'lens_scan', 'arguments' => ['url' => '/crash', 'save_history' => false]]);
+        $id = $crashed['result']['structuredContent']['run_id'];
+        for ($counter = 43; $counter < 70; $counter++) {
+            usleep(100000);
+            $status = $request($counter, 'tools/call', ['name' => 'lens_get_run', 'arguments' => ['run_id' => $id]]);
+            if (in_array($status['result']['structuredContent']['status'], RunStore::TERMINAL, true)) {
+                break;
+            }
+        }
+        expect($status['result']['structuredContent']['status'])->toBe('failed')
+            ->and($status['result']['structuredContent']['error']['code'])->toBe('WORKER_FAILED');
+        $healthy = $request(71, 'tools/call', ['name' => 'lens_scan', 'arguments' => ['url' => '/', 'async' => false, 'save_history' => false]]);
+        expect($healthy['result']['structuredContent']['status'])->toBe('completed');
         $input->close();
         $process->wait();
         expect($process->getExitCode())->toBe(0)->and($process->getErrorOutput())->toBe('');
