@@ -5,6 +5,7 @@ namespace LensForLaravel\LensForLaravel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use LensForLaravel\LensForLaravel\Console\Commands\LensAuditCommand;
+use LensForLaravel\LensForLaravel\Console\Commands\LensInstallCommand;
 use LensForLaravel\LensForLaravel\Console\Commands\LensMcpCommand;
 use LensForLaravel\LensForLaravel\Console\Commands\LensMcpInstallCommand;
 use LensForLaravel\LensForLaravel\Console\Commands\LensMcpRunsCommand;
@@ -74,6 +75,7 @@ class LensForLaravelServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 LensAuditCommand::class,
+                LensInstallCommand::class,
                 LensMcpCommand::class,
                 LensMcpInstallCommand::class,
                 LensMcpWorkCommand::class,

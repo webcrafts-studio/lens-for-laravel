@@ -12,13 +12,16 @@ class AiFixAvailability
     }
 
     /**
-     * @return array{available: bool, message: string|null}
+     * @return array{available: bool, reason: string|null, message: string|null}
      */
     public function status(): array
     {
+        $key = $this->messageKey();
+
         return [
-            'available' => $this->available(),
-            'message' => $this->message(),
+            'available' => $key === null,
+            'reason' => $key,
+            'message' => $key === null ? null : trans("lens-for-laravel::messages.ai_fix.{$key}"),
         ];
     }
 

@@ -39,7 +39,8 @@ test('AI Fix is available on supported runtimes when the optional SDK is install
     $availability = aiFixAvailability(80300, '12.0.0', true);
 
     expect($availability->available())->toBeTrue()
-        ->and($availability->message())->toBeNull();
+        ->and($availability->message())->toBeNull()
+        ->and($availability->status()['reason'])->toBeNull();
 });
 
 test('AI Fix is unavailable on PHP versions older than 8.3', function () {
@@ -60,7 +61,8 @@ test('AI Fix is unavailable when the optional SDK is not installed', function ()
     $availability = aiFixAvailability(80300, '12.0.0', false);
 
     expect($availability->available())->toBeFalse()
-        ->and($availability->message())->toContain('laravel/ai');
+        ->and($availability->message())->toContain('laravel/ai')
+        ->and($availability->status()['reason'])->toBe('sdk_missing');
 });
 
 test('AI Fix can be disabled explicitly while core scanning remains available', function () {
@@ -69,7 +71,8 @@ test('AI Fix can be disabled explicitly while core scanning remains available', 
     $availability = aiFixAvailability(80300, '12.0.0', true);
 
     expect($availability->available())->toBeFalse()
-        ->and($availability->message())->toContain('disabled by configuration');
+        ->and($availability->message())->toContain('disabled by configuration')
+        ->and($availability->status()['reason'])->toBe('disabled');
 });
 
 test('AI Fix explains an installed but unsupported SDK', function () {
