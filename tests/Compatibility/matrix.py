@@ -107,7 +107,8 @@ def main():
             env["LENS_COMPAT_EXPECT_AI_UNAVAILABLE"] = "1"
         commands = [([php, composer, "update", "--no-interaction", "--no-scripts", "--prefer-dist"], "install"),
                     ([php, composer, "check-platform-reqs"], "platform"),
-                    ([php, str(PACKAGE / "tests/Compatibility/core.php")], "core")]
+                    ([php, str(PACKAGE / "tests/Compatibility/core.php")], "core"),
+                    ([php, str(PACKAGE / "tests/Compatibility/install.php")], "install-command")]
         if case.get("lowest"):
             commands[0][0].extend(["--prefer-lowest", "--prefer-stable"])
         if "laravel/ai" in case["packages"]:
@@ -120,7 +121,7 @@ def main():
             (root / (phase + ".log")).write_text(result.stdout)
             if result.returncode != 0:
                 return dict(case, status="failed", phase=phase, output=result.stdout[-5000:], seconds=round(time.monotonic() - start, 2))
-            if phase in ("core", "ai-http", "ecosystem"):
+            if phase in ("core", "install-command", "ai-http", "ecosystem"):
                 try:
                     evidence[phase] = json.loads(result.stdout.strip().splitlines()[-1])
                 except (ValueError, IndexError):
