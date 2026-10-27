@@ -7,6 +7,7 @@ use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
 use LensForLaravel\LensForLaravel\Ai\AccessibilityFixAgent;
 use LensForLaravel\LensForLaravel\Services\AiFixPromptRunner;
+use LensForLaravel\LensForLaravel\Services\AiSdkCompatibility;
 
 test('optional accessibility agent keeps cloud provider defaults and supports bounded Ollama generation', function () {
     if (! interface_exists(Agent::class)) {
@@ -24,7 +25,7 @@ test('optional accessibility agent keeps cloud provider defaults and supports bo
         ->and($maxTokens[0]->newInstance()->value)->toBe(12000)
         ->and($temperature)->toBeEmpty()
         ->and($model)->toBeEmpty()
-        ->and($agent->providerOptions(Lab::Gemini))->toBe(['thinkingBudget' => 1024])
+        ->and($agent->providerOptions(Lab::Gemini))->toBe(app(AiSdkCompatibility::class)->geminiOptions())
         ->and($agent->providerOptions(Lab::OpenAI))->toBe([])
         ->and($agent->providerOptions(Lab::Anthropic))->toBe([])
         ->and($agent->providerOptions(Lab::Ollama))->toBe([])

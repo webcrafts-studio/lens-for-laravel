@@ -5,7 +5,7 @@ namespace LensForLaravel\LensForLaravel\DTOs;
 final readonly class AiFixGeneration
 {
     /**
-     * @param  array<string, int>  $usage
+     * @param  array<string, int|null>  $usage
      */
     public function __construct(
         public string $replacement,

@@ -50,6 +50,10 @@ class AiFixAvailability
             return 'sdk_missing';
         }
 
+        if (! $this->sdkSupported()) {
+            return 'sdk_unsupported';
+        }
+
         return null;
     }
 
@@ -67,5 +71,17 @@ class AiFixAvailability
     {
         return class_exists('Laravel\\Ai\\Enums\\Lab')
             && function_exists('Laravel\\Ai\\agent');
+    }
+
+    protected function sdkSupported(): bool
+    {
+        return app(AiSdkCompatibility::class)->supported()
+            && app(AiSdkCompatibility::class)->dependenciesAvailable()
+            && interface_exists('Laravel\\Ai\\Contracts\\HasProviderOptions')
+            && interface_exists('Laravel\\Ai\\Contracts\\HasStructuredOutput')
+            && interface_exists('Laravel\\Ai\\Contracts\\Agent')
+            && trait_exists('Laravel\\Ai\\Promptable')
+            && class_exists('Laravel\\Ai\\Attributes\\MaxTokens')
+            && class_exists('Illuminate\\JsonSchema\\JsonSchemaTypeFactory');
     }
 }

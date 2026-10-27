@@ -4,6 +4,7 @@ namespace LensForLaravel\LensForLaravel\Services;
 
 use Illuminate\Support\Facades\Log;
 use LensForLaravel\LensForLaravel\Exceptions\AiFixGenerationException;
+use LensForLaravel\LensForLaravel\Exceptions\AiFixResponseException;
 use RuntimeException;
 use Throwable;
 
@@ -47,7 +48,7 @@ class AiFixer
         $model = $this->configuredModel($provider);
         $timeout = $this->configuredTimeout($provider);
 
-        for ($attempt = 1; $attempt <= 2; $attempt++) {
+        foreach ([1, 2] as $attempt) {
             try {
                 $generation = $this->promptRunner->generate(
                     $this->buildPrompt(
@@ -86,6 +87,13 @@ class AiFixer
                 ];
             } catch (AiFixGenerationException $e) {
                 throw $e;
+            } catch (AiFixResponseException $e) {
+                $this->logAttempt('warning', $e->provider, $e->model, $e->finishReason, $e->usage, $attempt, $e->retryable, $e::class);
+                if ($e->retryable && $attempt === 1) {
+                    continue;
+                }
+
+                throw $e->retryable ? AiFixGenerationException::incomplete($e) : AiFixGenerationException::providerFailed($e);
             } catch (Throwable $e) {
                 $retryable = $this->isRetryable($e);
                 $this->logAttempt('warning', $provider, $model, $this->inferredFinishReason($e), [], $attempt, $retryable, $e::class);
@@ -247,7 +255,7 @@ PROMPT;
     }
 
     /**
-     * @param  array<string, int>  $usage
+     * @param  array<string, int|null>  $usage
      */
     protected function logAttempt(
         string $level,

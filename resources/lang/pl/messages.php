@@ -104,6 +104,7 @@ return [
         'disabled' => 'AI Fix został wyłączony w konfiguracji. Podstawowe skanowanie dostępności nadal działa.',
         'unsupported_runtime' => 'AI Fix wymaga PHP 8.3 lub nowszego oraz Laravel 12 lub nowszego. Podstawowe skanowanie dostępności nadal działa w tej aplikacji.',
         'sdk_missing' => 'Zainstaluj opcjonalny pakiet laravel/ai, aby włączyć AI Fix. Podstawowe skanowanie dostępności nadal działa.',
+        'sdk_unsupported' => 'Zainstalowane SDK laravel/ai lub jego zależności nie są obsługiwane. Użyj SDK >=0.3.2 <0.12 lub 1.x z wymaganymi zależnościami. Podstawowe skanowanie dostępności nadal działa.',
         'incomplete_response' => 'AI Fix nie zdołał wygenerować kompletnej i poprawnej sugestii po jednej ponownej próbie. Żaden plik nie został zmieniony. Spróbuj ponownie lub popraw ten problem ręcznie.',
         'generation_failed' => 'AI Fix nie mógł połączyć się ze skonfigurowanym dostawcą AI lub użyć jego usługi. Żaden plik nie został zmieniony. Sprawdź dane dostępowe i spróbuj ponownie.',
         'applied_badge' => 'AI Fix zastosowany · oczekuje na ponowny skan',

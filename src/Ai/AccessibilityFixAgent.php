@@ -2,13 +2,13 @@
 
 namespace LensForLaravel\LensForLaravel\Ai;
 
-use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasProviderOptions;
 use Laravel\Ai\Contracts\HasStructuredOutput;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Promptable;
+use LensForLaravel\LensForLaravel\Services\AiSdkCompatibility;
 
 #[MaxTokens(12000)]
 class AccessibilityFixAgent implements Agent, HasProviderOptions, HasStructuredOutput
@@ -25,7 +25,9 @@ Return only the replacement and a short explanation through the required structu
 INSTRUCTIONS;
     }
 
-    public function schema(JsonSchema $schema): array
+    // Older Illuminate JSON Schema factories predate the JsonSchema contract.
+    // Contravariance keeps the same SDK interface compatible with both factories.
+    public function schema(mixed $schema): array
     {
         return [
             'replacement' => $schema->string()->required(),
@@ -38,7 +40,7 @@ INSTRUCTIONS;
         $providerName = $provider instanceof Lab ? $provider->value : strtolower($provider);
 
         return $providerName === Lab::Gemini->value
-            ? ['thinkingBudget' => 1024]
+            ? app(AiSdkCompatibility::class)->geminiOptions()
             : [];
     }
 }

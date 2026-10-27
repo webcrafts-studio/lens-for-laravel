@@ -2,14 +2,15 @@
 
 use LensForLaravel\LensForLaravel\Services\AiFixAvailability;
 
-function aiFixAvailability(int $phpVersionId, string $laravelVersion, bool $sdkInstalled): AiFixAvailability
+function aiFixAvailability(int $phpVersionId, string $laravelVersion, bool $sdkInstalled, bool $sdkSupported = true): AiFixAvailability
 {
-    return new class($phpVersionId, $laravelVersion, $sdkInstalled) extends AiFixAvailability
+    return new class($phpVersionId, $laravelVersion, $sdkInstalled, $sdkSupported) extends AiFixAvailability
     {
         public function __construct(
             private readonly int $fakePhpVersionId,
             private readonly string $fakeLaravelVersion,
             private readonly bool $fakeSdkInstalled,
+            private readonly bool $fakeSdkSupported,
         ) {}
 
         protected function phpVersionId(): int
@@ -25,6 +26,11 @@ function aiFixAvailability(int $phpVersionId, string $laravelVersion, bool $sdkI
         protected function sdkInstalled(): bool
         {
             return $this->fakeSdkInstalled;
+        }
+
+        protected function sdkSupported(): bool
+        {
+            return $this->fakeSdkSupported;
         }
     };
 }
@@ -64,4 +70,11 @@ test('AI Fix can be disabled explicitly while core scanning remains available', 
 
     expect($availability->available())->toBeFalse()
         ->and($availability->message())->toContain('disabled by configuration');
+});
+
+test('AI Fix explains an installed but unsupported SDK', function () {
+    $availability = aiFixAvailability(80300, '13.0.0', true, false);
+
+    expect($availability->available())->toBeFalse()
+        ->and($availability->message())->toContain('unsupported', 'Core accessibility scanning remains available');
 });

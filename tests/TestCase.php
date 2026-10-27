@@ -35,6 +35,11 @@ class TestCase extends OrchestraTestCase
             {
                 return true;
             }
+
+            protected function sdkSupported(): bool
+            {
+                return true;
+            }
         });
 
         $app['config']->set('database.default', 'testing');

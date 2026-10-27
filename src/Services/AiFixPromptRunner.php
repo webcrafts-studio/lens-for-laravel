@@ -5,7 +5,7 @@ namespace LensForLaravel\LensForLaravel\Services;
 use Laravel\Ai\Enums\Lab;
 use LensForLaravel\LensForLaravel\Ai\AccessibilityFixAgent;
 use LensForLaravel\LensForLaravel\DTOs\AiFixGeneration;
-use RuntimeException;
+use LensForLaravel\LensForLaravel\Exceptions\AiFixResponseException;
 
 class AiFixPromptRunner
 {
@@ -19,27 +19,29 @@ class AiFixPromptRunner
         );
 
         $replacement = $response['replacement'] ?? null;
+        if (is_string($replacement)) {
+            $replacement = $this->unwrapCodeFence($replacement);
+        }
         $explanation = $response['explanation'] ?? null;
+        $finishReason = $response->steps->last()?->finishReason?->value;
+        $usage = app(AiSdkCompatibility::class)->usage($response->usage);
+        $resolvedProvider = $response->meta->provider ?? $provider;
+        $resolvedModel = $response->meta->model ?? null;
+        $retryable = ! in_array($finishReason, ['content_filter', 'error', 'cancelled'], true);
 
-        if (! is_string($replacement) || trim($replacement) === '' || ! is_string($explanation) || trim($explanation) === '') {
-            throw new RuntimeException(__('lens-for-laravel::messages.errors.ai_response_missing'));
+        // A complete-looking object can still contain a truncated or filtered replacement.
+        if (! $retryable || $finishReason === 'length'
+            || ! is_string($replacement) || trim($replacement) === '' || ! is_string($explanation) || trim($explanation) === '') {
+            throw new AiFixResponseException($resolvedProvider, $resolvedModel, $finishReason, $usage, $retryable);
         }
 
-        $lastStep = $response->steps->last();
-
         return new AiFixGeneration(
-            replacement: $this->unwrapCodeFence($replacement),
+            replacement: $replacement,
             explanation: trim($explanation),
-            provider: $response->meta->provider ?? $provider,
-            model: $response->meta->model ?? null,
-            finishReason: $lastStep?->finishReason?->value,
-            usage: [
-                'prompt_tokens' => $response->usage->promptTokens,
-                'completion_tokens' => $response->usage->completionTokens,
-                'reasoning_tokens' => $response->usage->reasoningTokens,
-                'cache_read_input_tokens' => $response->usage->cacheReadInputTokens,
-                'cache_write_input_tokens' => $response->usage->cacheWriteInputTokens,
-            ],
+            provider: $resolvedProvider,
+            model: $resolvedModel,
+            finishReason: $finishReason,
+            usage: $usage,
         );
     }
 
