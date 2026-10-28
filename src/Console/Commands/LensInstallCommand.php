@@ -52,7 +52,7 @@ class LensInstallCommand extends Command
                     $this->detail($aiStatus['message']);
                 }
             }
-            $this->link('https://lens.webcrafts.pl/docs/ai-fix-engine');
+            $this->link('https://lens.lipinskijakub.pl/docs/ai-fix-engine');
 
             $this->newLine();
             $mcpStatus = $mcp->status();
@@ -66,7 +66,7 @@ class LensInstallCommand extends Command
             } elseif (! $configured) {
                 $this->detail($this->message('mcp_setup'));
             }
-            $this->link('https://lens.webcrafts.pl/docs');
+            $this->link('https://lens.lipinskijakub.pl/docs/mcp');
 
             $this->newLine();
             $this->line('  <fg=yellow>☆</> <fg=gray>'.OutputFormatter::escape($this->message('star')).'</>');

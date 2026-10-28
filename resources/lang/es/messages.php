@@ -211,9 +211,9 @@ return [
         'star' => '¡Gracias por usar Lens for Laravel! ¿Te gustaría mostrarnos tu apoyo dejando una estrella en GitHub?',
     ],
     'mcp' => [
-        'requirements' => 'Lens MCP requiere Laravel 10.49+ y el paquete opcional laravel/mcp (^0.5.3, ^0.6.3 o ^1.0). Composer selecciona un SDK compatible.',
+        'requirements' => 'Lens MCP requiere Laravel 10.49+ y el paquete opcional laravel/mcp (>=0.5.3 <0.10 o ^1.0). Composer selecciona un SDK compatible.',
         'unsupported_runtime' => 'Lens MCP requiere al menos Laravel 10.49. El escaneo básico sigue disponible.',
-        'sdk_missing' => 'Instala el paquete opcional laravel/mcp (^0.5.3, ^0.6.3 o ^1.0) para usar Lens MCP.',
+        'sdk_missing' => 'Instala el paquete opcional laravel/mcp (>=0.5.3 <0.10 o ^1.0) para usar Lens MCP.',
         'disabled' => 'Lens MCP está desactivado. Actívalo en la configuración o para este proceso.',
         'environment' => 'Lens MCP no está permitido en este entorno.',
         'invalid_source' => 'El archivo fuente no está disponible o está fuera de los directorios permitidos.',

@@ -81,7 +81,7 @@ test('core installation has a concise first-run welcome and passive star message
     $output = Artisan::output();
     expect($output)->toContain('Lens for Laravel is installed.', 'https://lens-demo.test/lens-for-laravel/dashboard',
         'AI Fix', 'Lens MCP', 'Optional', 'PHP 8.3+', 'Laravel 12+', 'laravel/ai', 'Laravel 10.49+', 'laravel/mcp',
-        'https://lens.webcrafts.pl/docs/ai-fix-engine', 'https://lens.webcrafts.pl/docs',
+        'https://lens.lipinskijakub.pl/docs/ai-fix-engine', 'https://lens.lipinskijakub.pl/docs/mcp',
         'Thanks for using Lens for Laravel! Would you like to show some love and leave a star on GitHub?',
         'https://github.com/webcrafts-studio/lens-for-laravel')
         ->not->toContain('SDK installed', 'Client configured', "\e[", '[y/N]', 'Gemini', 'Claude', 'Codex');
@@ -92,7 +92,7 @@ test('a repeated installation succeeds without repeating optional integrations o
     Artisan::call('lens:install');
     expect(Artisan::call('lens:install', ['--no-interaction' => true]))->toBe(0);
     expect(Artisan::output())->toContain('already been installed', 'https://lens-demo.test/lens-for-laravel/dashboard')
-        ->not->toContain('AI Fix', 'Lens MCP', 'GitHub', 'https://lens.webcrafts.pl/docs');
+        ->not->toContain('AI Fix', 'Lens MCP', 'GitHub', 'https://lens.lipinskijakub.pl/docs');
 });
 
 test('installed integrations use neutral statuses without exposing a model provider or client', function (string $client) {

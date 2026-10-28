@@ -32,6 +32,7 @@ test('MCP availability requires Laravel 10.49 independently of optional AI', fun
 test('MCP availability explains missing official SDK explicit disablement and environment', function () {
     config(['lens-for-laravel.mcp.enabled' => true]);
     expect(fakeMcpAvailability('12.41.1', false)->status()['reason'])->toBe('sdk_missing');
+    expect(fakeMcpAvailability('12.41.1', false)->status()['message'])->toContain('>=0.5.3 <0.10', '^1.0');
     config(['lens-for-laravel.mcp.enabled' => false]);
     expect(fakeMcpAvailability('12.41.1', true)->status()['reason'])->toBe('disabled');
     config(['lens-for-laravel.mcp.enabled' => true, 'lens-for-laravel.enabled_environments' => ['local']]);
