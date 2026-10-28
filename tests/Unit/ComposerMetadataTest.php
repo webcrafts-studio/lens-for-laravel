@@ -15,9 +15,28 @@ test('Composer metadata describes the package rather than a skeleton application
         ->and($composer['type'])->toBe('library')
         ->and($composer['description'])->toContain('local-first WCAG accessibility auditor')
         ->and($composer['description'])->not->toContain('skeleton')
-        ->and($composer['homepage'])->toBe('https://lens.webcrafts.pl')
+        ->and($composer['homepage'])->toBe('https://lens.lipinskijakub.pl')
+        ->and($composer['support']['docs'])->toBe('https://lens.lipinskijakub.pl/docs')
         ->and($composer['suggest'])->toHaveKey('laravel/ai')
         ->and($composer)->not->toHaveKey('version');
+});
+
+test('the concise README ships working local artwork and documents optional MCP setup', function () {
+    $root = dirname(__DIR__, 2);
+    $readme = file_get_contents($root.'/README.md');
+    expect($readme)->toContain('php artisan lens:install', 'composer require laravel/mcp --dev',
+        'php artisan lens:mcp:install --client=codex', '--client=claude', 'Laravel 10.49+',
+        'https://lens.lipinskijakub.pl/docs/mcp', 'PHP 8.3+', 'Laravel 12+', 'MIT license')
+        ->not->toContain('current development line')
+        ->not->toMatch('/[\x{2013}\x{2014}]/u');
+    preg_match_all('/(?:src|srcset)="(art\/readme\/[^" ]+)"/', $readme, $matches);
+    expect(array_unique($matches[1]))->toHaveCount(6);
+    foreach (array_unique($matches[1]) as $asset) {
+        expect($root.'/'.$asset)->toBeFile();
+    }
+    preg_match_all('/https:\/\/lens\.[^\s\/"\)]+/', $readme, $domains);
+    expect(array_values(array_unique($domains[0])))->toBe(['https://lens.lipinskijakub.pl']);
+    expect(count(explode("\n", $readme)))->toBeLessThan(120);
 });
 
 test('optional SDK constraints preserve compatible releases without requiring either SDK', function () {

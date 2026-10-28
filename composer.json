@@ -8,11 +8,11 @@
     "laravel",
     "wcag"
   ],
-  "homepage": "https://lens.webcrafts.pl",
+  "homepage": "https://lens.lipinskijakub.pl",
   "type": "library",
   "license": "MIT",
   "support": {
-    "docs": "https://lens.webcrafts.pl/docs",
+    "docs": "https://lens.lipinskijakub.pl/docs",
     "issues": "https://github.com/webcrafts-studio/lens-for-laravel/issues",
     "source": "https://github.com/webcrafts-studio/lens-for-laravel"
   },

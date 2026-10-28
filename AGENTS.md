@@ -4,7 +4,7 @@
 
 Lens for Laravel is a local-first accessibility auditing package for Laravel applications. It renders application pages in Chromium, runs axe-core, maps violations back to Blade/React/Vue source files, and exposes the results through a dashboard and the `lens:audit` Artisan command.
 
-The current development line is v3.5.0. Its new features are an optional explicit AI model override and dashboard info about the active AI Fix model. The released v3.4.0 added authenticated scans for pages behind login and four additional AI Fix providers (OpenRouter, xAI, DeepSeek, Mistral). New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must otherwise be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1/v3.2/v3.3/v3.4 upgrade notes as historical documentation.
+The current release is v3.6.0. It adds optional Lens MCP integration, tracked long scans, a first-install welcome, and compatibility with supported 0.x and stable 1.x Laravel AI/MCP SDK releases. v3.5 introduced the optional explicit AI model override, dashboard model information, bulk application, and provider-default temperature. v3.4 added authenticated scans and the OpenRouter, xAI, DeepSeek, and Mistral providers. New compatibility, WCAG selection, reliability, localization, source-mapping, and documentation work in this branch must otherwise be described as v3 functionality. Keep v2.0/v2.1 and incremental v3.0/v3.1/v3.2/v3.3/v3.4/v3.5 upgrade notes as historical documentation.
 
 The package supports PHP 8.2+ and Laravel 10-13 for its core, non-AI features.
 
@@ -36,6 +36,9 @@ Do not add `laravel/ai` back to production `require`. Core installation on PHP 8
 - `src/Services/AuthenticatedScanResolver.php` - guard login, allowlist, and auth-state restore
 - `src/Support/Wcag.php` - supported WCAG versions, cumulative axe-core tags, and result-level classification
 - `src/Console/Commands/LensAuditCommand.php` - CLI audit workflow
+- `src/Console/Commands/LensInstallCommand.php` - first-install welcome
+- `src/Mcp/` - optional local MCP tools, tracked runs, source context, history, and verification
+- `src/Services/McpAvailability.php` - optional MCP SDK, runtime, and environment checks
 - `routes/web.php` - dashboard JSON endpoints
 - `resources/views/dashboard.blade.php` - dashboard interface
 - `resources/views/state-recorder.blade.php` - visual interaction recorder
@@ -111,6 +114,9 @@ Do not commit that temporary dependency as a mandatory production requirement.
 The package README is the concise installation and feature reference. The website contains the full documentation. Keep these claims exact:
 
 - core: PHP 8.2+, Laravel 10-13
+- Lens MCP: PHP 8.2+, Laravel 10.49+, optional `laravel/mcp` >=0.5.3 <0.10 or 1.x; the connected assistant uses its own model and does not require `laravel/ai`
+- v3.6 adds Lens MCP, tracked asynchronous scans, and the explicit `lens:install` first-run welcome; do not print welcome output during Composer updates or MCP stdio
+- AI Fix supports `laravel/ai` >=0.3.2 <0.12 or 1.x, with SDK-specific Gemini options and token metadata; Composer chooses a compatible supported SDK
 - AI Fix: PHP 8.3+, Laravel 12+, optional `laravel/ai`
 - AI Fix sends a bounded semantic element/component and issue metadata to the configured provider; default localhost Ollama processing stays on the application host, while cloud and remote Ollama endpoints receive the context over the network
 - v3 AI Fix uses a minimal replacement and one controlled retry for truncated/invalid structured output; cloud providers use their default `laravel/ai` model and timeout behavior unless the optional `ai_model` override is set, while v3.3 can select a local Ollama model tag explicitly and defaults its timeout to 120 seconds
